@@ -1,0 +1,18 @@
+<?xml version='1.0' standalone='yes'?>
+<extension>
+	<name>PLUGIN_MUSICARTISTINFO</name>
+	<creator>Michael Herger</creator>
+	<defaultState>enabled</defaultState>
+	<description>PLUGIN_MUSICARTISTINFO_DESC</description>
+	<email>slim@herger.net</email>
+	<homepageURL>http://www.herger.net/MusicArtistInfo</homepageURL>
+	<id>65f0c9e0-042f-11e3-8ffd-0800200c9a66</id>
+	<module>Plugins::MusicArtistInfo::Plugin</module>
+	<targetApplication>
+		<id>SqueezeCenter</id>
+		<maxVersion>*</maxVersion>
+		<minVersion>7.6</minVersion>
+	</targetApplication>
+	<type>2</type>
+	<version>0.0.1</version>
+</extension>

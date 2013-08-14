@@ -1,0 +1,26 @@
+PLUGIN_MUSICARTISTINFO
+	DE	Musik- und Interpreten-Information
+	EN	Music and Artist Information
+	
+PLUGIN_MUSICARTISTINFO_DESC
+	EN	Read album reviews, artist biographies, related artists, see artist pictures and much more.
+	
+PLUGIN_MUSICARTISTINFO_ARTISTINFO
+	DE	Interpreten-Information
+	EN	Artist Information
+	
+PLUGIN_MUSICARTISTINFO_BIOGRAPHY
+	DE	Biographie
+	EN	Biography
+
+PLUGIN_MUSICARTISTINFO_ARTISTDETAILS
+	DE	Details über den Interpreten
+	EN	Artist Details
+
+PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
+	DE	Fotos
+	EN	Pictures
+
+PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS
+	DE	Verwandte Interpreten
+	EN	Related Artists
