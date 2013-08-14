@@ -22,6 +22,8 @@ use constant ALBUMSEARCH_URL  => BASE_URL . 'search/albums/%s, %s/all/1';
 use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s/all/1';
 use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biography';
 use constant RELATED_URL      => BASE_URL . 'artist/%s/related';
+use constant ALBUMREVIEW_URL  => BASE_URL . 'album/%s';
+use constant ALBUMCREDITS_URL => BASE_URL . ALBUMREVIEW_URL . '/credits';
 
 my $log = logger('plugin.musicartistinfo');
 
@@ -45,19 +47,7 @@ sub getBiography {
 
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
 					
-					# clean up links and images
-					foreach ( $bio->look_down('_tag', 'a') ) {
-						# make external links absolute
-						$_->attr('href', BASE_URL . $_->attr('href')) if $_->attr('href') !~ /^http/;
-						# open links in new window
-						$_->attr('target', 'allmusic');
-					}
-
-					foreach ( $bio->look_down('_tag', 'img', 'class', 'lazy') ) {
-						my $src = $_->attr('data-original') || next;
-						$_->attr('src', $src);
-						$_->attr('data-original', '');
-					}
+					$bio = _cleanupLinksAndImages($bio);
 
 					$result->{bio} = HTML::Entities::decode($bio->as_HTML);
 					$result->{bioText} = Encode::decode( 'utf8', join('\n\n', map { 
@@ -297,6 +287,204 @@ sub searchArtists {
 	} );
 }
 
+sub getAlbumReview {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	my $getAlbumReviewCB = sub {
+		my $url = _getAlbumReviewUrl(shift);
+
+		_get( $client, $cb, {
+			url     => $url,
+			parseCB => sub {
+				my $tree   = shift;
+				my $result = {};
+
+				main::DEBUGLOG && $log->is_debug && $tree->dump;
+
+				if ( my $review = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody') ) {
+
+					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
+					
+					$review = _cleanupLinksAndImages($review);
+
+					$result->{review} = HTML::Entities::decode($review->as_HTML);
+					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map { 
+						$_->as_trimmed_text;
+					} $review->content_list) );
+					
+					$result->{review} || $log->warn('Failed to find album review for ' . $url);
+				}
+				
+				my $author = $tree->look_down('_tag', 'h4', 'class', 'review-author headline');
+				$result->{author} = $author->as_trimmed_text if $author;
+				
+				my $cover = $tree->look_down('_tag', 'div', 'class', 'album-contain');
+				if ( $cover && (my $img = $cover->look_down('_tag', 'img')) ) {
+					$result->{image} = $img->attr('src');
+				}
+				
+				$result->{author} = $author->as_trimmed_text if $author;
+
+				return $result;
+			} 
+		} );
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getAlbumReviewCB->( $args );
+	}
+	else {
+		$class->getAlbum($client, sub {
+			$getAlbumReviewCB->( shift );
+		}, $args);
+	}
+}
+
+sub getAlbumDetails {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	my $getAlbumDetailsCB = sub {
+		my $url = _getAlbumReviewUrl(shift);
+		
+		_get( $client, $cb, {
+			url     => $url,
+			parseCB => sub {
+				my $tree   = shift;
+				my $result = [];
+				
+				my $details = $tree->look_down('_tag', 'section', 'class', 'basic-info');
+
+				foreach ( 'release-date', 'recording-date', 'duration', 'genre', 'styles' ) {
+					if ( my $item = $details->look_down('_tag', 'div', 'class', $_) ) {
+						my $title = $item->look_down('_tag', 'h4');
+						my $value = $item->look_down('_tag', 'div', 'class', undef) || $item->look_down('_tag', 'span');
+
+						next unless $title && $value;
+
+						if ( /genre|styles/ ) {
+							# XXX - link to genre/artist pages?
+							my $values = [];
+							foreach ( $value->look_down('_tag', 'a') ) {
+								push @$values, $_->as_trimmed_text;
+							}
+							
+							$value = $values if scalar @$values;
+						}
+						
+						push @$result, {
+							$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
+						} if $title && $value;
+					}
+				}
+				
+				if ( my $item = $tree->look_down('_tag', 'section', 'class', 'moods') ) {
+					my $title = $item->look_down('_tag', 'h4');
+					my $value = $item->look_down('_tag', 'div', 'class', undef);
+
+					if ( $title && $value ) {
+						# XXX - link to genre/artist pages?
+						my $values = [];
+						foreach ( $value->look_down('_tag', 'a') ) {
+							push @$values, $_->as_trimmed_text;
+						}
+						
+						$value = $values if scalar @$values;
+					}
+					
+					push @$result, {
+						$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
+					} if $title && $value;
+				}
+				
+				return {
+					items => $result
+				};
+			} 
+		} );
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getAlbumDetailsCB->( $args );
+	}
+	else {
+		$class->getAlbum($client, sub {
+			$getAlbumDetailsCB->( shift );
+		}, $args);
+	}
+}
+
+sub getAlbumCredits {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	my $getAlbumDetailsCB = sub {
+		my $url = $_[0]->{url} ? ($_[0]->{url} . '/credits') : sprintf(ALBUMCREDITS_URL, $_[0]->{id});
+		
+		_get( $client, $cb, {
+			url     => $url,
+			parseCB => sub {
+				my $tree   = shift;
+				my $result = [];
+				
+				my $credits = $tree->look_down('_tag', 'table');
+
+				foreach ($credits->content_list) {
+					my $artist = $_->look_down('_tag', 'td', 'class', 'artist') || next;
+					
+					my $artistData = _parseArtistInfo($artist);
+					
+					if ( my $credit = $_->look_down('_tag', 'td', 'class', 'credit') ) {
+						$artistData->{credit} = $credit->as_trimmed_text;
+					}
+					
+					push @$result, $artistData if $artistData->{name};
+				}
+				
+				return {
+					items => $result
+				};
+			} 
+		} );
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getAlbumDetailsCB->( $args );
+	}
+	else {
+		$class->getAlbum($client, sub {
+			$getAlbumDetailsCB->( shift );
+		}, $args);
+	}
+}
+
+sub getAlbum {
+	my ( $class, $client, $cb, $args ) = @_;
+	
+	warn Data::Dump::dump($args);
+	my $artist = $args->{artist};
+	my $album  = $args->{album};
+	
+	if (!$artist || !$album) {
+		$cb->();
+		return;
+	}
+	
+	$class->searchAlbums($client, sub {
+		my $items = shift;
+		
+		my $albumInfo;
+		
+		foreach (@$items) {
+			# TODO - sanity check input, "smart matching" bjork/björk etc.
+			if ( $_->{name} =~ /$album/i && $_->{artist}->{name} =~ /$artist/i ) {
+				$albumInfo = $_;
+				last;
+			}
+		}
+		
+		$cb->($albumInfo);
+	}, $args)
+}
+
 sub searchAlbums {
 	my ( $class, $client, $cb, $args ) = @_;
 	
@@ -333,6 +521,26 @@ sub searchAlbums {
 	} );
 }
 
+sub _cleanupLinksAndImages {
+	my $tree = shift;
+	
+	# clean up links and images
+	foreach ( $tree->look_down('_tag', 'a') ) {
+		# make external links absolute
+		$_->attr('href', BASE_URL . $_->attr('href')) if $_->attr('href') !~ /^http/;
+		# open links in new window
+		$_->attr('target', 'allmusic');
+	}
+
+	foreach ( $tree->look_down('_tag', 'img', 'class', 'lazy') ) {
+		my $src = $_->attr('data-original') || next;
+		$_->attr('src', $src);
+		$_->attr('data-original', '');
+	}
+	
+	return $tree;
+}
+
 sub _parseArtistInfo {
 	my $data = shift;
 	
@@ -356,6 +564,10 @@ sub _parseArtistInfo {
 
 sub _getBioUrl {
 	return $_[0]->{url} ? ($_[0]->{url} . '/biography') : sprintf(BIOGRAPHY_URL, $_[0]->{id});
+}
+
+sub _getAlbumReviewUrl {
+	return $_[0]->{url} ? $_[0]->{url} : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
 }
 
 sub _getIdFromUrl {
@@ -382,10 +594,9 @@ sub _get {
 			
 			if ( $response->headers->content_type =~ /html/ ) {
 				my $tree = HTML::TreeBuilder->new;
-				$tree->no_expand_entities(1);
-				$tree->ignore_unknown(0);
+				$tree->no_expand_entities(1);	# there's an issue with utf8 encoding - let's do it on our own :-/
+				$tree->ignore_unknown(0);		# allmusic.com uses unknown "section" tag
 				$tree->parse_content( $response->content );
-#				$tree->parse_content( Encode::decode( 'utf8', $response->content) );
 
 				$result = $parseCB->($tree) if $parseCB;
 			}

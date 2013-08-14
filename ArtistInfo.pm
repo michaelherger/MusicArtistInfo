@@ -36,18 +36,21 @@ sub getArtistMenu {
 			passthrough => $pt,
 		},
 		{
-			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTPICTURES'),
-			type => 'link',
-			url  => \&getArtistPhotos,
-			passthrough => $pt,
-		},
-		{
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS'),
 			type => 'link',
 			url  => \&getRelatedArtists,
 			passthrough => $pt,
 		},
 	];
+	
+	if (!$params->{isButton}) {
+		push @$items, {
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTPICTURES'),
+			type => 'link',
+			url  => \&getArtistPhotos,
+			passthrough => $pt,
+		};
+	}
 	
 	$cb->({
 		items => $items,
@@ -79,6 +82,7 @@ sub getBiography {
 					$content .= $bio->{bioText};
 				}
 				
+				# TODO - textarea not supported in button mode!
 				push @$items, {
 					name => $content,
 					type => 'textarea',

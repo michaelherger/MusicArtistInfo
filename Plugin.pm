@@ -4,17 +4,13 @@ use strict;
 use base qw(Slim::Plugin::OPMLBased);
 
 use vars qw($VERSION);
-#use Digest::MD5 qw(md5_hex);
-#use JSON::XS::VersionOneAndTwo;
-#use Scalar::Util qw(blessed);
 
 #use Slim::Menu::TrackInfo;
-#use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string cstring);
-#use Slim::Utils::Timers;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
+use Plugins::MusicArtistInfo::AlbumInfo;
 
 use constant PLUGIN_TAG => 'musicartistinfo';
 
@@ -23,8 +19,6 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	defaultLevel => 'ERROR',
 	description  => 'PLUGIN_MUSICARTISTINFO',
 } );
-
-#my $prefs = preferences('server');
 
 sub initPlugin {
 	my $class = shift;
@@ -35,7 +29,7 @@ sub initPlugin {
 		feed   => \&handleFeed,
 		tag    => PLUGIN_TAG,
 		menu   => 'plugins',
-#		is_app => 1,
+		is_app => 1,
 		weight => 1,
 	);
 }
@@ -53,6 +47,13 @@ sub handleFeed {
 				type => 'link',
 				url  => sub {
 					Plugins::MusicArtistInfo::ArtistInfo::getArtistMenu(@_);
+				},
+			},
+			{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMINFO'),
+				type => 'link',
+				url  => sub {
+					Plugins::MusicArtistInfo::AlbumInfo::getAlbumMenu(@_);
 				},
 			},
 		],
