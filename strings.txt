@@ -24,3 +24,8 @@ PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
 PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS
 	DE	Verwandte Interpreten
 	EN	Related Artists
+
+PLUGIN_MUSICARTISTINFO_NOT_FOUND
+	DE	Tut mir Leid, konnte keine relevanten Informationen finden.
+	EN	I'm sorry, didn't find any relevant information.
+	

@@ -6,6 +6,7 @@ use JSON::XS::VersionOneAndTwo;
 
 use FindBin qw($Bin);
 use lib catdir($Bin, 'Plugins', 'MusicArtistInfo', 'lib');
+use HTML::Entities;
 use HTML::TreeBuilder;
 
 #use Encode;
@@ -13,6 +14,7 @@ use HTML::TreeBuilder;
 use Slim::Networking::SimpleAsyncHTTP;
 #use Slim::Utils::Cache;
 use Slim::Utils::Log;
+use Slim::Utils::Strings qw(string cstring);
 
 use constant BASE_URL         => 'http://www.allmusic.com/';
 use constant SEARCH_URL       => BASE_URL . 'search/typeahead/all/%s';
@@ -21,17 +23,15 @@ use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s/all/1';
 use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biography';
 use constant RELATED_URL      => BASE_URL . 'artist/%s/related';
 
-my $log = logger('plugin.bioalbumreview');
+my $log = logger('plugin.musicartistinfo');
 
 #my $cache = Slim::Utils::Cache->new;
 
 sub getBiography {
 	my ( $class, $client, $cb, $args ) = @_;
-	
-	$class->getArtist($client, sub {
-		my $artistInfo = shift;
-		
-		my $url = ($artistInfo->{url} . '/biography') || sprintf(BIOGRAPHY_URL, $artistInfo->{id});
+
+	my $getBiographyCB = sub {
+		my $url = _getBioUrl(shift);
 		
 		_get( $client, $cb, {
 			url     => $url,
@@ -39,7 +39,12 @@ sub getBiography {
 				my $tree   = shift;
 				my $result = {};
 
+				main::DEBUGLOG && $log->is_debug && $tree->dump;
+
 				if ( my $bio = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody') ) {
+
+					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
+					
 					# clean up links and images
 					foreach ( $bio->look_down('_tag', 'a') ) {
 						# make external links absolute
@@ -54,11 +59,12 @@ sub getBiography {
 						$_->attr('data-original', '');
 					}
 
-					$result->{bio} = $bio->as_HTML;
-					$result->{bio} = Slim::Utils::Unicode::utf8decode_guess($result->{bio});
+					$result->{bio} = HTML::Entities::decode($bio->as_HTML);
 					$result->{bioText} = Encode::decode( 'utf8', join('\n\n', map { 
 						$_->as_trimmed_text;
 					} $bio->content_list) );
+					
+					$result->{bio} || $log->warn('Failed to find biography for ' . $url);
 				}
 				
 				my $author = $tree->look_down('_tag', 'h2', 'class', 'headline');
@@ -67,16 +73,23 @@ sub getBiography {
 				return $result;
 			} 
 		} );
-	}, $args);
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getBiographyCB->( $args );
+	}
+	else {
+		$class->getArtist($client, sub {
+			$getBiographyCB->( shift );
+		}, $args);
+	}
 }
 
 sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
-	
-	$class->getArtist($client, sub {
-		my $artistInfo = shift;
-		
-		my $url = ($artistInfo->{url} . '/biography') || sprintf(BIOGRAPHY_URL, $artistInfo->{id});
+
+	my $getArtistPhotosCB = sub {
+		my $url = _getBioUrl(shift);
 		
 		_get( $client, $cb, {
 			url     => $url,
@@ -100,19 +113,28 @@ sub getArtistPhotos {
 					}
 				}
 				
-				return $result;
+				return {
+					items => $result
+				};
 			} 
 		} );
-	}, $args);
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getArtistPhotosCB->( $args );
+	}
+	else {
+		$class->getArtist($client, sub {
+			$getArtistPhotosCB->( shift );
+		}, $args);
+	}
 }
 
 sub getArtistDetails {
 	my ( $class, $client, $cb, $args ) = @_;
-	
-	$class->getArtist($client, sub {
-		my $artistInfo = shift;
-		
-		my $url = ($artistInfo->{url} . '/biography') || sprintf(BIOGRAPHY_URL, $artistInfo->{id});
+
+	my $getArtistDetailsCB = sub {
+		my $url = _getBioUrl(shift);
 		
 		_get( $client, $cb, {
 			url     => $url,
@@ -129,11 +151,22 @@ sub getArtistDetails {
 
 						next unless $title && $value;
 
-						if ( /genre|styles|member/ ) {
+						if ( /genre|styles/ ) {
 							# XXX - link to genre/artist pages?
 							my $values = [];
 							foreach ( $value->look_down('_tag', 'a') ) {
 								push @$values, $_->as_trimmed_text;
+							}
+							
+							$value = $values if scalar @$values;
+						}
+						elsif ( /member/ ) {
+							# XXX - link to genre/artist pages?
+							my $values = [];
+							foreach ( $value->look_down('_tag', 'a') ) {
+								push @$values, {
+									HTML::Entities::decode($_->as_trimmed_text) => $_->attr('href')
+								};
 							}
 							
 							$value = $values if scalar @$values;
@@ -153,20 +186,29 @@ sub getArtistDetails {
 					}
 				}
 				
-				return $result;
+				return {
+					items => $result
+				};
 			} 
 		} );
-	}, $args);
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getArtistDetailsCB->( $args );
+	}
+	else {
+		$class->getArtist($client, sub {
+			$getArtistDetailsCB->( shift );
+		}, $args);
+	}
 }
 
 sub getRelatedArtists {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	$class->getArtist($client, sub {
-		my $artistInfo = shift;
-		
-		my $url = ($artistInfo->{url} . '/related') || sprintf(RELATED_URL, $artistInfo->{id});
-		
+	my $getRelatedArtistsCB = sub {
+		my $url = $_[0]->{url} ? ($_[0]->{url} . '/related') : sprintf(RELATED_URL, $_[0]->{id});
+
 		_get( $client, $cb, {
 			url     => $url,
 			parseCB => sub {
@@ -176,7 +218,6 @@ sub getRelatedArtists {
 				foreach ( 'similars', 'influencers', 'followers', 'associatedwith', 'collaboratorwith' ) {
 					my $related = $tree->look_down('_tag', 'section', 'class', "related $_") || next;
 					my $title = $related->look_down('_tag', 'h2') || next;
-
 					my $items = $related->look_down("_tag", "ul") || next;
 
 					push @$result, {
@@ -186,10 +227,21 @@ sub getRelatedArtists {
 					};
 				}
 				
-				return $result;
+				return {
+					items => $result
+				};
 			} 
 		} );
-	}, $args);
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getRelatedArtistsCB->( $args );
+	}
+	else {
+		$class->getArtist($client, sub {
+			$getRelatedArtistsCB->( shift );
+		}, $args);
+	}
 }
 
 sub getArtist {
@@ -302,6 +354,10 @@ sub _parseArtistInfo {
 	return $artistInfo;
 }
 
+sub _getBioUrl {
+	return $_[0]->{url} ? ($_[0]->{url} . '/biography') : sprintf(BIOGRAPHY_URL, $_[0]->{id});
+}
+
 sub _getIdFromUrl {
 	$_[0] =~ /\b(\w+)$/;
 	return $1;
@@ -309,6 +365,8 @@ sub _getIdFromUrl {
 
 sub _get {
 	my ( $client, $cb, $args ) = @_;
+	
+	main::INFOLOG && $log->info('Getting ' . $args->{url});
 	
 	my $url = $args->{url} || return;
 	my $parseCB = $args->{parseCB};
@@ -320,7 +378,7 @@ sub _get {
 			my $result;
 			my $error;
 
-			#warn Data::Dump::dump($response->content);
+			main::DEBUGLOG && $log->is_debug && Data::Dump::dump($response->content);
 			
 			if ( $response->headers->content_type =~ /html/ ) {
 				my $tree = HTML::TreeBuilder->new;
@@ -337,13 +395,31 @@ sub _get {
 				$log->error($result->{error});
 			}
 
-#			main::DEBUGLOG && $log->debug(Data::Dump::dump($result));
+			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 			
 			$cb->($result);
 		},
 		sub {
-			$log->warn("error: $_[1]");
-			$cb->({ error => 'Unknown error: ' . $_[1] });
+			my $response = shift;
+			my $error    = shift || '';
+			
+			my $item = {
+				error => 'Unknown error',
+			};
+			
+			if ($response->code == 404 || $error =~ /404/) {
+				$item = {
+					error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				};
+			}
+			else {
+				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($response));
+				
+				$log->warn("error: $error");
+				$item = { error => 'Unknown error: ' . $error }
+			}
+			
+			$cb->($item);
 		},
 		{
 			client  => $client,
