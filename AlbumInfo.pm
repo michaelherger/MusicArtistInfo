@@ -27,26 +27,24 @@ sub getAlbumMenu {
 	
 	my $pt = [$args];
 
-	my $items = [
-		{
-			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMREVIEW'),
-			type => 'link',
-			url  => \&getAlbumReview,
-			passthrough => $pt,
-		},
-		{
-			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMDETAILS'),
-			type => 'link',
-			url  => \&getAlbumInfo,
-			passthrough => $pt,
-		},
-		{
-			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMCREDITS'),
-			type => 'link',
-			url  => \&getAlbumCredits,
-			passthrough => $pt,
-		},
-	];
+	my $items = [ {
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMDETAILS'),
+		type => 'link',
+		url  => \&getAlbumInfo,
+		passthrough => $pt,
+	},{
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMCREDITS'),
+		type => 'link',
+		url  => \&getAlbumCredits,
+		passthrough => $pt,
+	} ];
+	
+	unshift @$items, {
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMREVIEW'),
+		type => 'link',
+		url  => \&getAlbumReview,
+		passthrough => $pt,
+	} unless $params->{isButton};
 	
 	$cb->({
 		items => $items,

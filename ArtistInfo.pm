@@ -4,9 +4,26 @@ use strict;
 
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
+
 use Plugins::MusicArtistInfo::AllMusic;
+use Plugins::MusicArtistInfo::TEN;
+
+use constant CLICOMMAND => 'musicartistinfo'; 
 
 my $log = logger('plugin.musicartistinfo');
+
+sub init {
+#                                                                |requires Client
+#                                                                |  |is a Query
+#                                                                |  |  |has Tags
+#                                                                |  |  |  |Function to call
+#                                                                C  Q  T  F
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'], [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'], [1, 1, 1, \&getArtistWeblinksCLI]);
+
+	Plugins::MusicArtistInfo::TEN->init($_[1]);
+}
 
 sub getArtistMenu {
 	my ($client, $cb, $params, $args) = @_;
@@ -22,34 +39,84 @@ sub getArtistMenu {
 	
 	my $pt = [$args];
 
-	my $items = [
-		{
+	my $items = [ {
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTDETAILS'),
+		type => 'link',
+		url  => \&getArtistInfo,
+		passthrough => $pt,
+	},{
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS'),
+		type => 'link',
+		url  => \&getRelatedArtists,
+		passthrough => $pt,
+	} ];
+	
+	# we don't show pictures, videos and length text content on ip3k
+	if (!$params->{isButton}) {
+		unshift @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_BIOGRAPHY'),
 			type => 'link',
 			url  => \&getBiography,
 			passthrough => $pt,
-		},
-		{
-			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTDETAILS'),
-			type => 'link',
-			url  => \&getArtistInfo,
-			passthrough => $pt,
-		},
-		{
-			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS'),
-			type => 'link',
-			url  => \&getRelatedArtists,
-			passthrough => $pt,
-		},
-	];
-	
-	if (!$params->{isButton}) {
+		};
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTPICTURES'),
 			type => 'link',
 			url  => \&getArtistPhotos,
 			passthrough => $pt,
 		};
+
+		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
+		# don't show blog/news summaries on iPeng, but link instead. And show videos!
+		if ($params->{isControl} && $client->controllerUA =~ /iPeng/i)  {
+			push @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'news' ],
+						fixedParams => $args,
+					},
+				},
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTBLOGS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'blogs' ],
+						fixedParams => $args,
+					},
+				},
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'videos' ],
+						fixedParams => $args,
+					},
+				},
+			};
+		}
+		
+		else {
+			push @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
+				type => 'link',
+				url  => \&getArtistNews,
+				passthrough => $pt,
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTBLOGS'),
+				type => 'link',
+				url  => \&getArtistBlogs,
+				passthrough => $pt,
+			};
+			
+			push @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS'),
+				type => 'link',
+				url  => \&getArtistVideos,
+				passthrough => $pt,
+			} if $params->{isWeb};
+		}
 	}
 	
 	$cb->({
@@ -82,7 +149,6 @@ sub getBiography {
 					$content .= $bio->{bioText};
 				}
 				
-				# TODO - textarea not supported in button mode!
 				push @$items, {
 					name => $content,
 					type => 'textarea',
@@ -231,6 +297,162 @@ sub getRelatedArtists {
 			$cb->($items);
 		},
 		$args,
+	);
+}
+
+sub getArtistNews {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistNews(
+		sub {
+			_gotWebLinks($cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub getArtistBlogs {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistBlogs(
+		sub {
+			_gotWebLinks($cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub getArtistVideos {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistVideos(
+		sub {
+			_gotWebLinks($cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub _gotWebLinks {
+	my ($cb, $params, $result) = @_; 
+
+	my $items = [];
+	$result ||= {};
+
+	if ($result->{error}) {
+		$items = [{
+			name => $result->{error},
+			type => 'text'
+		}]
+	}
+	elsif ($result->{items} && $params->{isWeb}) {
+		$items = [ map {
+			my $title = $_->{name} || $_->{title};
+			$title .= ' (' . $_->{site} . ')' if $_->{site};
+			
+			{
+				name  => $title,
+				image => $_->{image_url},
+				type  => 'redirect',
+				weblink => $_->{url},
+			}
+		} @{$result->{items}} ];
+	}
+	elsif ($result->{items}) {
+		$items = [ map {
+			my $item = {
+				name  => $_->{name} || $_->{title},
+			};
+			
+			$item->{image} = $_->{image_url} if $_->{image_url};
+			
+			if ($_->{summary}) {
+				$_->{summary} =~ s/<\/?span>//g;
+				
+				$_->{summary} .= '\n\n' . $_->{url} if $_->{url};
+				
+				$item->{items} = [{
+					name => $_->{summary},
+					type => 'textarea',
+				}] ;
+			}
+			$item;
+		} @{$result->{items}} ];
+	}
+
+	$cb->($items);
+}
+
+sub getArtistWeblinksCLI {
+	my $request = shift;
+
+	my $handler;
+	# check this is the correct query.
+	if ($request->isNotQuery([[CLICOMMAND], ['videos', 'blogs', 'news']]) || !$request->client()) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['news']]) || !$request->client()) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistNews(@_) };
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['blogs']]) || !$request->client()) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistBlogs(@_) };
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['videos']]) || !$request->client()) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistVideos(@_) };
+	}
+	
+	$request->setStatusProcessing();
+	
+	my $client = $request->client();
+	my $artist = $request->getParam('artist');
+
+	$handler->(
+		sub {
+			my $items = shift || {};
+
+			my $i = 0;
+			my $hasImages;
+
+			if ($items->{error}) {
+				$request->addResult('window', {
+					textArea => $items->{error},
+				});
+				$i++;
+			}
+			elsif ($items->{items}) {
+				foreach (@{$items->{items}}) {
+					my $url = $_->{url};
+
+#					if ($url =~ /youtube/) {
+#						my ($id) = $url =~ /v=(\w+)\b/;
+#						logError($id);
+#						$url = 'http://y2u.be/' . $id;
+#						logError($url);
+#					}
+					
+#					logError($url);
+
+					$hasImages ||= $_->{image_url};
+					
+					$request->addResultLoop('item_loop', $i, 'text', ($_->{title} || $_->{name}) . "\n" . ($_->{site} ? $_->{site} . ' - ' : '') . $_->{date_found} );
+					$request->addResultLoop('item_loop', $i, 'icon', $_->{image_url}) if $_->{image_url};
+					$request->addResultLoop('item_loop', $i, 'weblink', $url);
+					
+					$i++;
+				}
+			}
+									
+			$request->addResult('window', {
+				windowStyle => 'icon_list'
+			}) if $hasImages;
+			$request->addResult('count', $i);
+			$request->addResult('offset', 0);
+			$request->setStatusDone();
+		},
+		{
+			artist => $artist
+		},
 	);
 }
 

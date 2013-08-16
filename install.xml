@@ -7,6 +7,7 @@
 	<email>slim@herger.net</email>
 	<homepageURL>http://www.herger.net/MusicArtistInfo</homepageURL>
 	<id>65f0c9e0-042f-11e3-8ffd-0800200c9a66</id>
+	<aid>50444d32-494c-4d4f-4149-324b4e3858444c</aid>
 	<module>Plugins::MusicArtistInfo::Plugin</module>
 	<targetApplication>
 		<id>SqueezeCenter</id>

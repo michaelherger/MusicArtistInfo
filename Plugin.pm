@@ -24,6 +24,7 @@ sub initPlugin {
 	my $class = shift;
 	
 	$VERSION = $class->_pluginDataFor('version');
+	Plugins::MusicArtistInfo::ArtistInfo->init($class->_pluginDataFor('aid'), $VERSION);
 	
 	$class->SUPER::initPlugin(
 		feed   => \&handleFeed,
