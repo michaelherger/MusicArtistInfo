@@ -2,6 +2,10 @@ package Plugins::MusicArtistInfo::ArtistInfo;
 
 use strict;
 
+use Slim::Menu::ArtistInfo;
+use Slim::Menu::AlbumInfo;
+use Slim::Menu::TrackInfo;
+use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
@@ -21,6 +25,22 @@ sub init {
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [1, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'], [1, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'], [1, 1, 1, \&getArtistWeblinksCLI]);
+
+	Slim::Menu::GlobalSearch->registerInfoProvider( moreartistinfo => (
+		func => \&searchHandler,
+	) );
+
+	Slim::Menu::ArtistInfo->registerInfoProvider( moreartistinfo => (
+		func => \&artistInfoHandler,
+	) );
+
+	Slim::Menu::AlbumInfo->registerInfoProvider( moreartistinfo => (
+		func => \&albumInfoHandler,
+	) );
+
+	Slim::Menu::TrackInfo->registerInfoProvider( moreartistinfo => (
+		func => \&trackInfoHandler,
+	) );
 
 	Plugins::MusicArtistInfo::TEN->init($_[1]);
 }
@@ -119,9 +139,14 @@ sub getArtistMenu {
 		}
 	}
 	
-	$cb->({
-		items => $items,
-	});
+	if ($cb) {
+		$cb->({
+			items => $items,
+		});
+	}
+	else {
+		return $items;
+	}
 }
 
 sub getBiography {
@@ -456,14 +481,60 @@ sub getArtistWeblinksCLI {
 	);
 }
 
+sub trackInfoHandler {
+	my ( $client, $url, $track, $remoteMeta ) = @_;
+	my $return = _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url );
+}
+
+sub artistInfoHandler {
+	my ( $client, $url, $artist, $remoteMeta ) = @_;
+	my $return = _objInfoHandler( $client, $artist->name || $remoteMeta->{artist}, $url );
+}
+
+sub albumInfoHandler {
+	my ( $client, $url, $album, $remoteMeta ) = @_;
+	my $return = _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url );
+}
+
+sub searchHandler {
+	my ( $client, $tags ) = @_;
+	my $return = _objInfoHandler( $client, $tags->{search} );
+}
+
+sub _objInfoHandler {
+	my ( $client, $artist, $url ) = @_;
+
+	$artist = _getArtistFromSongURL($client, $url) if !$artist && $url;
+
+	return unless $artist;
+
+	my $args = {
+		artist => $artist
+	};
+
+	my $items = getArtistMenu($client, undef, $args);
+	
+	return {
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
+		type => 'outline',
+		items => $items,
+		passthrough => [ $args ],
+	};	
+}
+
 
 sub _getArtistFromSongURL {
 	my $client = shift;
+	my $url    = shift;
 
 	return unless $client;
 
-	if ( my $url = Slim::Player::Playlist::song($client) ) {
-		$url = $url->url;
+	if ( !$url ) {
+		$url = Slim::Player::Playlist::song($client);
+		$url = $url->url if $url;
+	}
+
+	if ( $url ) {
 		my $track = Slim::Schema->objectForUrl($url);
 
 		my $artist;

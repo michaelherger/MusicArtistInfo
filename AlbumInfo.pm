@@ -2,6 +2,9 @@ package Plugins::MusicArtistInfo::AlbumInfo;
 
 use strict;
 
+use Slim::Menu::AlbumInfo;
+use Slim::Menu::TrackInfo;
+use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -10,7 +13,20 @@ use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
 
 my $log   = logger('plugin.musicartistinfo');
-my $prefs = preferences('plugin.musicartistinfo');
+
+sub init {
+	Slim::Menu::GlobalSearch->registerInfoProvider( moremusicinfo => (
+		func => \&searchHandler,
+	) );
+
+	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
+		func => \&albumInfoHandler,
+	) );
+
+	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
+		func => \&trackInfoHandler,
+	) );
+}
 
 sub getAlbumMenu {
 	my ($client, $cb, $params, $args) = @_;
@@ -46,9 +62,14 @@ sub getAlbumMenu {
 		passthrough => $pt,
 	} unless $params->{isButton};
 	
-	$cb->({
-		items => $items,
-	});
+	if ($cb) {
+		$cb->({
+			items => $items,
+		});
+	}
+	else {
+		return $items;
+	}
 }
 
 sub getAlbumReview {
@@ -187,6 +208,45 @@ sub getAlbumCredits {
 	);
 }
 
+sub trackInfoHandler {
+	my ( $client, $url, $track, $remoteMeta ) = @_;
+	my $return = _objInfoHandler( $client, $track->albumname || $remoteMeta->{album}, $track->artistName || $remoteMeta->{artist}, $url );
+}
+
+sub albumInfoHandler {
+	my ( $client, $url, $album, $remoteMeta ) = @_;
+	my $return = _objInfoHandler( $client, $album->name || $remoteMeta->{name}, $album->contributor->name || $remoteMeta->{artist}, $url );
+}
+
+sub searchHandler {
+	my ( $client, $tags ) = @_;
+	my $return = _objInfoHandler( $client, $tags->{search} );
+}
+
+sub _objInfoHandler {
+	my ( $client, $album, $artist, $url ) = @_;
+
+	$album = _getAlbumFromSongURL($client, $url) if !$album && $url;
+
+	return unless $album;
+
+	my $args = {
+		album => {
+			album  => $album,
+			artist => $artist,
+		}
+	};
+
+	my $items = getAlbumMenu($client, undef, $args);
+	
+	return {
+		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMINFO'),
+		type => 'outline',
+		items => $items,
+		passthrough => [ $args ],
+	};	
+}
+
 sub _getAlbumFromAlbumId {
 	my $albumId = shift;
 
@@ -250,8 +310,8 @@ sub _cleanupAlbumName {
 	
 	main::INFOLOG && $log->info("Cleaning up album name: '$album'");
 
-	# optionally remove everything between () or []... But don't for PG's eponymous first four albums :-)
-	$album =~ s/[\(\[].*?[\)\]]//g if ($prefs->get('plugin_albumreview_remove_brackets') && $album !~ /Peter Gabriel \[[1-4]\]/i);
+	# remove everything between () or []... But don't for PG's eponymous first four albums :-)
+	$album =~ s/[\(\[].*?[\)\]]//g if $album !~ /Peter Gabriel \[[1-4]\]/i;
 	
 	# remove stuff like "CD02", "1 of 2"
 	$album =~ s/\b(disc \d+ of \d+)\b//ig;

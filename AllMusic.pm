@@ -352,28 +352,28 @@ sub getAlbumDetails {
 				my $tree   = shift;
 				my $result = [];
 				
-				my $details = $tree->look_down('_tag', 'section', 'class', 'basic-info');
-
-				foreach ( 'release-date', 'recording-date', 'duration', 'genre', 'styles' ) {
-					if ( my $item = $details->look_down('_tag', 'div', 'class', $_) ) {
-						my $title = $item->look_down('_tag', 'h4');
-						my $value = $item->look_down('_tag', 'div', 'class', undef) || $item->look_down('_tag', 'span');
-
-						next unless $title && $value;
-
-						if ( /genre|styles/ ) {
-							# XXX - link to genre/artist pages?
-							my $values = [];
-							foreach ( $value->look_down('_tag', 'a') ) {
-								push @$values, $_->as_trimmed_text;
+				if ( my $details = $tree->look_down('_tag', 'section', 'class', 'basic-info') ) {
+					foreach ( 'release-date', 'recording-date', 'duration', 'genre', 'styles' ) {
+						if ( my $item = $details->look_down('_tag', 'div', 'class', $_) ) {
+							my $title = $item->look_down('_tag', 'h4');
+							my $value = $item->look_down('_tag', 'div', 'class', undef) || $item->look_down('_tag', 'span');
+	
+							next unless $title && $value;
+	
+							if ( /genre|styles/ ) {
+								# XXX - link to genre/artist pages?
+								my $values = [];
+								foreach ( $value->look_down('_tag', 'a') ) {
+									push @$values, $_->as_trimmed_text;
+								}
+								
+								$value = $values if scalar @$values;
 							}
 							
-							$value = $values if scalar @$values;
+							push @$result, {
+								$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
+							} if $title && $value;
 						}
-						
-						push @$result, {
-							$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
-						} if $title && $value;
 					}
 				}
 				
@@ -425,18 +425,18 @@ sub getAlbumCredits {
 				my $tree   = shift;
 				my $result = [];
 				
-				my $credits = $tree->look_down('_tag', 'table');
-
-				foreach ($credits->content_list) {
-					my $artist = $_->look_down('_tag', 'td', 'class', 'artist') || next;
-					
-					my $artistData = _parseArtistInfo($artist);
-					
-					if ( my $credit = $_->look_down('_tag', 'td', 'class', 'credit') ) {
-						$artistData->{credit} = $credit->as_trimmed_text;
+				if ( my $credits = $tree->look_down('_tag', 'table') ) {
+					foreach ($credits->content_list) {
+						my $artist = $_->look_down('_tag', 'td', 'class', 'artist') || next;
+						
+						my $artistData = _parseArtistInfo($artist);
+						
+						if ( my $credit = $_->look_down('_tag', 'td', 'class', 'credit') ) {
+							$artistData->{credit} = $credit->as_trimmed_text;
+						}
+						
+						push @$result, $artistData if $artistData->{name};
 					}
-					
-					push @$result, $artistData if $artistData->{name};
 				}
 				
 				return {
@@ -459,7 +459,6 @@ sub getAlbumCredits {
 sub getAlbum {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	warn Data::Dump::dump($args);
 	my $artist = $args->{artist};
 	my $album  = $args->{album};
 	
