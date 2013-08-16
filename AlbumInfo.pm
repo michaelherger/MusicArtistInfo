@@ -114,8 +114,6 @@ sub getAlbumReview {
 sub getAlbumInfo {
 	my ($client, $cb, $params, $args) = @_;
 	
-	warn Data::Dump::dump($args);
-
 	Plugins::MusicArtistInfo::AllMusic->getAlbumDetails($client,
 		sub {
 			my $details = shift;

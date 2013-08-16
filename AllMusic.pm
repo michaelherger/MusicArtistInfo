@@ -495,24 +495,24 @@ sub searchAlbums {
 			my $tree   = shift;
 			my $result = [];
 			
-			my $results = $tree->look_down("_tag", "ul");
-
-			foreach ($results->content_list) {
-				my $title  = $_->look_down('_tag', 'div', 'class', 'title') || next;
-				my $url    = $title->look_down('_tag', 'a') || next;
-				my $artist = $_->look_down('_tag', 'div', 'class', 'artist') || next;
-
-				my $albumData = {
-					name => $title->as_text,
-					url  => $url->attr('href'),
-					artist => _parseArtistInfo($artist),
-				};
-				
-				if ( my $year = $_->look_down('_tag', 'div', 'class', 'year') ) {
-					$albumData->{year} = $year->as_text + 0;
+			if ( my $results = $tree->look_down("_tag", "ul") ) {
+				foreach ($results->content_list) {
+					my $title  = $_->look_down('_tag', 'div', 'class', 'title') || next;
+					my $url    = $title->look_down('_tag', 'a') || next;
+					my $artist = $_->look_down('_tag', 'div', 'class', 'artist') || next;
+	
+					my $albumData = {
+						name => $title->as_text,
+						url  => $url->attr('href'),
+						artist => _parseArtistInfo($artist),
+					};
+					
+					if ( my $year = $_->look_down('_tag', 'div', 'class', 'year') ) {
+						$albumData->{year} = $year->as_text + 0;
+					}
+					
+					push @$result, $albumData;
 				}
-				
-				push @$result, $albumData;
 			}
 
 			return $result;

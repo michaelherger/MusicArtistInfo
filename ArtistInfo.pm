@@ -227,8 +227,6 @@ sub getArtistPhotos {
 sub getArtistInfo {
 	my ($client, $cb, $params, $args) = @_;
 	
-	warn Data::Dump::dump($args);
-
 	Plugins::MusicArtistInfo::AllMusic->getArtistDetails($client,
 		sub {
 			my $details = shift;
