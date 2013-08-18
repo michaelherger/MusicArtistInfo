@@ -89,7 +89,7 @@ sub getArtistMenu {
 
 		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
 		# don't show blog/news summaries on iPeng, but link instead. And show videos!
-		if ($params->{isControl} && $client->controllerUA =~ /iPeng/i)  {
+		if ($client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
 				itemActions => {
@@ -135,7 +135,7 @@ sub getArtistMenu {
 				type => 'link',
 				url  => \&getArtistVideos,
 				passthrough => $pt,
-			} if $params->{isWeb};
+			} if !$client->controllerUA;
 		}
 	}
 	
@@ -371,6 +371,7 @@ sub _gotWebLinks {
 	elsif ($result->{items} && $params->{isWeb}) {
 		$items = [ map {
 			my $title = $_->{name} || $_->{title};
+			$title = $_->{date_found} . ' - ' . $title if $_->{date_found};
 			$title .= ' (' . $_->{site} . ')' if $_->{site};
 			
 			{
@@ -383,8 +384,10 @@ sub _gotWebLinks {
 	}
 	elsif ($result->{items}) {
 		$items = [ map {
+			my $title = $_->{name} || $_->{title};
+			$title = $_->{date_found} . ' - ' . $title if $_->{date_found};
 			my $item = {
-				name  => $_->{name} || $_->{title},
+				name  => $title,
 			};
 			
 			$item->{image} = $_->{image_url} if $_->{image_url};

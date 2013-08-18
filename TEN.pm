@@ -1,11 +1,9 @@
 package Plugins::MusicArtistInfo::TEN;
 
 use strict;
+use Date::Parse qw(str2time);
 use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
-use Digest::MD5 qw(md5_hex);
-use HTTP::Request;
-use URI;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -83,7 +81,12 @@ sub getArtistNews {
 			my $items = [];
 			
 			if ( $result && $result->{response} ) {
-				$items = $result->{response}->{news} || [];
+				$items = [ map {
+					$_->{date_found} = Slim::Utils::DateTime::shortDateF(
+						str2time($_->{date_found})
+					) if $_->{date_found};
+					$_;
+				} @{$result->{response}->{news}} ];
 			}
 			
 			$cb->({ items => $items });
@@ -106,7 +109,12 @@ sub getArtistBlogs {
 			my $items = [];
 			
 			if ( $result && $result->{response} ) {
-				$items = $result->{response}->{blogs} || [];
+				$items = [ map {
+					$_->{date_found} = Slim::Utils::DateTime::shortDateF(
+						str2time($_->{date_found})
+					) if $_->{date_found};
+					$_;
+				} @{$result->{response}->{blogs}} ];
 			}
 			
 			$cb->({ items => $items });
@@ -128,7 +136,12 @@ sub getArtistVideos {
 			my $items = [];
 			
 			if ( $result && $result->{response} ) {
-				$items = $result->{response}->{video} || [];
+				$items = [ map {
+					$_->{date_found} = Slim::Utils::DateTime::shortDateF(
+						str2time($_->{date_found})
+					) if $_->{date_found};
+					$_;
+				} @{$result->{response}->{video}} ];
 			}
 			
 			$cb->({ items => $items });
@@ -181,7 +194,8 @@ sub _call {
 		$cb2, 
 		$cb2, 
 		{
-			timeout => 15
+			timeout => 15,
+			cache   => 1,
 		}
 	)->get($url . '?' . $params);
 }
