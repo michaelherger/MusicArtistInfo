@@ -162,23 +162,21 @@ sub getArtistURLs {
 			my $items = [];
 			
 			if ( $result && $result->{response} && (my $urls = $result->{response}->{urls}) ) {
+				my $official = string('PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE');
+
 				my %sources = (
 					lastfm   => 'last.fm',
 					aolmusic => 'AOL Music',
 					itunes   => 'iTunes',
 					mb       => 'MusicBrainz',
 					wikipedia=> 'Wikipedia',
+					official => $official,
 				);
-				
-				my $official = string('PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE');
 				
 				while ( my ($name, $url) = each %$urls ) {
 					my ($source) = $name =~ /(.*)_url/i;
 					
-					if ($source eq 'official') {
-						$source = $official;
-					}
-					elsif ($sources{$source}) {
+					if ($sources{$source}) {
 						$source = $sources{$source};
 					}
 					
