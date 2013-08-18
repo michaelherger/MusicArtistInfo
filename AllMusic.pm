@@ -4,15 +4,14 @@ use strict;
 use File::Spec::Functions qw(catdir);
 use JSON::XS::VersionOneAndTwo;
 
+use Encode;
 use FindBin qw($Bin);
 use lib catdir($Bin, 'Plugins', 'MusicArtistInfo', 'lib');
 use HTML::Entities;
 use HTML::TreeBuilder;
-
-#use Encode;
+use URI::Escape;
 
 use Slim::Networking::SimpleAsyncHTTP;
-#use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string cstring);
 
@@ -145,7 +144,7 @@ sub getArtistDetails {
 							# XXX - link to genre/artist pages?
 							my $values = [];
 							foreach ( $value->look_down('_tag', 'a') ) {
-								push @$values, $_->as_trimmed_text;
+								push @$values, Encode::decode('utf8', $_->as_trimmed_text);
 							}
 							
 							$value = $values if scalar @$values;
@@ -164,14 +163,14 @@ sub getArtistDetails {
 						elsif ( /aliases/ ) {
 							my $values = [];
 							foreach ( $value->look_down('_tag', 'div', sub { !$_[0]->descendents }) ) {
-								push @$values, $_->as_trimmed_text;
+								push @$values, Encode::decode('utf8', $_->as_trimmed_text);
 							}
 							
 							$value = $values if scalar @$values;
 						}
 						
 						push @$result, {
-							$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
+							Encode::decode('utf8', $title->as_trimmed_text) => ref $value eq 'ARRAY' ? $value : Encode::decode('utf8', $value->as_trimmed_text),
 						} if $title && $value;
 					}
 				}
@@ -237,7 +236,8 @@ sub getRelatedArtists {
 sub getArtist {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	my $artist = $args->{artist};
+	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
+	$args->{artist} = URI::Escape::uri_escape_utf8($args->{artist});
 	
 	if (!$artist) {
 		$cb->();
@@ -250,8 +250,9 @@ sub getArtist {
 		my $artistInfo;
 		
 		foreach (@$items) {
-			# TODO - sanity check input, "smart matching" bjork/björk etc.
-			if ( $_->{name} =~ /$artist/i ) {
+			if ( Slim::Utils::Text::ignoreCaseArticles(
+				Slim::Utils::Unicode::utf8decode($_->{name}), 1
+			) =~ /$artist/i ) {
 				$artistInfo = $_;
 				last;
 			}
@@ -459,8 +460,11 @@ sub getAlbumCredits {
 sub getAlbum {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	my $artist = $args->{artist};
-	my $album  = $args->{album};
+	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
+	my $album  = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
+
+	$args->{artist} = URI::Escape::uri_escape_utf8($args->{artist});
+	$args->{album}  = URI::Escape::uri_escape_utf8($args->{album});
 	
 	if (!$artist || !$album) {
 		$cb->();
@@ -473,8 +477,11 @@ sub getAlbum {
 		my $albumInfo;
 		
 		foreach (@$items) {
-			# TODO - sanity check input, "smart matching" bjork/björk etc.
-			if ( $_->{name} =~ /$album/i && $_->{artist}->{name} =~ /$artist/i ) {
+			$_->{name} = Slim::Utils::Unicode::utf8decode($_->{name});
+			$_->{artist}->{name} = Slim::Utils::Unicode::utf8decode($_->{artist}->{name});
+
+			if ( Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /$album/i 
+					&& Slim::Utils::Text::ignoreCaseArticles($_->{artist}->{name}, 1) =~ /$artist/i ) {
 				$albumInfo = $_;
 				last;
 			}
@@ -544,7 +551,7 @@ sub _parseArtistInfo {
 	my $data = shift;
 	
 	my $artistInfo = {
-		name => $data->as_text,
+		name => Encode::decode('utf8', $data->as_text),
 	};
 	
 	if ( my $url = $data->look_down('_tag', 'a') ) {

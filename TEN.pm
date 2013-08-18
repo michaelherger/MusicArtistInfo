@@ -33,11 +33,11 @@ sub getArtist {
 	$class->searchArtists(sub {
 		my $result = shift || {};
 		my $artist = {};
+		my $searchArtist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
 		
 		if ($result->{items}) {
 			foreach ( @{$result->{items}} ) {
-				# TODO - sanity check input, "smart matching" bjork/björk etc.
-				if ( $_->{name} =~ /$args->{artist}/i ) {
+				if ( Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /$searchArtist/i ) {
 					$artist = $_;
 					last;
 				}
