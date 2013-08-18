@@ -25,6 +25,7 @@ sub init {
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [1, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'], [1, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'], [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'], [1, 1, 1, \&getArtistWeblinksCLI]);
 
 	Slim::Menu::GlobalSearch->registerInfoProvider( moreartistinfo => (
 		func => \&searchHandler,
@@ -89,7 +90,7 @@ sub getArtistMenu {
 
 		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
 		# don't show blog/news summaries on iPeng, but link instead. And show videos!
-		if ($client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
+		if ($client->controllerUA &&1 || $client->controllerUA =~ /iPeng/i)  {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
 				itemActions => {
@@ -114,6 +115,14 @@ sub getArtistMenu {
 						fixedParams => $args,
 					},
 				},
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_URLS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'urls' ],
+						fixedParams => $args,
+					},
+				},
 			};
 		}
 		
@@ -134,6 +143,11 @@ sub getArtistMenu {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS'),
 				type => 'link',
 				url  => \&getArtistVideos,
+				passthrough => $pt,
+			}, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_URLS'),
+				type => 'link',
+				url  => \&getArtistURLs,
 				passthrough => $pt,
 			} if !$client->controllerUA;
 		}
@@ -356,6 +370,17 @@ sub getArtistVideos {
 	);
 }
 
+sub getArtistURLs {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistURLs(
+		sub {
+			_gotWebLinks($cb, $params, shift);
+		},
+		$args,
+	);
+}
+
 sub _gotWebLinks {
 	my ($cb, $params, $result) = @_; 
 
@@ -414,7 +439,7 @@ sub getArtistWeblinksCLI {
 
 	my $handler;
 	# check this is the correct query.
-	if ($request->isNotQuery([[CLICOMMAND], ['videos', 'blogs', 'news']]) || !$request->client()) {
+	if ($request->isNotQuery([[CLICOMMAND], ['videos', 'blogs', 'news', 'urls']]) || !$request->client()) {
 		$request->setStatusBadDispatch();
 		return;
 	}
@@ -426,6 +451,9 @@ sub getArtistWeblinksCLI {
 	}
 	elsif ($request->isQuery([[CLICOMMAND], ['videos']]) || !$request->client()) {
 		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistVideos(@_) };
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['urls']]) || !$request->client()) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistURLs(@_) };
 	}
 	
 	$request->setStatusProcessing();

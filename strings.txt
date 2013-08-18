@@ -54,4 +54,12 @@ PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	DE	Tut mir Leid, konnte keine relevanten Informationen finden.
 	EN	I'm sorry, didn't find any relevant information.
+
+PLUGIN_MUSICARTISTINFO_URLS
+	DE	Webseiten
+	EN	Websites
+	
+PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE
+	DE	Offizielle Webseite
+	EN	Official Website
 	

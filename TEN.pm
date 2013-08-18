@@ -7,8 +7,7 @@ use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
-use Slim::Utils::Misc;
-use Slim::Utils::Prefs;
+use Slim::Utils::Strings qw(string);
 
 use constant BASE_URL => 'http://developer.echonest.com/api/v4/';
 use constant MAX_HISTORY => 200;			# keep track of the 200 most recently played songs to pre-populate playlist history and prevent repetition
@@ -142,6 +141,58 @@ sub getArtistVideos {
 					) if $_->{date_found};
 					$_;
 				} @{$result->{response}->{video}} ];
+			}
+			
+			$cb->({ items => $items });
+		});
+	}, $args);
+}
+
+sub getArtistURLs {
+	my ( $class, $cb, $args ) = @_;
+	
+	$class->getArtist(sub {
+		my $artist = shift || {};
+
+		return _call('artist/urls', {
+			id => $artist->{id},
+#			results => 100,
+		}, sub {
+			my $result = shift;
+			my $items = [];
+			
+			if ( $result && $result->{response} && (my $urls = $result->{response}->{urls}) ) {
+				my %sources = (
+					lastfm   => 'last.fm',
+					aolmusic => 'AOL Music',
+					itunes   => 'iTunes',
+					mb       => 'MusicBrainz',
+					wikipedia=> 'Wikipedia',
+				);
+				
+				my $official = string('PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE');
+				
+				while ( my ($name, $url) = each %$urls ) {
+					my ($source) = $name =~ /(.*)_url/i;
+					
+					if ($source eq 'official') {
+						$source = $official;
+					}
+					elsif ($sources{$source}) {
+						$source = $sources{$source};
+					}
+					
+					push @$items, {
+						name => $source,
+						url  => $url,
+					};
+				}
+				
+				$items = [ sort {
+					if ( $a->{name} eq $official ) { -1; }
+					elsif ( $b->{name} eq $official ) { 1; }
+					else { lc($a->{name}) cmp lc($b->{name}); }
+				} @$items ];
 			}
 			
 			$cb->({ items => $items });
