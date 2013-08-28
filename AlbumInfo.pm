@@ -41,6 +41,8 @@ sub getAlbumMenu {
 	$args->{album}  ||= $args2->{album};
 	$args->{artist} ||= $args2->{artist};
 	
+	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
+	
 	my $pt = [$args];
 
 	my $items = [ {

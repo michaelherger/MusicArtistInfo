@@ -58,6 +58,8 @@ sub getArtistMenu {
 			|| _getArtistFromAlbumId($params->{'album_id'}) 
 			|| _getArtistFromSongURL($client) unless $args->{url} || $args->{id};
 	
+	main::DEBUGLOG && $log->debug("Getting artist menu for " . $args->{artist});
+	
 	my $pt = [$args];
 
 	my $items = [ {
@@ -90,7 +92,7 @@ sub getArtistMenu {
 
 		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
 		# don't show blog/news summaries on iPeng, but link instead. And show videos!
-		if ($client->controllerUA &&1 || $client->controllerUA =~ /iPeng/i)  {
+		if ($client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
 				itemActions => {
