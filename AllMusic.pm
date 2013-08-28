@@ -150,7 +150,6 @@ sub getArtistDetails {
 							$value = $values if scalar @$values;
 						}
 						elsif ( /member/ ) {
-							# XXX - link to genre/artist pages?
 							my $values = [];
 							foreach ( $value->look_down('_tag', 'a') ) {
 								push @$values, {
@@ -383,7 +382,6 @@ sub getAlbumDetails {
 					my $value = $item->look_down('_tag', 'div', 'class', undef);
 
 					if ( $title && $value ) {
-						# XXX - link to genre/artist pages?
 						my $values = [];
 						foreach ( $value->look_down('_tag', 'a') ) {
 							push @$values, $_->as_trimmed_text;
