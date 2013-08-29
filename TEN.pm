@@ -84,6 +84,7 @@ sub getArtistNews {
 					$_->{date_found} = Slim::Utils::DateTime::shortDateF(
 						str2time($_->{date_found})
 					) if $_->{date_found};
+					$_->{summary} =~ s/^Printable version\s*//i;		# TEN doesn't parse this out
 					$_;
 				} @{$result->{response}->{news}} ];
 			}
