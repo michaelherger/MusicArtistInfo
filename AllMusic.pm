@@ -598,7 +598,6 @@ sub _get {
 			
 			if ( $response->headers->content_type =~ /html/ ) {
 				my $tree = HTML::TreeBuilder->new;
-				$tree->no_expand_entities(1);	# there's an issue with utf8 encoding - let's do it on our own :-/
 				$tree->ignore_unknown(0);		# allmusic.com uses unknown "section" tag
 				$tree->parse_content( $response->content );
 
