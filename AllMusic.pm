@@ -48,7 +48,7 @@ sub getBiography {
 					
 					$bio = _cleanupLinksAndImages($bio);
 
-					$result->{bio} = HTML::Entities::decode($bio->as_HTML);
+					$result->{bio} = _decodeHTML($bio->as_HTML);
 					$result->{bioText} = Encode::decode( 'utf8', join('\n\n', map { 
 						$_->as_trimmed_text;
 					} $bio->content_list) );
@@ -236,7 +236,6 @@ sub getArtist {
 	my ( $class, $client, $cb, $args ) = @_;
 	
 	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
-	$args->{artist} = URI::Escape::uri_escape_utf8($args->{artist});
 	
 	if (!$artist) {
 		$cb->();
@@ -264,7 +263,7 @@ sub getArtist {
 sub searchArtists {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	my $url = sprintf(ARTISTSEARCH_URL, $args->{artist});
+	my $url = sprintf(ARTISTSEARCH_URL, URI::Escape::uri_escape_utf8($args->{artist}));
 
 	_get( $client, $cb, {
 		url     => $url,
@@ -307,7 +306,7 @@ sub getAlbumReview {
 					
 					$review = _cleanupLinksAndImages($review);
 
-					$result->{review} = HTML::Entities::decode($review->as_HTML);
+					$result->{review} = _decodeHTML($review->as_HTML);
 					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map { 
 						$_->as_trimmed_text;
 					} $review->content_list) );
@@ -460,9 +459,6 @@ sub getAlbum {
 	
 	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
 	my $album  = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
-
-	$args->{artist} = URI::Escape::uri_escape_utf8($args->{artist});
-	$args->{album}  = URI::Escape::uri_escape_utf8($args->{album});
 	
 	if (!$artist || !$album) {
 		$cb->();
@@ -492,7 +488,11 @@ sub getAlbum {
 sub searchAlbums {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	my $url = sprintf(ALBUMSEARCH_URL, $args->{artist}, $args->{album});
+	my $url = sprintf(
+		ALBUMSEARCH_URL, 
+		URI::Escape::uri_escape_utf8($args->{artist}), 
+		URI::Escape::uri_escape_utf8($args->{album})
+	);
 
 	_get( $client, $cb, {
 		url     => $url,
@@ -577,6 +577,13 @@ sub _getAlbumReviewUrl {
 sub _getIdFromUrl {
 	$_[0] =~ /\b(\w+)$/;
 	return $1;
+}
+
+sub _decodeHTML {
+	return Encode::decode(
+		'utf8',
+		HTML::Entities::decode(shift)
+	);
 }
 
 sub _get {
