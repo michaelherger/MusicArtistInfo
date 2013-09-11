@@ -33,12 +33,17 @@ sub getArtist {
 		my $result = shift || {};
 		my $artist = {};
 		my $searchArtist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
+		my $searchArtistLC = lc( $args->{artist} );
 		
 		if ($result->{items}) {
 			foreach ( @{$result->{items}} ) {
-				if ( Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /$searchArtist/i ) {
+				if ( lc( $_->{name} ) eq $searchArtistLC ) {
 					$artist = $_;
 					last;
+				}
+				
+				if ( !$artist && Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /$searchArtist/i ) {
+					$artist = $_;
 				}
 			}
 		}
