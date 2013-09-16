@@ -6,7 +6,7 @@ use File::Spec::Functions qw(catdir);
 use Digest::MD5 qw(md5_hex);
 
 use Slim::Menu::AlbumInfo;
-#use Slim::Menu::FolderInfo;
+use Slim::Menu::FolderInfo;
 use Slim::Menu::TrackInfo;
 use Slim::Utils::Cache;
 use Slim::Utils::Strings qw(string cstring);
@@ -21,9 +21,9 @@ sub init {
 		func => \&albumInfoHandler,
 	) );
 
-#	Slim::Menu::FolderInfo->registerInfoProvider( moremusicinfo => (
-#		func => \&folderInfoHandler,
-#	) );
+	Slim::Menu::FolderInfo->registerInfoProvider( moremusicinfo => (
+		func => \&folderInfoHandler,
+	) );
 
 	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
 		func => \&trackInfoHandler,
@@ -42,13 +42,13 @@ sub albumInfoHandler {
 	return trackInfoHandler($client, undef, $album->tracks->first);
 }
 
-#sub folderInfoHandler {
-#	my ( $client, $tags ) = @_;
-#
-#	return unless $tags->{folder_id};
-#
-#	return trackInfoHandler($client, undef, Slim::Schema->find('Track', $tags->{folder_id}), undef, $tags);
-#}
+sub folderInfoHandler {
+	my ( $client, $tags ) = @_;
+
+	return unless $tags->{folder_id};
+
+	return trackInfoHandler($client, undef, Slim::Schema->find('Track', $tags->{folder_id}), undef, $tags);
+}
 
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta, $tags ) = @_;
