@@ -6,6 +6,7 @@ use File::Spec::Functions qw(catdir);
 use Digest::MD5 qw(md5_hex);
 
 use Slim::Menu::AlbumInfo;
+#use Slim::Menu::FolderInfo;
 use Slim::Menu::TrackInfo;
 use Slim::Utils::Cache;
 use Slim::Utils::Strings qw(string cstring);
@@ -16,12 +17,16 @@ use Slim::Web::ImageProxy qw(proxiedImage);
 my $log = logger('plugin.musicartistinfo');
 
 sub init {
-	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
-		func => \&trackInfoHandler,
-	) );
-
 	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
 		func => \&albumInfoHandler,
+	) );
+
+#	Slim::Menu::FolderInfo->registerInfoProvider( moremusicinfo => (
+#		func => \&folderInfoHandler,
+#	) );
+
+	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
+		func => \&trackInfoHandler,
 	) );
 
 	Slim::Web::ImageProxy->registerHandler(
@@ -34,18 +39,29 @@ sub albumInfoHandler {
 	my ( $client, $url, $album ) = @_;
 	
 	# try to grab the first album track to find it's folder location
-	my $track = $album->tracks->first;
-	
-	return trackInfoHandler($client, $track->url) if $track;
+	return trackInfoHandler($client, undef, $album->tracks->first);
 }
 
+#sub folderInfoHandler {
+#	my ( $client, $tags ) = @_;
+#
+#	return unless $tags->{folder_id};
+#
+#	return trackInfoHandler($client, undef, Slim::Schema->find('Track', $tags->{folder_id}), undef, $tags);
+#}
+
 sub trackInfoHandler {
-	my ( $client, $url ) = @_;
+	my ( $client, $url, $track, $remoteMeta, $tags ) = @_;
 
 	# only deal with local media
+	$url = $track->url if !$url && $track;
 	return unless $url && $url =~ /^file:\/\//i;
 	
-	my $path = dirname( Slim::Utils::Misc::pathFromFileURL($url) );
+	my $path = Slim::Utils::Misc::pathFromFileURL($url);
+	
+	if (! -d $path) {
+		$path = dirname( $path );
+	}
 	
 	opendir(DIR, $path) || return;
 	my @images = grep /\.(?:jpe?g|png|gif)$/i, readdir(DIR);
