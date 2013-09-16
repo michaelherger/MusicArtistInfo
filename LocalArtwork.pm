@@ -17,15 +17,15 @@ use Slim::Web::ImageProxy qw(proxiedImage);
 my $log = logger('plugin.musicartistinfo');
 
 sub init {
-	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
+	Slim::Menu::AlbumInfo->registerInfoProvider( moreartwork => (
 		func => \&albumInfoHandler,
 	) );
 
-	Slim::Menu::FolderInfo->registerInfoProvider( moremusicinfo => (
+	Slim::Menu::FolderInfo->registerInfoProvider( moreartwork => (
 		func => \&folderInfoHandler,
 	) );
 
-	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
+	Slim::Menu::TrackInfo->registerInfoProvider( moreartwork => (
 		func => \&trackInfoHandler,
 	) );
 
