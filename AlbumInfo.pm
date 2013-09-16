@@ -7,12 +7,11 @@ use Slim::Menu::TrackInfo;
 use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
-use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
 
-my $log   = logger('plugin.musicartistinfo');
+my $log = logger('plugin.musicartistinfo');
 
 sub init {
 	Slim::Menu::GlobalSearch->registerInfoProvider( moremusicinfo => (
@@ -210,17 +209,17 @@ sub getAlbumCredits {
 
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-	my $return = _objInfoHandler( $client, $track->albumname || $remoteMeta->{album}, $track->artistName || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $track->albumname || $remoteMeta->{album}, $track->artistName || $remoteMeta->{artist}, $url );
 }
 
 sub albumInfoHandler {
 	my ( $client, $url, $album, $remoteMeta ) = @_;
-	my $return = _objInfoHandler( $client, $album->name || $remoteMeta->{name}, $album->contributor->name || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $album->name || $remoteMeta->{name}, $album->contributor->name || $remoteMeta->{artist}, $url );
 }
 
 sub searchHandler {
 	my ( $client, $tags ) = @_;
-	my $return = _objInfoHandler( $client, $tags->{search} );
+	return _objInfoHandler( $client, $tags->{search} );
 }
 
 sub _objInfoHandler {

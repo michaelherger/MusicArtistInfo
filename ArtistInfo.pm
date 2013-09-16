@@ -514,22 +514,22 @@ sub getArtistWeblinksCLI {
 
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-	my $return = _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url );
 }
 
 sub artistInfoHandler {
 	my ( $client, $url, $artist, $remoteMeta ) = @_;
-	my $return = _objInfoHandler( $client, $artist->name || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $artist->name || $remoteMeta->{artist}, $url );
 }
 
 sub albumInfoHandler {
 	my ( $client, $url, $album, $remoteMeta ) = @_;
-	my $return = _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url );
 }
 
 sub searchHandler {
 	my ( $client, $tags ) = @_;
-	my $return = _objInfoHandler( $client, $tags->{search} );
+	return _objInfoHandler( $client, $tags->{search} );
 }
 
 sub _objInfoHandler {

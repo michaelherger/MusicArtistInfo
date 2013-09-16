@@ -5,12 +5,11 @@ use base qw(Slim::Plugin::Base);
 
 use vars qw($VERSION);
 
-#use Slim::Menu::TrackInfo;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string cstring);
 
-use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AlbumInfo;
+use Plugins::MusicArtistInfo::ArtistInfo;
 
 use constant PLUGIN_TAG => 'musicartistinfo';
 
@@ -27,40 +26,17 @@ sub initPlugin {
 	
 	Plugins::MusicArtistInfo::AlbumInfo->init();
 	Plugins::MusicArtistInfo::ArtistInfo->init($class->_pluginDataFor('aid'));
+
+	# "Local Artwork" requires LMS 7.8+, as it's using its imageproxy.
+	if (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0) {
+		require Plugins::MusicArtistInfo::LocalArtwork;
+		Plugins::MusicArtistInfo::LocalArtwork->init();
+	}
 	
 	$class->SUPER::initPlugin(shift);
-#		feed   => \&handleFeed,
-#		tag    => PLUGIN_TAG,
-#		menu   => 'plugins',
-#		is_app => 1,
-#		weight => 1,
-#	);
 }
 
 # don't add this plugin to the Extras menu
 sub playerMenu {}
-
-#sub handleFeed {
-#	my ($client, $cb, $params, $args) = @_;
-#	
-#	$cb->({
-#		items => [
-#			{
-#				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
-#				type => 'link',
-#				url  => sub {
-#					Plugins::MusicArtistInfo::ArtistInfo::getArtistMenu(@_);
-#				},
-#			},
-#			{
-#				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMINFO'),
-#				type => 'link',
-#				url  => sub {
-#					Plugins::MusicArtistInfo::AlbumInfo::getAlbumMenu(@_);
-#				},
-#			},
-#		],
-#	});
-#}
 
 1;
