@@ -5,12 +5,12 @@ use Date::Parse qw(str2time);
 use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
+use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string);
 
 use constant BASE_URL => 'http://developer.echonest.com/api/v4/';
-use constant MAX_HISTORY => 200;			# keep track of the 200 most recently played songs to pre-populate playlist history and prevent repetition
 
 my $log = logger('plugin.musicartistinfo');
 my $aid = '';
@@ -22,8 +22,8 @@ sub init {
 
 	(undef, $aid) = @_;
 
-	$aid ||= $cache->get('mai_aid');
-	$cache->set('mai_aid', $aid, 'never') if $aid;
+	$aid ||= $cache->get('mai_aid_ten');
+	$cache->set('mai_aid_ten', $aid, 86400) if $aid;
 }
 
 sub getArtist {

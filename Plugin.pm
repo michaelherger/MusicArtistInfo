@@ -24,7 +24,7 @@ sub initPlugin {
 	
 	$VERSION = $class->_pluginDataFor('version');
 	
-	Plugins::MusicArtistInfo::AlbumInfo->init();
+	Plugins::MusicArtistInfo::AlbumInfo->init($class->_pluginDataFor('aid2'));
 	Plugins::MusicArtistInfo::ArtistInfo->init($class->_pluginDataFor('aid'));
 
 	# "Local Artwork" requires LMS 7.8+, as it's using its imageproxy.
