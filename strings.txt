@@ -66,3 +66,7 @@ PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE
 PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 	DE	Bilder aus Musikordner
 	EN	Local Artwork
+
+PLUGIN_MUSICARTISTINFO_ALBUM_COVER
+	DE	Plattenhülle online suchen
+	EN	Find Album Cover online

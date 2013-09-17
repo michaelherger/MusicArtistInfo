@@ -59,12 +59,21 @@ sub getAlbumMenu {
 		passthrough => $pt,
 	} ];
 	
-	unshift @$items, {
-		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMREVIEW'),
-		type => 'link',
-		url  => \&getAlbumReview,
-		passthrough => $pt,
-	} unless $params->{isButton};
+	if ( !$params->{isButton} ) {
+		unshift @$items, {
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMREVIEW'),
+			type => 'link',
+			url  => \&getAlbumReview,
+			passthrough => $pt,
+		};
+		
+		push @$items, {
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUM_COVER'),
+			type => 'link',
+			url  => \&getAlbumCover,
+			passthrough => $pt,
+		};
+	}
 	
 	if ($cb) {
 		$cb->({
@@ -111,6 +120,50 @@ sub getAlbumReview {
 			
 			$cb->($items);
 		},
+		$args,
+	);
+}
+
+sub getAlbumCover {
+	my ($client, $cb, $params, $args) = @_;
+
+	my $getAlbumCoverCb = sub {
+		my $cover = shift;
+		my $items = [];
+		
+		if ($cover->{error}) {
+			$items = [{
+				name => $cover->{error},
+				type => 'text'
+			}]
+		}
+		elsif ($cover->{url}) {
+			my $size = $cover->{width} || '';
+			if ( $cover->{height} ) {
+				$size .= ($size ? 'x' : '') . $cover->{height};
+			}
+			
+			$size = " (${size}px)" if $size;
+			
+			push @$items, {
+				name  => $cover->{author} . $size,
+				image => $cover->{url},
+				jive  => {
+					showBigArtwork => 1,
+					actions => {
+						do => {
+							cmd => [ 'artwork', $cover->{url} ]
+						},
+					},
+				}
+			};
+		}
+		
+		$cb->($items);
+	};
+
+	Plugins::MusicArtistInfo::AllMusic->getAlbumCover($client,
+		$getAlbumCoverCb,
 		$args,
 	);
 }

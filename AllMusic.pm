@@ -420,6 +420,56 @@ sub getAlbumDetails {
 	}
 }
 
+sub getAlbumCover {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	my $getAlbumCoverCB = sub {
+		my $url = _getAlbumReviewUrl(shift);
+		
+		_get( $client, $cb, {
+			url     => $url,
+			parseCB => sub {
+				my $tree   = shift;
+				my $result = {};
+
+				#main::DEBUGLOG && $log->is_debug && $tree->dump;
+				
+				if ( my $cover = $tree->look_down('_tag', 'img', 'itemprop', 'image') ) {
+					#main::DEBUGLOG && $log->is_debug && $cover->dump;
+					my $img = eval { from_json( $cover->attr('data-lightbox') ) };
+
+					if ( $@ ) {
+						$result->{error} = $@;
+					}
+					elsif ( $img && $img->{image} ) {
+						$result = {
+							author => $img->{image}->{author} || 'AllMusic.com',
+							url    => $img->{image}->{url},
+							height => $img->{image}->{height},
+							width  => $img->{image}->{width},
+						}
+					}
+				}
+				
+				if ( !$result->{url} ) {
+					$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+				}
+				
+				return $result;
+			} 
+		} );
+	};
+	
+	if ( $args->{url} || $args->{id} ) {
+		$getAlbumCoverCB->( $args );
+	}
+	else {
+		$class->getAlbum($client, sub {
+			$getAlbumCoverCB->( shift );
+		}, $args);
+	}
+}
+
 sub getAlbumCredits {
 	my ( $class, $client, $cb, $args ) = @_;
 
