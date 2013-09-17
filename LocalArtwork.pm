@@ -19,6 +19,7 @@ my $log = logger('plugin.musicartistinfo');
 sub init {
 	Slim::Menu::AlbumInfo->registerInfoProvider( moreartwork => (
 		func => \&albumInfoHandler,
+		after => 'moremusicinfo',
 	) );
 
 	Slim::Menu::FolderInfo->registerInfoProvider( moreartwork => (
@@ -27,6 +28,7 @@ sub init {
 
 	Slim::Menu::TrackInfo->registerInfoProvider( moreartwork => (
 		func => \&trackInfoHandler,
+		after => 'moremusicinfo',
 	) );
 
 	Slim::Web::ImageProxy->registerHandler(

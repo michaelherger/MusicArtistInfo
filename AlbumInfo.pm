@@ -16,14 +16,17 @@ my $log = logger('plugin.musicartistinfo');
 sub init {
 	Slim::Menu::GlobalSearch->registerInfoProvider( moremusicinfo => (
 		func => \&searchHandler,
+		after => 'moreartistinfo',
 	) );
 
 	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
 		func => \&albumInfoHandler,
+		after => 'moreartistinfo',
 	) );
 
 	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
 		func => \&trackInfoHandler,
+		after => 'moreartistinfo',
 	) );
 }
 
