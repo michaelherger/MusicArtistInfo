@@ -12,7 +12,78 @@ use Slim::Utils::Strings qw(string cstring);
 use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
 
 my $log = logger('plugin.musicartistinfo');
-my $aid = 'c6abc51e847b91aba0de2ede33875e24';
+my $aid;
+
+sub init {
+	shift->aid(shift->_pluginDataFor('id2'));
+}
+
+sub getArtistPhotos {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	# last.fm doesn't try to be smart about names: "the beatles" != "beatles" - don't punish users with correct tags
+	# this is an ugly hack, but we can't set the ignoredarticles pref, as this triggers a rescan...
+	my $ignoredArticles = $Slim::Utils::Text::ignoredArticles;
+	%Slim::Utils::Text::caseArticlesCache = ();
+	$Slim::Utils::Text::ignoredArticles = qr/^\s+/;
+
+	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
+
+	$Slim::Utils::Text::ignoredArticles = $ignoredArticles;
+	
+	if (!$artist) {
+		$cb->();
+		return;
+	}
+	
+	_call({
+		method => 'artist.getimages',
+		artist => $artist,
+		autocorrect => 1,
+	}, sub {
+		my $artistInfo = shift;
+		my $result = {};
+		
+		if ( $artistInfo && $artistInfo->{images} && (my $images = $artistInfo->{images}->{image}) ) {
+			if ( ref $images eq 'ARRAY' ) {
+				my @images;
+				foreach my $image (@$images) {
+					my $img;
+					
+					if ($image->{sizes} && $image->{sizes}->{size}) {
+						my $max = 0;
+						
+						foreach ( @{$image->{sizes}->{size}} ) {
+							next if $_->{width} < 250;
+							next if $_->{width} < $max;
+							
+							$max = $_->{width};
+							
+							$img = $_;
+						}
+					}
+					
+					next unless $img;
+					
+					push @images, {
+						author => $image->{owner}->{name} . ' (Last.fm)',
+						url    => $img->{'#text'},
+						height => $img->{height},
+						width  => $img->{width},
+					};
+				}
+
+				$result->{photos} = \@images if @images;
+			}
+		}
+
+		if ( !$result->{photos} ) {
+			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+		}
+		
+		$cb->($result);
+	});
+}
 
 sub getAlbumCover {
 	my ( $class, $client, $cb, $args ) = @_;

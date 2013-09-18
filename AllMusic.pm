@@ -94,7 +94,7 @@ sub getArtistPhotos {
 					}
 					elsif ($img) {
 						push @$result, {
-							author => $img->{author},
+							author => $img->{author} . ' (AllMusic.com)',
 							url    => $img->{url},
 							height => $img->{height},
 							width  => $img->{width},
@@ -103,7 +103,7 @@ sub getArtistPhotos {
 				}
 				
 				return {
-					items => $result
+					photos => $result
 				};
 			} 
 		} );

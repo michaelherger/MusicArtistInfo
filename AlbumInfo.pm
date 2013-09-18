@@ -147,7 +147,7 @@ sub getAlbumCover {
 		
 		my $items = [];
 		
-		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{allmusic}->{images} ) {
+		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} ) {
 			my @covers;
 			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';

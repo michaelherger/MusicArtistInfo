@@ -10,6 +10,7 @@ use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::AllMusic;
+use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::TEN;
 
 use constant CLICOMMAND => 'musicartistinfo'; 
@@ -44,6 +45,7 @@ sub init {
 	) );
 
 	Plugins::MusicArtistInfo::TEN->init($_[1]);
+	Plugins::MusicArtistInfo::LFM->init($_[1]);
 }
 
 sub getArtistMenu {
@@ -85,7 +87,7 @@ sub getArtistMenu {
 
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTPICTURES'),
-			type => 'link',
+			type => $client->controlledBy ? 'link' : 'slideshow',
 			url  => \&getArtistPhotos,
 			passthrough => $pt,
 		};
@@ -205,39 +207,58 @@ sub getBiography {
 sub getArtistPhotos {
 	my ($client, $cb, $params, $args) = @_;
 
-	Plugins::MusicArtistInfo::AllMusic->getArtistPhotos($client,
-		sub {
-			my $photos = shift || {};
-			my $items = [];
+	my $results = {};
 
-			if ($photos->{error}) {
-				$items = [{
-					name => $photos->{error},
-					type => 'text'
-				}]
-			}
-			elsif ($photos->{items}) {
-				$items = [ map {
-					my $credit = cstring($client, 'BY') . ' ';
-					{
-						name  => $_->{author} ? ($credit . $_->{author}) : '',
-						image => $_->{url},
-						jive  => {
-							showBigArtwork => 1,
-							actions => {
-								do => {
-									cmd => [ 'artwork', $_->{url} ]
-								},
+	my $getArtistPhotoCb = sub {
+		my $photos = shift;
+
+		# only continue once we have results from all services.
+		return unless $photos->{lfm} && $photos->{allmusic};
+
+		my $items = [];
+
+		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} ) {
+			my @photos;
+			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
+			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
+
+			$items = [ map {
+				my $credit = cstring($client, 'BY') . ' ';
+				{
+					type  => 'text',
+					name  => $_->{author} ? ($credit . $_->{author}) : '',
+					image => $_->{url},
+					jive  => {
+						showBigArtwork => 1,
+						actions => {
+							do => {
+								cmd => [ 'artwork', $_->{url} ]
 							},
-						}
+						},
 					}
-				} @{$photos->{items}} ];
-			}
-									
-			$cb->($items);
-		},
-		$args,
-	);
+				}
+			} @photos ];
+		}
+
+		if ( !scalar @$items ) {
+			$items = [{
+				name => $photos->{lfm}->{error} || $photos->{allmusic}->{error} || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				type => 'text'
+			}];
+		}
+		
+		$cb->($items);
+	};
+	
+	Plugins::MusicArtistInfo::AllMusic->getArtistPhotos($client, sub {
+		$results->{allmusic} = shift;
+		$getArtistPhotoCb->($results);
+	}, $args );
+
+	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
+		$results->{lfm} = shift;
+		$getArtistPhotoCb->($results);
+	}, $args );
 }
 
 sub getArtistInfo {

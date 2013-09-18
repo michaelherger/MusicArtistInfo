@@ -24,8 +24,8 @@ sub initPlugin {
 	
 	$VERSION = $class->_pluginDataFor('version');
 	
-	Plugins::MusicArtistInfo::AlbumInfo->init($class->_pluginDataFor('id2'));
-	Plugins::MusicArtistInfo::ArtistInfo->init($class->_pluginDataFor('id1'));
+	Plugins::MusicArtistInfo::AlbumInfo->init($class);
+	Plugins::MusicArtistInfo::ArtistInfo->init($class);
 
 	# "Local Artwork" requires LMS 7.8+, as it's using its imageproxy.
 	if (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0) {

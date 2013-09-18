@@ -6,7 +6,6 @@ use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Networking::SimpleAsyncHTTP;
-use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string);
 
@@ -16,14 +15,7 @@ my $log = logger('plugin.musicartistinfo');
 my $aid = '';
 
 sub init {
-	return if $aid;
-
-	my $cache = Slim::Utils::Cache->new();
-
-	(undef, $aid) = @_;
-
-	$aid ||= $cache->get('mai_aid_ten');
-	$cache->set('mai_aid_ten', $aid, 86400) if $aid;
+	$aid = $_[1]->_pluginDataFor('id1');
 }
 
 sub getArtist {
