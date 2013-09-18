@@ -79,9 +79,10 @@ sub trackInfoHandler {
 
 		$cache->set( $imageId, $imageUrl, 3600 );
 		
-		$imageId = proxiedImage($imageId, 'force');
+		$imageId = '/' . proxiedImage($imageId, 'force');
 		
 		{
+			type  => 'text',
 			name  => $_,
 			image => $imageId,
 			jive  => {
@@ -97,7 +98,8 @@ sub trackInfoHandler {
 	
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK'),
-		type => 'outline',
+		# we don't want slideshow mode on controllers, but web UI only
+		type => $client->controlledBy ? 'outline' : 'slideshow',
 		items => $items,
 	};	
 }
