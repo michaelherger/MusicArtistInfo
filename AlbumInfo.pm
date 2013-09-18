@@ -12,6 +12,8 @@ use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::LFM;
 
+use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
+
 my $log = logger('plugin.musicartistinfo');
 
 sub init {
@@ -29,6 +31,10 @@ sub init {
 		func => \&trackInfoHandler,
 		after => 'moreartistinfo',
 	) );
+	
+	if (CAN_IMAGEPROXY) {
+		require Plugins::MusicArtistInfo::Discogs;
+	}
 	
 	Plugins::MusicArtistInfo::LFM->aid($_[1]);
 }
@@ -137,14 +143,15 @@ sub getAlbumCover {
 		my $covers = shift;
 		
 		# only continue once we have results from all services.
-		return unless $covers->{lfm} && $covers->{allmusic};
+		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs};
 		
 		my $items = [];
 		
-		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} ) {
+		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{allmusic}->{images} ) {
 			my @covers;
 			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';
+			push @covers, @{$covers->{discogs}->{images}} if ref $covers->{discogs}->{images} eq 'ARRAY';
 
 			foreach my $cover (@covers) {
 				my $size = $cover->{width} || '';
@@ -182,15 +189,24 @@ sub getAlbumCover {
 		
 		if ( !scalar @$items ) {
 			$items = [{
-				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error} || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error} || $covers->{discogs}->{error}  || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
 				type => 'text'
 			}];
 		}
 		
 		$cb->($items);
-		
-		$results = undef;
 	};
+
+	# there's a rate limiting issue on discogs.com: don't use it without imageproxy, as this seems to work around the limitation...
+	if (CAN_IMAGEPROXY) {
+		Plugins::MusicArtistInfo::Discogs->getAlbumCover($client, sub {
+			$results->{discogs} = shift;
+			$getAlbumCoverCb->($results);
+		}, $args);
+	}
+	else {
+		$results->{discogs} = {};
+	}
 
 	Plugins::MusicArtistInfo::AllMusic->getAlbumCover($client, sub {
 		$results->{allmusic} = shift;
