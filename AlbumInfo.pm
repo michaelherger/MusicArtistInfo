@@ -72,7 +72,8 @@ sub getAlbumMenu {
 		
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUM_COVER'),
-			type => 'link',
+			# we don't want slideshow mode on controllers, but web UI only
+			type => $client->controlledBy ? 'link' : 'slideshow',
 			url  => \&getAlbumCover,
 			passthrough => $pt,
 		};
@@ -164,6 +165,7 @@ sub getAlbumCover {
 				}
 				
 				push @$items, {
+					type  => 'text',
 					name  => $cover->{author} . $size,
 					image => $cover->{url},
 					jive  => {
