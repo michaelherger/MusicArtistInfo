@@ -36,6 +36,8 @@ sub getAlbumCover {
 						width  => $size || $_->{size},
 					} if $_->{'#text'} && (!$size || $size*1 >= 300);
 				} @{$image} ];
+				
+				delete $result->{images} unless scalar @{$result->{images}};
 			}
 		}
 

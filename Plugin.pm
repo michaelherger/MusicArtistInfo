@@ -39,4 +39,59 @@ sub initPlugin {
 # don't add this plugin to the Extras menu
 sub playerMenu {}
 
+sub webPages {
+	my $class = shift;
+	
+	my $title = string('PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK');
+	my $url   = 'plugins/' . PLUGIN_TAG . '/index.html';
+	
+	Slim::Web::Pages->addPageLinks( 'plugins', { $title => $url } );
+
+	Slim::Web::Pages->addPageFunction( $url, sub {
+		my $client = $_[0];
+		
+		Slim::Web::XMLBrowser->handleWebIndex( {
+			client  => $client,
+			feed    => \&getMissingArtworkAlbums,
+			type    => 'link',
+			title   => $title,
+			timeout => 35,
+			args    => \@_
+		} );
+	} );
+}
+
+sub getMissingArtworkAlbums {
+	my ($client, $cb, $params, $args) = @_;
+
+	# Find distinct albums to check for artwork.
+	my $collate = Slim::Utils::OSDetect->getOS()->sqlHelperClass()->collate();
+	my $rs = Slim::Schema->search('Genre', undef, { 'order_by' => "me.namesort $collate" });
+
+	my $albums = Slim::Schema->search('Album', {
+		'me.artwork' => { '='  => undef },
+	},{
+		'order_by' => "me.titlesort $collate",
+	});
+	
+	my $items = [];
+	while ( my $album = $albums->next ) {
+		my $artist = $album->contributor->name;
+		
+		push @$items, {
+			type => 'slideshow',
+			name => $album->title . ' ' . cstring($client, 'BY') . " $artist",
+			url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCover,
+			passthrough => [{ 
+				album  => $album->title,
+				artist => $artist,
+			}]
+		};
+	}
+	
+	$cb->({
+		items => $items,
+	});
+}
+
 1;

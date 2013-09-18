@@ -179,11 +179,12 @@ sub getAlbumCover {
 				};
 			}
 		}
-		elsif ( $covers->{lfm}->{error} || $covers->{allmusic}->{error} ) {
+		
+		if ( !scalar @$items ) {
 			$items = [{
-				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error},
+				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error} || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
 				type => 'text'
-			}]
+			}];
 		}
 		
 		$cb->($items);

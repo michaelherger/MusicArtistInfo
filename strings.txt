@@ -70,3 +70,7 @@ PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
 	EN	Find Album Cover Online
+	
+PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
+	DE	Alben ohne Plattenhülle suchen
+	EN	Find albums with missing artwork
