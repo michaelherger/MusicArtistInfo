@@ -5,7 +5,6 @@ use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Networking::SimpleAsyncHTTP;
-use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Text;
 use Slim::Utils::Strings qw(string cstring);
@@ -60,7 +59,6 @@ sub getAlbum {
 
 	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
 	my $album  = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
-	my $albumLC= lc( $args->{album} );
 
 	$Slim::Utils::Text::ignoredArticles = $ignoredArticles;
 	
