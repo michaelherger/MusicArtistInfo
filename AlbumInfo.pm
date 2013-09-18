@@ -10,6 +10,7 @@ use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
+use Plugins::MusicArtistInfo::LFM;
 
 my $log = logger('plugin.musicartistinfo');
 
@@ -28,6 +29,8 @@ sub init {
 		func => \&trackInfoHandler,
 		after => 'moreartistinfo',
 	) );
+	
+	Plugins::MusicArtistInfo::LFM->aid($_[1]);
 }
 
 sub getAlbumMenu {
@@ -127,45 +130,74 @@ sub getAlbumReview {
 sub getAlbumCover {
 	my ($client, $cb, $params, $args) = @_;
 
+	my $results = {};
+
 	my $getAlbumCoverCb = sub {
-		my $cover = shift;
+		my $covers = shift;
+		
+		# only continue once we have results from all services.
+		return unless $covers->{lfm} && $covers->{allmusic};
+		
 		my $items = [];
 		
-		if ($cover->{error}) {
+		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} ) {
+			my @covers;
+			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
+			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';
+
+			foreach my $cover (@covers) {
+				my $size = $cover->{width} || '';
+				if ( $cover->{height} ) {
+					$size .= ($size ? 'x' : '') . $cover->{height};
+				}
+				
+				my ($type) = $cover->{url} =~ /\.(gif|png|jpe?g)(?:\?.+|)$/i;
+				$type = uc($type || '');
+				
+				if ($size) {
+					$size .= 'px' if $size =~ /\d+$/;
+					$size .= ", $type" if $type;
+					$size = " ($size)";
+				}
+				elsif ($type) {
+					$size = " ($type)";
+				}
+				
+				push @$items, {
+					name  => $cover->{author} . $size,
+					image => $cover->{url},
+					jive  => {
+						showBigArtwork => 1,
+						actions => {
+							do => {
+								cmd => [ 'artwork', $cover->{url} ]
+							},
+						},
+					}
+				};
+			}
+		}
+		elsif ( $covers->{lfm}->{error} || $covers->{allmusic}->{error} ) {
 			$items = [{
-				name => $cover->{error},
+				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error},
 				type => 'text'
 			}]
 		}
-		elsif ($cover->{url}) {
-			my $size = $cover->{width} || '';
-			if ( $cover->{height} ) {
-				$size .= ($size ? 'x' : '') . $cover->{height};
-			}
-			
-			$size = " (${size}px)" if $size;
-			
-			push @$items, {
-				name  => $cover->{author} . $size,
-				image => $cover->{url},
-				jive  => {
-					showBigArtwork => 1,
-					actions => {
-						do => {
-							cmd => [ 'artwork', $cover->{url} ]
-						},
-					},
-				}
-			};
-		}
 		
 		$cb->($items);
+		
+		$results = undef;
 	};
 
-	Plugins::MusicArtistInfo::AllMusic->getAlbumCover($client,
-		$getAlbumCoverCb,
-		$args,
-	);
+	Plugins::MusicArtistInfo::AllMusic->getAlbumCover($client, sub {
+		$results->{allmusic} = shift;
+		$getAlbumCoverCb->($results);
+	}, $args);
+	
+	Plugins::MusicArtistInfo::LFM->getAlbumCover($client, sub {
+		$results->{lfm} = shift;
+		$getAlbumCoverCb->($results);
+	}, $args);
 }
 
 sub getAlbumInfo {

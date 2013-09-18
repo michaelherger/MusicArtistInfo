@@ -69,4 +69,4 @@ PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
-	EN	Find Album Cover online
+	EN	Find Album Cover Online

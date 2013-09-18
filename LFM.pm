@@ -7,6 +7,7 @@ use URI::Escape qw(uri_escape uri_escape_utf8);
 use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+use Slim::Utils::Text;
 use Slim::Utils::Strings qw(string cstring);
 
 use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
@@ -23,15 +24,22 @@ sub getAlbumCover {
 		
 		if ( $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
 			if ( ref $image eq 'ARRAY' ) {
-				$image = $image->[-1];
-				$result = {
-					url => $image->{'#text'},
-					width => $image->{size},
-				};
+				$result->{images} = [ reverse grep {
+					$_
+				} map {
+					my ($size) = $_->{'#text'} =~ m{/(34|64|126|174|252|500|\d+x\d+)s?/}i;
+					
+					# ignore sizes smaller than 300px
+					{
+						author => 'Last.fm',
+						url    => $_->{'#text'},
+						width  => $size || $_->{size},
+					} if $_->{'#text'} && (!$size || $size*1 >= 300);
+				} @{$image} ];
 			}
 		}
 
-		if ( !$result->{url} ) {
+		if ( !$result->{images} ) {
 			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
 		
@@ -42,9 +50,17 @@ sub getAlbumCover {
 sub getAlbum {
 	my ( $class, $cb, $args ) = @_;
 
+	# last.fm doesn't try to be smart about names: "the beatles" != "beatles" - don't punish users with correct tags
+	# this is an ugly hack, but we can't set the ignoredarticles pref, as this triggers a rescan...
+	my $ignoredArticles = $Slim::Utils::Text::ignoredArticles;
+	%Slim::Utils::Text::caseArticlesCache = ();
+	$Slim::Utils::Text::ignoredArticles = qr/^\s+/;
+
 	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
 	my $album  = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
 	my $albumLC= lc( $args->{album} );
+
+	$Slim::Utils::Text::ignoredArticles = $ignoredArticles;
 	
 	if (!$artist || !$album) {
 		$cb->();

@@ -439,19 +439,30 @@ sub getAlbumCover {
 					my $img = eval { from_json( $cover->attr('data-lightbox') ) };
 
 					if ( $@ ) {
-						$result->{error} = $@;
+						# sometimes we don't have a data-lightbox - use the image shown instead
+						if ($img = $cover->attr('src')) {
+							my ($size) = $img =~ /(?:JPG|PNG)_(\d+)/i;
+							$result->{images} = [ {
+								author => 'AllMusic.com',
+								url    => $img,
+								width  => $size,
+							} ];
+						}
+						else {
+							$result->{error} = $@;
+						}
 					}
 					elsif ( $img && $img->{image} ) {
-						$result = {
+						$result->{images} = [ {
 							author => $img->{image}->{author} || 'AllMusic.com',
 							url    => $img->{image}->{url},
 							height => $img->{image}->{height},
 							width  => $img->{image}->{width},
-						}
+						} ];
 					}
 				}
 				
-				if ( !$result->{url} ) {
+				if ( !$result->{images} ) {
 					$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 				}
 				
