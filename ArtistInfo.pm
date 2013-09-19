@@ -87,7 +87,7 @@ sub getArtistMenu {
 
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTPICTURES'),
-			type => $client->controlledBy ? 'link' : 'slideshow',
+			type => ($client->controllerUA || '') =~ /squeezeplay/i ? 'link' : 'slideshow',
 			url  => \&getArtistPhotos,
 			passthrough => $pt,
 		};

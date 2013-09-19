@@ -8,11 +8,20 @@ use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string cstring);
+use Slim::Web::ImageProxy qw(proxiedImage);
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant BASE_URL => 'http://api.discogs.com/';
 
-my $log = logger('plugin.musicartistinfo');
+my $log   = logger('plugin.musicartistinfo');
+my $cache = Slim::Utils::Cache->new();
+
+if (CAN_IMAGEPROXY) {
+	Slim::Web::ImageProxy->registerHandler(
+		match => qr/api\.discogs\.com/,
+		func  => \&artworkUrl,
+	);
+}
 
 sub getAlbumCover {
 	my ( $class, $client, $cb, $args ) = @_;
@@ -39,10 +48,12 @@ sub getAlbumCover {
 							
 							push @images, {
 								author => 'Discogs',
-								url    => '/' . Slim::Web::ImageProxy::proxiedImage($_->{uri}),
+								url    => proxiedImage($_->{uri}),
 								width  => $_->{width},
 								height => $_->{height},
 							};
+							
+							$cache->set('150_' . $_->{uri}, $_->{uri150}) if $_->{uri150};
 						}
 						
 						$result->{images} = \@images if @images;
@@ -155,5 +166,20 @@ sub _call {
 	)->get($url . '?' . $params);
 }
 
+
+sub artworkUrl {
+	my ($url, $spec) = @_;
+	
+	main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
+
+	if ( Slim::Web::ImageProxy->getRightSize($spec, { 150 => 1 }) ) {
+		my $url150 = $cache->get("150_$url");
+		$url = $url150 if $url150;
+	}
+	
+	main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
+
+	return $url;
+}
 
 1;

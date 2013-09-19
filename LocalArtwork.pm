@@ -66,7 +66,7 @@ sub trackInfoHandler {
 	}
 	
 	opendir(DIR, $path) || return;
-	my @images = grep /\.(?:jpe?g|png|gif)$/i, readdir(DIR);
+	my @images = grep { $_ !~ /^\._/ } grep /\.(?:jpe?g|png|gif)$/i, readdir(DIR);
 	closedir(DIR);
 
 	return unless scalar @images;
@@ -79,7 +79,7 @@ sub trackInfoHandler {
 
 		$cache->set( $imageId, $imageUrl, 3600 );
 		
-		$imageId = '/' . proxiedImage($imageId, 'force');
+		$imageId = proxiedImage($imageId, 'force');
 		
 		{
 			type  => 'text',
@@ -99,7 +99,7 @@ sub trackInfoHandler {
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK'),
 		# we don't want slideshow mode on controllers, but web UI only
-		type => $client->controlledBy ? 'outline' : 'slideshow',
+		type => ($client->controllerUA || '') =~ /squeezeplay/i ? 'outline' : 'slideshow',
 		items => $items,
 	};	
 }
