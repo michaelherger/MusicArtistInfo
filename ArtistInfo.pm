@@ -24,9 +24,9 @@ sub init {
 #                                                                |  |  |  |Function to call
 #                                                                C  Q  T  F
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [1, 1, 1, \&getArtistWeblinksCLI]);
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'], [1, 1, 1, \&getArtistWeblinksCLI]);
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'], [1, 1, 1, \&getArtistWeblinksCLI]);
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'], [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'],  [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'],   [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'],   [1, 1, 1, \&getArtistWeblinksCLI]);
 
 	Slim::Menu::GlobalSearch->registerInfoProvider( moreartistinfo => (
 		func => \&searchHandler,

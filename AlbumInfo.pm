@@ -17,18 +17,13 @@ use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSIO
 my $log = logger('plugin.musicartistinfo');
 
 sub init {
-	Slim::Menu::GlobalSearch->registerInfoProvider( moremusicinfo => (
-		func => \&searchHandler,
-		after => 'moreartistinfo',
-	) );
-
 	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
-		func => \&albumInfoHandler,
+		func => \&_objInfoHandler,
 		after => 'moreartistinfo',
 	) );
 
 	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
-		func => \&trackInfoHandler,
+		func => \&_objInfoHandler,
 		after => 'moreartistinfo',
 	) );
 	
@@ -46,7 +41,7 @@ sub getAlbumMenu {
 	$args   ||= {};
 	
 	my $args2 = $params->{'album'} 
-			|| _getAlbumFromAlbumId($params->{'album_id'}) 
+			|| _getAlbumFromAlbumId($params->{album_id}) 
 			|| _getAlbumFromSongURL($client) unless $args->{url} || $args->{id};
 			
 	$args->{album}  ||= $args2->{album};
@@ -314,23 +309,24 @@ sub getAlbumCredits {
 	);
 }
 
-sub trackInfoHandler {
-	my ( $client, $url, $track, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $track->albumname || $remoteMeta->{album}, $track->artistName || $remoteMeta->{artist}, $url );
-}
-
-sub albumInfoHandler {
-	my ( $client, $url, $album, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $album->name || $remoteMeta->{name}, $album->contributor->name || $remoteMeta->{artist}, $url );
-}
-
-sub searchHandler {
-	my ( $client, $tags ) = @_;
-	return _objInfoHandler( $client, $tags->{search} );
-}
-
 sub _objInfoHandler {
-	my ( $client, $album, $artist, $url ) = @_;
+	my ( $client, $url, $obj, $remoteMeta ) = @_;
+
+	my ($album, $artist);
+	
+	if ( $obj && blessed $obj ) {
+		if ($obj->isa('Slim::Schema::Track')) {
+			$album  = $obj->albumname || $remoteMeta->{album};
+			$artist = $obj->artistName || $remoteMeta->{artist};
+		}
+		elsif ($obj->isa('Slim::Schema::Album')) {
+			$album  = $obj->name || $remoteMeta->{name};
+			$artist = $obj->contributor->name || $remoteMeta->{artist};
+		}
+		else {
+			#warn Data::Dump::dump($obj);
+		}
+	}
 
 	$album = _getAlbumFromSongURL($client, $url) if !$album && $url;
 
@@ -364,7 +360,7 @@ sub _getAlbumFromAlbumId {
 			
 			return {
 				artist => $album->contributor->name,
-				album  => _cleanupAlbumName($album->title),			
+				album  => _cleanupAlbumName($album->title),
 			};
 		}
 	}
@@ -405,7 +401,7 @@ sub _getAlbumFromSongURL {
 		if ($album && $artist) {
 			return {
 				artist => $artist,
-				album  => _cleanupAlbumName($album),			
+				album  => _cleanupAlbumName($album),
 			};
 		}
 	}
