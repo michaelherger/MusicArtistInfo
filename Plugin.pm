@@ -42,10 +42,10 @@ sub playerMenu {}
 sub webPages {
 	my $class = shift;
 	
-	my $title = string('PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK');
 	my $url   = 'plugins/' . PLUGIN_TAG . '/index.html';
 	
-	Slim::Web::Pages->addPageLinks( 'plugins', { $title => $url } );
+	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => $url } );
+	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => "html/images/cover.png" });
 
 	Slim::Web::Pages->addPageFunction( $url, sub {
 		my $client = $_[0];
@@ -54,7 +54,7 @@ sub webPages {
 			client  => $client,
 			feed    => \&getMissingArtworkAlbums,
 			type    => 'link',
-			title   => $title,
+			title   => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK'),
 			timeout => 35,
 			args    => \@_
 		} );
@@ -93,5 +93,58 @@ sub getMissingArtworkAlbums {
 		items => $items,
 	});
 }
+
+=pod
+sub getSmallArtworkAlbums {
+	my ($client, $cb, $params, $args) = @_;
+
+	# Find distinct albums to check for artwork.
+	my $collate = Slim::Utils::OSDetect->getOS()->sqlHelperClass()->collate();
+	my $rs = Slim::Schema->search('Genre', undef, { 'order_by' => "me.namesort $collate" });
+
+	my $cache = Slim::Utils::ArtworkCache->new();
+	my $sth = Slim::Schema->dbh->prepare("SELECT album, cover, coverid FROM tracks WHERE NOT coverid IS NULL GROUP BY album");
+	$sth->execute();
+	
+	my $items = [];
+	while ( my $track = $sth->fetchrow_hashref ) {
+		my $size;
+		$size = $track->{cover} if $track->{cover} =~ /^\d+$/;
+		
+		if ( !$size && -f $track->{cover} ) {
+			$size = -s _;
+		}
+		
+		# what's a reasonable threshold here? Doesn't make much sense with lossy jpg vs. lossless png etc.
+		if ( $size && $size > 50000 ) {
+			my $album = Slim::Schema->search('Album', {
+				'me.id' => { '=' => $track->{album} }
+			})->first;
+			
+			if ($album) {
+				my $artist = $album->contributor->name;
+				my $title  = $album->title;
+				
+				push @$items, {
+					type => 'slideshow',
+					image => '/music/' . $track->{coverid} . '/cover',
+					name => $title . ' ' . cstring($client, 'BY') . " $artist",
+					url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCover,
+					passthrough => [{ 
+						album  => $title,
+						artist => $artist,
+					}]
+				};
+			}
+		}
+	}
+	
+	$items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$items ];
+	
+	$cb->({
+		items => $items,
+	});
+}
+=cut
 
 1;
