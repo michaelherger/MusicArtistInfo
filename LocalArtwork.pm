@@ -32,7 +32,7 @@ sub init {
 	) );
 
 	Slim::Web::ImageProxy->registerHandler(
-		match => qr/mai\|[a-f\d]+/,
+		match => qr/mai\/localartwork\/[a-f\d]+/,
 		func  => \&artworkUrl,
 	);
 }
@@ -75,7 +75,7 @@ sub trackInfoHandler {
 
 	my $items = [ map {
 		my $imageUrl = Slim::Utils::Misc::fileURLFromPath( catdir($path, $_) );
-		my $imageId = 'mai|' . md5_hex($imageUrl);
+		my $imageId = 'mai/localartwork/' . md5_hex($imageUrl);
 
 		$cache->set( $imageId, $imageUrl, 3600 );
 		
