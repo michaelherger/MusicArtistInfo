@@ -1,0 +1,40 @@
+<title>[% IF pagetitle %][% pagetitle -%][% ELSE %][% "SQUEEZEBOX_SERVER" | string %][% END -%]</title>
+<link rel="shortcut icon" href="[% webroot %]favicon.ico" type="image/x-icon"/>
+<link rel="icon" href="[% webroot %]favicon.ico" type="image/x-icon"/>
+<meta http-equiv="Content-Type" content="text/html; charset=[% LOCALE %]"/>
+<link rel="stylesheet" type="text/css" href="[% webroot %]slimserver.css?r=[% revision %]"/>
+<link rel="stylesheet" type="text/css" href="[% webroot %]skin.css?r=[% revision %]"/>
+<link rel="apple-touch-icon" href="[% webroot %]html/images/apple-touch-icon.png"/>
+[% IF mobileBrowser %]
+	<meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" type="text/css" href="[% webroot %]mobile.css"/>
+[% END %]
+
+[%
+	IF template.name.match('xmlbrowser') && items;
+		FOREACH item = items;
+			IF item.mixersLink && item.artist && item.id && !(item.genre || item.album || item.image || item.year);
+				item.image = 'imageproxy/mai/artist/' _ item.id _ '/image.png';
+				hasArtwork = 1;
+			END;
+		END;	
+	END;
+
+    # this is replicated from xmlbrowser.html, but I didn't find a way to do this differently
+	IF hasArtwork && !(ajaxUpdate && ajaxUpdate >= 1);
+		IF artwork == 1;
+			IF playlist_id;
+				artwork = 0;
+			ELSE;
+				container = 'gallerycontainer';
+				contentwrapper = 'galleryitem';
+			END;
+		END;
+		
+		titleRight = BLOCK %]
+			<div id="viewSelect"></div>
+		[% END; 
+	ELSIF hasArtwork && ajaxSearch;
+		artwork = 2;
+	END;
+%]

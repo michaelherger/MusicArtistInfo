@@ -13,9 +13,11 @@ use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::TEN;
 
-use constant CLICOMMAND => 'musicartistinfo'; 
+use constant CLICOMMAND => 'musicartistinfo';
+use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
 my $log = logger('plugin.musicartistinfo');
+my $defaultImg;
 
 sub init {
 #                                                                |requires Client
@@ -27,6 +29,8 @@ sub init {
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'],  [1, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'],   [1, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'],   [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'artistphoto'],
+	                                                            [0, 1, 1, \&getArtistPhotoCLI]);
 
 	Slim::Menu::GlobalSearch->registerInfoProvider( moreartistinfo => (
 		func => \&searchHandler,
@@ -43,6 +47,20 @@ sub init {
 	Slim::Menu::TrackInfo->registerInfoProvider( moreartistinfo => (
 		func => \&trackInfoHandler,
 	) );
+
+	if (CAN_IMAGEPROXY) {
+		require Slim::Web::HTTP;
+		require Slim::Web::ImageProxy;
+
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/mai\/artist\/[a-f\d]+/,
+			func  => \&_artworkUrl,
+		);
+		
+		$defaultImg = Slim::Utils::Misc::fileURLFromPath( 
+			Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png')
+		);
+	}
 
 	Plugins::MusicArtistInfo::TEN->init($_[1]);
 	Plugins::MusicArtistInfo::LFM->init($_[1]);
@@ -259,6 +277,50 @@ sub getArtistPhotos {
 		$results->{lfm} = shift;
 		$getArtistPhotoCb->($results);
 	}, $args );
+}
+
+sub getArtistPhotoCLI {
+	my $request = shift;
+
+	my $handler;
+	# check this is the correct query.
+	if ( $request->isNotQuery([[CLICOMMAND], ['artistphoto']]) ) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+	
+	$request->setStatusProcessing();
+	
+	my $client = $request->client();
+	my $artist = $request->getParam('artist') || _getArtistFromArtistId($request->getParam('artist_id'));
+
+	if (!$artist) {
+		$request->addResult('error', 'No artist found');
+		$request->setStatusDone();
+		return;
+	}
+
+	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
+		my $items = shift || {};
+
+		if ($items->{error}) {
+			$log->warn($items->{error});
+			$request->addResult('error', $items->{error})
+		}
+		elsif ($items->{photos} && scalar @{$items->{photos}}) {
+			foreach (@{$items->{photos}}) {
+				if ( my $url = $_->{url} ) {
+					$request->addResult('url', $url);
+					$request->addResult('credits', $_->{author} || ''),
+					last;
+				}
+			}
+		}
+
+		$request->setStatusDone();
+	},{
+		artist => $artist,
+	} );
 }
 
 sub getArtistInfo {
@@ -663,5 +725,51 @@ sub _getArtistFromAlbumId {
 		return $artist;
 	}
 }
+
+sub _artworkUrl { if (CAN_IMAGEPROXY) {
+	my ($url, $spec, $cb) = @_;
+	
+	my ($artist_id) = $url =~ m|mai/artist/([a-f\d]+)|i;
+	
+	main::DEBUGLOG && $log->debug("Artist ID is '$artist_id'");
+	
+	return $defaultImg unless $artist_id;
+
+	my $artist = _getArtistFromArtistId($artist_id);
+
+	return $defaultImg unless $artist;
+
+	Plugins::MusicArtistInfo::LFM->getArtistPhotos(undef, sub {
+		my $items = shift || {};
+		
+		my $img = $defaultImg;
+		my $sizeMap = {
+			252 => 252,
+			500 => 500,
+		};
+
+		if ($items->{photos} && scalar @{$items->{photos}}) {
+			foreach (@{$items->{photos}}) {
+				if ( my $url = $_->{url} ) {
+#					warn Data::Dump::dump($_);
+					$img = $url;
+					# if we've hit one of those huge files, go with a known max of 500px
+					$sizeMap->{999999} = 500;
+					last;
+				}
+			}
+		}
+		
+		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || '_';
+		$img =~ s/\/_\//\/$size\//;
+
+		$cb->($img);
+	},{
+		artist => $artist,
+	} );
+
+	return;
+} }
+
 
 1;

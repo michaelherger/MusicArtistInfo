@@ -32,6 +32,12 @@ sub initPlugin {
 		require Plugins::MusicArtistInfo::LocalArtwork;
 		Plugins::MusicArtistInfo::LocalArtwork->init();
 	}
+	else {
+		# remove our HTML folder from the list of skins if we can't support it
+		Slim::Web::HTTP->getSkinManager->{templateDirs} = [ 
+			grep { $_ !~ m|Plugins/MusicArtistInfo| } @{Slim::Web::HTTP->getSkinManager->{templateDirs}}
+		];
+	}
 	
 	$class->SUPER::initPlugin(shift);
 }
