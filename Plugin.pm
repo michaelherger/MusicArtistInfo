@@ -6,6 +6,7 @@ use base qw(Slim::Plugin::Base);
 use vars qw($VERSION);
 
 use Slim::Utils::Log;
+use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::MusicArtistInfo::AlbumInfo;
@@ -19,6 +20,8 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_MUSICARTISTINFO',
 } );
 
+my $prefs = preferences('plugin.musicartistinfo'); 
+
 sub initPlugin {
 	my $class = shift;
 	
@@ -31,6 +34,10 @@ sub initPlugin {
 	if (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0) {
 		require Plugins::MusicArtistInfo::LocalArtwork;
 		Plugins::MusicArtistInfo::LocalArtwork->init();
+		
+		# use our skin, unless user has changed back already
+		preferences('server')->set('skin', 'MusicArtistInfo') unless $prefs->get('skinSet') || lc(preferences('server')->get('skin')) ne 'default';
+		$prefs->set('skinSet', 1);
 	}
 	else {
 		# remove our HTML folder from the list of skins if we can't support it

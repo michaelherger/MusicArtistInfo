@@ -40,7 +40,6 @@ sub getArtistPhotos {
 
 	$cache ||= Slim::Utils::Cache->new;	
 	if ( my $cached = $cache->get("lfm_artist_photos_$artist") ) {
-		warn Data::Dump::dump($cached, 'cached');
 		$cb->($cached);
 		return;
 	}
