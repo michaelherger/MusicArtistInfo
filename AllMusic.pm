@@ -26,8 +26,6 @@ use constant ALBUMCREDITS_URL => BASE_URL . ALBUMREVIEW_URL . '/credits';
 
 my $log = logger('plugin.musicartistinfo');
 
-#my $cache = Slim::Utils::Cache->new;
-
 sub getBiography {
 	my ( $class, $client, $cb, $args ) = @_;
 

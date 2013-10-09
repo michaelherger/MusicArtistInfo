@@ -5,12 +5,14 @@ use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Networking::SimpleAsyncHTTP;
+use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Text;
 use Slim::Utils::Strings qw(string cstring);
 
 use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
 
+my $cache;
 my $log = logger('plugin.musicartistinfo');
 my $aid;
 
@@ -33,6 +35,13 @@ sub getArtistPhotos {
 	
 	if (!$artist) {
 		$cb->();
+		return;
+	}
+
+	$cache ||= Slim::Utils::Cache->new;	
+	if ( my $cached = $cache->get("lfm_artist_photos_$artist") ) {
+		warn Data::Dump::dump($cached, 'cached');
+		$cb->($cached);
 		return;
 	}
 	
@@ -73,7 +82,12 @@ sub getArtistPhotos {
 					};
 				}
 
-				$result->{photos} = \@images if @images;
+				if (@images) {
+					$result->{photos} = \@images;
+
+					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
+					$cache->set("lfm_artist_photos_$artist", $result, 86400 * 30);
+				}
 			}
 		}
 
