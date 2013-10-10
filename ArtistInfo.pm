@@ -292,7 +292,8 @@ sub getArtistPhotoCLI {
 	$request->setStatusProcessing();
 	
 	my $client = $request->client();
-	my $artist = $request->getParam('artist') || _getArtistFromArtistId($request->getParam('artist_id'));
+	my $artist_id = $request->getParam('artist_id');
+	my $artist = $request->getParam('artist') || _getArtistFromArtistId($artist_id);
 
 	if (!$artist) {
 		$request->addResult('error', 'No artist found');
@@ -312,6 +313,7 @@ sub getArtistPhotoCLI {
 				if ( my $url = $_->{url} ) {
 					$request->addResult('url', $url);
 					$request->addResult('credits', $_->{author} || ''),
+					$request->addResult('artist_id', $artist_id) if $artist_id;
 					last;
 				}
 			}
