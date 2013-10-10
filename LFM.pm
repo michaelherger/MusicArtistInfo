@@ -4,7 +4,6 @@ use strict;
 use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
-use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Text;
@@ -12,7 +11,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
 
-my $cache;
+my $cache = Slim::Utils::Cache->new;
 my $log = logger('plugin.musicartistinfo');
 my $aid;
 
@@ -53,6 +52,8 @@ sub getArtistPhotos {
 		my $result = {};
 		
 		if ( $artistInfo && $artistInfo->{images} && (my $images = $artistInfo->{images}->{image}) ) {
+			$images = [ $images ] if ref $images eq 'HASH';
+			
 			if ( ref $images eq 'ARRAY' ) {
 				my @images;
 				foreach my $image (@$images) {
@@ -90,7 +91,7 @@ sub getArtistPhotos {
 			}
 		}
 
-		if ( !$result->{photos} ) {
+		if ( !$result->{photos} && $main::SERVER ) {
 			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
 		
@@ -106,6 +107,8 @@ sub getAlbumCover {
 		my $result = {};
 		
 		if ( $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
+			$image = [ $image ] if ref $image eq 'HASH';
+
 			if ( ref $image eq 'ARRAY' ) {
 				$result->{images} = [ reverse grep {
 					$_
@@ -162,6 +165,7 @@ sub getAlbum {
 }
 
 
+my $ua;
 sub _call {
 	my ( $args, $cb ) = @_;
 	
@@ -203,14 +207,29 @@ sub _call {
 		$cb->($result);
 	};
 	
-	Slim::Networking::SimpleAsyncHTTP->new( 
-		$cb2, 
-		$cb2, 
-		{
+	# in scanner mode we don't want to load the async http code
+	if (main::SCANNER) {
+		require LWP::UserAgent;
+		$ua ||= LWP::UserAgent->new(
+			agent   => Slim::Utils::Misc::userAgentString(),
 			timeout => 15,
-			cache   => 1,
-		}
-	)->get($url . '?' . $params);
+		);
+		
+		my $request = HTTP::Request->new( GET => $url . '?' . $params );
+		my $response = $ua->request( $request );
+		
+		$cb2->($response);
+	}
+	else {
+		Slim::Networking::SimpleAsyncHTTP->new( 
+			$cb2, 
+			$cb2, 
+			{
+				timeout => 15,
+				cache   => 1,
+			}
+		)->get($url . '?' . $params);
+	}
 }
 
 sub _debug {
@@ -223,7 +242,11 @@ sub aid {
 	if ( $_[1] ) {
 		$aid = $_[1];
 		$aid =~ s/-//g;
+		$cache->set('lfm_aid', $aid, 'never');
 	}
+	
+	$aid ||= $cache->get('lfm_aid');
+
 	return $aid; 
 }
 
