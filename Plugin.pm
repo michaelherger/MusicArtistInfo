@@ -20,7 +20,7 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_MUSICARTISTINFO',
 } );
 
-my $prefs = preferences('plugin.musicartistinfo'); 
+#my $prefs = preferences('plugin.musicartistinfo'); 
 
 sub initPlugin {
 	my $class = shift;
@@ -36,8 +36,12 @@ sub initPlugin {
 		Plugins::MusicArtistInfo::LocalArtwork->init();
 		
 		# use our skin, unless user has changed back already
-		preferences('server')->set('skin', 'MusicArtistInfo') unless $prefs->get('skinSet') || lc(preferences('server')->get('skin')) ne 'default';
-		$prefs->set('skinSet', 1);
+		# XXX - skin files can be remove once we live with the Artists menu hijacking
+#		preferences('server')->set('skin', 'MusicArtistInfo') unless $prefs->get('skinSet') || lc(preferences('server')->get('skin')) ne 'default';
+#		$prefs->set('skinSet', 1);
+		# revert skin pref from previous skinning exercise...
+		my $prefs = preferences('server'); 
+		$prefs->set('skin', 'Default') if lc($prefs->get('skin')) eq 'musicartistinfo';
 	}
 	else {
 		# remove our HTML folder from the list of skins if we can't support it
