@@ -53,7 +53,7 @@ sub init {
 		require Slim::Web::ImageProxy;
 
 		Slim::Web::ImageProxy->registerHandler(
-			match => qr/mai\/artist\/[a-f\d]+/,
+			match => qr/mai\/artist\/.+/,
 			func  => \&_artworkUrl,
 		);
 		
@@ -731,15 +731,13 @@ sub _getArtistFromAlbumId {
 sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	my ($url, $spec, $cb) = @_;
 	
-	my ($artist_id) = $url =~ m|mai/artist/([a-f\d]+)|i;
+	my ($artist_id) = $url =~ m|mai/artist/(.+)|i;
 	
 	main::DEBUGLOG && $log->debug("Artist ID is '$artist_id'");
 	
 	return $defaultImg unless $artist_id;
 
-	my $artist = _getArtistFromArtistId($artist_id);
-
-	return $defaultImg unless $artist;
+	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhotos(undef, sub {
 		my $items = shift || {};
@@ -749,20 +747,20 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 			252 => 252,
 			500 => 500,
 		};
+		my $defaultSize = '_';
 
 		if ($items->{photos} && scalar @{$items->{photos}}) {
 			foreach (@{$items->{photos}}) {
 				if ( my $url = $_->{url} ) {
-#					warn Data::Dump::dump($_);
 					$img = $url;
 					# if we've hit one of those huge files, go with a known max of 500px
-					$sizeMap->{999999} = 500;
+					$defaultSize = 500 if ($_->{width} && $_->{width} > 1500) || ($_->{height} && $_->{height} > 1500);
 					last;
 				}
 			}
 		}
 		
-		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || '_';
+		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || $defaultSize;
 		$img =~ s/\/_\//\/$size\//;
 
 		$cb->($img);
