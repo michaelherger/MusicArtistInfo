@@ -20,12 +20,17 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_MUSICARTISTINFO',
 } );
 
-#my $prefs = preferences('plugin.musicartistinfo'); 
-
 sub initPlugin {
 	my $class = shift;
 	
 	$VERSION = $class->_pluginDataFor('version');
+
+	my $prefs = preferences('plugin.musicartistinfo'); 
+	$prefs->init({
+		browseArtistPictures => 1,
+		runImporter => 1,
+		precacheArtistPictures => 1,
+	});
 	
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
@@ -35,13 +40,15 @@ sub initPlugin {
 		require Plugins::MusicArtistInfo::LocalArtwork;
 		Plugins::MusicArtistInfo::LocalArtwork->init();
 		
-		# use our skin, unless user has changed back already
-		# XXX - skin files can be remove once we live with the Artists menu hijacking
-#		preferences('server')->set('skin', 'MusicArtistInfo') unless $prefs->get('skinSet') || lc(preferences('server')->get('skin')) ne 'default';
-#		$prefs->set('skinSet', 1);
 		# revert skin pref from previous skinning exercise...
-		my $prefs = preferences('server'); 
-		$prefs->set('skin', 'Default') if lc($prefs->get('skin')) eq 'musicartistinfo';
+		preferences('server')->set('skin', 'Default') if lc(preferences('server')->get('skin')) eq 'musicartistinfo';
+		$prefs->remove('skinSet');
+		
+		if (main::WEBUI) {
+			require Plugins::MusicArtistInfo::Settings;
+			Plugins::MusicArtistInfo::Settings->new();
+		}
+
 	}
 	else {
 		# remove our HTML folder from the list of skins if we can't support it

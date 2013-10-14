@@ -17,6 +17,7 @@ use constant CLICOMMAND => 'musicartistinfo';
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
 my $log = logger('plugin.musicartistinfo');
+my $prefs;
 my $defaultImg;
 
 sub init {
@@ -66,6 +67,9 @@ sub init {
 		# XXX - should pre-cache artwork if enabled?
 		require Slim::Utils::Timers;
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 1, \&_hijackArtistsMenu);
+
+		$prefs = Slim::Utils::Prefs::preferences('plugin.musicartistinfo');
+		$prefs->setChange(\&_hijackArtistsMenu, 'browseArtistPictures');
 	}
 
 	Plugins::MusicArtistInfo::TEN->init($_[1]);
@@ -783,26 +787,38 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 	main::DEBUGLOG && $log->debug('Trying to redirect Artists menu...');
 
 	if ( my ($node) = grep { $_->{id} eq 'myMusicArtists' } @{ Slim::Menu::BrowseLibrary->_getNodeList() } ) {
-		main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu!');
+		
+		if ( $prefs->get('browseArtistPictures') && !$node->{mainCB} ) {
+			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu!');
+	
+			Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
+	
+			my $cb = $node->{feed};
+			$node->{feed} = sub {
+				my ($client, $callback, $args, $pt) = @_;
+				$cb->($client, sub {
+					my $items = shift;
+	
+					$items->{items} = [ map { 
+						$_->{image} ||= Slim::Web::ImageProxy::proxiedImage('imageproxy/mai/artist/' . $_->{id}, 'force');
+						$_;
+					} @{$items->{items}} ];
+	
+					$callback->($items);
+				}, $args, $pt);
+			};
+			$node->{mainCB} = $cb;
+			Slim::Menu::BrowseLibrary->registerNode($node);
+		}
+		elsif ( !$prefs->get('browseArtistPictures') && $node->{mainCB} ) {
+			main::DEBUGLOG && $log->debug('Artist menu was hijacked - let\'s free it!');
+	
+			Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
+	
+			$node->{feed} = delete $node->{mainCB};
 
-		Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
-
-		my $cb = $node->{feed};
-		$node->{feed} = sub {
-			my ($client, $callback, $args, $pt) = @_;
-			$cb->($client, sub {
-				my $items = shift;
-
-				$items->{items} = [ map { 
-					$_->{image} ||= Slim::Web::ImageProxy::proxiedImage('imageproxy/mai/artist/' . $_->{id}, 'force');
-					$_;
-				} @{$items->{items}} ];
-
-				$callback->($items);
-			}, $args, $pt);
-		}; 
-
-		Slim::Menu::BrowseLibrary->registerNode($node);
+			Slim::Menu::BrowseLibrary->registerNode($node);
+		}
 
 		$retry = 0;
 	}

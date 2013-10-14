@@ -76,4 +76,18 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	EN	Find albums with missing artwork
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
+	DE	Interpretenbilder suchen
 	EN	Artist picture lookup
+
+PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
+	DE	Bilder in Interpretenlist anzeigen
+	EN	Show pictures in Artists list
+	
+PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
+	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
+	EN	Show pictures (can slow down browsing under certain conditions)
+	
+PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
+	DE	Bilder nicht anzeigen
+	EN	Don't show pictures
+	

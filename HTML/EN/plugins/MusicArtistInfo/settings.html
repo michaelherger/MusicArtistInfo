@@ -1,0 +1,9 @@
+[% PROCESS settings/header.html %]
+	[% WRAPPER setting title="PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS" desc="" %]
+		<select class="stdedit" name="pref_browseArtistPictures" id="pref_browseArtistPictures">
+			<option [% IF prefs.pref_browseArtistPictures %]selected [% END %]value="1">[% "PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON" | string %]</option>
+			<option [% IF !prefs.pref_browseArtistPictures %]selected [% END %]value="0">[% "PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF" | string %]</option>
+		</select>
+	[% END %]
+
+[% PROCESS settings/footer.html %]
