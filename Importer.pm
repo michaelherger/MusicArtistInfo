@@ -115,6 +115,13 @@ sub _precacheArtistImage {
 	my ($artist_id, $img) = @_;
 	
 	if ( $artist_id && (my $url = $img->{url}) ) {
+		if ( ($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500) ) {
+			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
+			$url =~ s/\/_\//\/500\//;
+		}
+		
+#		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
+		
 		my $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
 
 		if (my $image = $cache->get("mai_$url")) {
