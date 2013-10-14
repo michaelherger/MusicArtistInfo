@@ -311,22 +311,17 @@ sub getArtistPhotoCLI {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
-		my $items = shift || {};
+	Plugins::MusicArtistInfo::LFM->getArtistPhoto($client, sub {
+		my $photo = shift || {};
 
-		if ($items->{error}) {
-			$log->warn($items->{error});
-			$request->addResult('error', $items->{error})
+		if ($photo->{error}) {
+			$log->warn($photo->{error});
+			$request->addResult('error', $photo->{error})
 		}
-		elsif ($items->{photos} && scalar @{$items->{photos}}) {
-			foreach (@{$items->{photos}}) {
-				if ( my $url = $_->{url} ) {
-					$request->addResult('url', $url);
-					$request->addResult('credits', $_->{author} || ''),
-					$request->addResult('artist_id', $artist_id) if $artist_id;
-					last;
-				}
-			}
+		else {
+			$request->addResult('url', $photo->{url});
+			$request->addResult('credits', $photo->{author} || ''),
+			$request->addResult('artist_id', $artist_id) if $artist_id;
 		}
 
 		$request->setStatusDone();
@@ -749,8 +744,8 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
 
-	Plugins::MusicArtistInfo::LFM->getArtistPhotos(undef, sub {
-		my $items = shift || {};
+	Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
+		my $photo = shift || {};
 		
 		my $img = $defaultImg;
 		my $sizeMap = {
@@ -759,15 +754,10 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		};
 		my $defaultSize = '_';
 
-		if ($items->{photos} && scalar @{$items->{photos}}) {
-			foreach (@{$items->{photos}}) {
-				if ( my $url = $_->{url} ) {
-					$img = $url;
-					# if we've hit one of those huge files, go with a known max of 500px
-					$defaultSize = 500 if ($_->{width} && $_->{width} > 1500) || ($_->{height} && $_->{height} > 1500);
-					last;
-				}
-			}
+		if (my $url = $photo->{url}) {
+			$img = $url;
+			# if we've hit one of those huge files, go with a known max of 500px
+			$defaultSize = 500 if ($photo->{width} && $photo->{width} > 1500) || ($photo->{height} && $photo->{height} > 1500);
 		}
 		
 		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || $defaultSize;
@@ -800,7 +790,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 					my $items = shift;
 	
 					$items->{items} = [ map { 
-						$_->{image} ||= Slim::Web::ImageProxy::proxiedImage('imageproxy/mai/artist/' . $_->{id}, 'force');
+						$_->{image} ||= Slim::Web::ImageProxy::proxiedImage('mai/artist/' . $_->{id}, 'force');
 						$_;
 					} @{$items->{items}} ];
 	

@@ -99,6 +99,37 @@ sub getArtistPhotos {
 	});
 }
 
+# get a single artist picture - wrapper around getArtistPhotos
+sub getArtistPhoto {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	$class->getArtistPhotos($client, sub {
+		my $items = shift || {};
+
+		my $photo;
+		if ($items->{error}) {
+			$photo = $items;
+		}
+		elsif ($items->{photos} && scalar @{$items->{photos}}) {
+			foreach (@{$items->{photos}}) {
+				if ( my $url = $_->{url} ) {
+					$photo = $_;
+					last;
+				}
+			}
+		}
+		
+		if (!$photo && $main::SERVER) {
+			$photo = {
+				error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')
+			};
+		}
+
+		$cb->($photo);
+	},
+	$args );
+}
+
 sub getAlbumCover {
 	my ( $class, $client, $cb, $args ) = @_;
 	
@@ -187,7 +218,7 @@ sub _call {
 	my $params = join('&', @query);
 	my $url = BASE_URL;
 
-	main::INFOLOG && $log->is_info && $log->info(_debug( "Async API call: GET $url?$params" ));
+	main::INFOLOG && $log->is_info && $log->info(_debug( (main::SCANNER ? 'Sync' : 'Async') . " API call: GET $url?$params" ));
 	
 	my $cb2 = sub {
 		my $response = shift;

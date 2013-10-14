@@ -80,8 +80,8 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	EN	Artist picture lookup
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
-	DE	Bilder in Interpretenlist anzeigen
-	EN	Show pictures in Artists list
+	DE	Interpreten-Photos
+	EN	Artists Photos
 	
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
@@ -90,4 +90,24 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	DE	Bilder nicht anzeigen
 	EN	Don't show pictures
+
+PLUGIN_MUSICARTISTINFO_IMPORTER
+	DE	Importer Einstellungen
+	EN	Importer Settings
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
+	DE	Die folgenden Einstellungen sind nur wichtig, wenn die Anzeige von Interpreten Bildern aktiviert ist.
+	EN	The following settings are only of importance if you decided to display pictures when browsing artists.
+	
+PLUGIN_MUSICARTISTINFO_IMPORTER_GET_URLS
+	DE	Bilder für Interpreten online suchen
+	EN	Find artist pictures online
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
+	DE	Interpreten-Bilder herunterladen und zwischenspeichern
+	EN	Download and pre-cache artist pictures
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
+	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.
+	EN	Downloading and pre-caching of artist pictures can be quite time-consuming, but will speed up browsing by artist considerably.
 	
