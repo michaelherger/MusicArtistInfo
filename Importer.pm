@@ -15,7 +15,7 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 
 my $newTracks = [];
-my ($ua, $cache, $cachedir, $imgProxyCache, $specs);
+my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max);
 
 sub initPlugin {
 	my $class = shift;
@@ -73,8 +73,15 @@ sub startScan {
 	 	$cache = Slim::Utils::Cache->new();
 	 	$cachedir = preferences('server')->get('cachedir');
 
-		my $thumbSize = $prefs->get('thumbSize') || 100;
 		$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
+		
+		($max) = $specs =~ /(\d+)/;
+		if ($max*1) {
+			# 252 & 500 are known sizes for last.fm
+			if    ($max <= 252) { $max = 252 }
+			elsif ($max <= 500) { $max = 500 }
+			else  { $max = 0 }
+		}
 	}
 	
 	while ( _getArtistPhotoURL({
@@ -83,6 +90,8 @@ sub startScan {
 		progress => $progress,
 		cb       => $precacheCB,
 	}) ) {}
+	
+	$imgProxyCache->{default_expires_in} = 3600;
 }
 
 
@@ -117,12 +126,14 @@ sub _precacheArtistImage {
 	my ($artist_id, $img) = @_;
 	
 	if ( $artist_id && (my $url = $img->{url}) ) {
-		if ( ($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500) ) {
+		if ( !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
-			$url =~ s/\/_\//\/500\//;
+			$max = 500;
 		}
+
+		$url =~ s/\/_\//\/$max\// if $max;
 		
-#		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
+		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 		
 		my $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
 
