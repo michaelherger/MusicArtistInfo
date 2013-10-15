@@ -91,7 +91,7 @@ sub startScan {
 		cb       => $precacheCB,
 	}) ) {}
 	
-	$imgProxyCache->{default_expires_in} = 3600;
+	$imgProxyCache->{default_expires_in} = 86400 * 30;
 }
 
 
