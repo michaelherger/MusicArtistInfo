@@ -44,43 +44,55 @@ sub getArtistPhotos {
 	}
 	
 	_call({
-		method => 'artist.getimages',
+		# XXX - artist.getimages has been deprecated by October 2013. getInfo will only return one image :-(
+#		method => 'artist.getimages',
+		method => 'artist.getInfo',
 		artist => $artist,
 		autocorrect => 1,
 	}, sub {
 		my $artistInfo = shift;
 		my $result = {};
 		
-		if ( $artistInfo && $artistInfo->{images} && (my $images = $artistInfo->{images}->{image}) ) {
+#		if ( $artistInfo && $artistInfo->{images} && (my $images = $artistInfo->{images}->{image}) ) {
+		if ( $artistInfo && $artistInfo->{artist} && (my $images = $artistInfo->{artist}->{image}) ) {
 			$images = [ $images ] if ref $images eq 'HASH';
 			
 			if ( ref $images eq 'ARRAY' ) {
-				my @images;
-				foreach my $image (@$images) {
-					my $img;
-					
-					if ($image->{sizes} && $image->{sizes}->{size}) {
-						my $max = 0;
-						
-						foreach ( @{$image->{sizes}->{size}} ) {
-							next if $_->{width} < 250;
-							next if $_->{width} < $max;
-							
-							$max = $_->{width};
-							
-							$img = $_;
-						}
-					}
-					
-					next unless $img;
-					
-					push @images, {
-						author => $image->{owner}->{name} . ' (Last.fm)',
-						url    => $img->{'#text'},
-						height => $img->{height},
-						width  => $img->{width},
-					};
-				}
+#				my @images;
+#				foreach my $image (@$images) {
+#					my $img;
+#					
+#					if ($image->{sizes} && $image->{sizes}->{size}) {
+#						my $max = 0;
+#						
+#						foreach ( @{$image->{sizes}->{size}} ) {
+#							next if $_->{width} < 250;
+#							next if $_->{width} < $max;
+#							
+#							$max = $_->{width};
+#							
+#							$img = $_;
+#						}
+#					}
+#					
+#					next unless $img;
+#					
+#					push @images, {
+#						author => $image->{owner}->{name} . ' (Last.fm)',
+#						url    => $img->{'#text'},
+#						height => $img->{height},
+#						width  => $img->{width},
+#					};
+#				}
+
+				my $url = $images->[-1]->{'#text'};
+				my ($size) = $url =~ m{/(34|64|126|174|252|500|\d+x\d+)s?/}i;
+
+				my @images = ({
+					author => 'Last.fm',
+					url    => $url,
+					width  => $size * 1 || undef
+				});
 
 				if (@images) {
 					$result->{photos} = \@images;
