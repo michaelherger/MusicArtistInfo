@@ -74,7 +74,7 @@ sub getAlbumMenu {
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUM_COVER'),
 			# we don't want slideshow mode on controllers, but web UI only
-			type => ($client->controllerUA || '') =~ /squeezeplay/i ? 'link' : 'slideshow',
+			type => ($client && $client->controllerUA || '') =~ /squeezeplay/i ? 'link' : 'slideshow',
 			url  => \&getAlbumCover,
 			passthrough => $pt,
 		};

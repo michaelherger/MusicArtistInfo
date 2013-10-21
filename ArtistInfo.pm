@@ -115,14 +115,14 @@ sub getArtistMenu {
 
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTPICTURES'),
-			type => ($client->controllerUA || '') =~ /squeezeplay/i ? 'link' : 'slideshow',
+			type => ($client && $client->controllerUA || '') =~ /squeezeplay/i ? 'link' : 'slideshow',
 			url  => \&getArtistPhotos,
 			passthrough => $pt,
 		};
 
 		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
 		# don't show blog/news summaries on iPeng, but link instead. And show videos!
-		if ($client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
+		if ($client && $client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
 				itemActions => {
@@ -181,7 +181,7 @@ sub getArtistMenu {
 				type => 'link',
 				url  => \&getArtistURLs,
 				passthrough => $pt,
-			} if !$client->controllerUA;
+			} if !$client || !$client->controllerUA;
 		}
 	}
 	
@@ -247,8 +247,8 @@ sub getArtistPhotos {
 
 		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} ) {
 			my @photos;
-			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
 			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
+			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
 
 			$items = [ map {
 				my $credit = cstring($client, 'BY') . ' ';

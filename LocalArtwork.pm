@@ -99,7 +99,7 @@ sub trackInfoHandler {
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK'),
 		# we don't want slideshow mode on controllers, but web UI only
-		type => ($client->controllerUA || '') =~ /squeezeplay/i ? 'outline' : 'slideshow',
+		type => ($client && $client->controllerUA || '') =~ /squeezeplay/i ? 'outline' : 'slideshow',
 		items => $items,
 	};	
 }
