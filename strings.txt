@@ -87,6 +87,14 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
 	EN	Show pictures (can slow down browsing under certain conditions)
 	
+PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
+	DE	Ordner für Interpreten-Photos
+	EN	Folder with Artist Photos
+	
+PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
+	DE	Falls Sie einen Ordner für Interpreten-Photos angeben, so werden darin gespeicherte Photos verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.jpg (png, gif, z.B. 'Peter Gabriel.jpg'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
+	EN	If you decide to use a folder for artist photos, this will be used as an additional source for pictures. Use filenames like %ARTIST.jpg (png, gif, eg. 'Peter Gabriel.jpg'). If a file is found in this folder, then no online-source will be used.
+	
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	DE	Bilder nicht anzeigen
 	EN	Don't show pictures

@@ -12,7 +12,7 @@ sub name {
 }
 
 sub prefs {
-	return ($prefs, 'browseArtistPictures', 'runImporter', 'precacheArtistPictures');
+	return ($prefs, 'browseArtistPictures', 'runImporter', 'precacheArtistPictures', 'artistImageFolder');
 }
 
 sub page {

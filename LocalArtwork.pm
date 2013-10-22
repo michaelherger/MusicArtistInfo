@@ -136,7 +136,7 @@ sub getArtistPhoto {
 	}
 	
 	my $img;
-	my $imageFolder = $prefs->get('artistimagefolder');
+	my $imageFolder = $prefs->get('artistImageFolder');
 	
 	if ($imageFolder) {
 		$img = _imageInFolder($imageFolder, "\Q$artist\E");
