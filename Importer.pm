@@ -8,6 +8,7 @@ use Slim::Utils::Prefs;
 use Slim::Utils::Scanner::API;
 
 use Plugins::MusicArtistInfo::LFM;
+use Plugins::MusicArtistInfo::LocalArtwork;
 
 use constant EXPIRY => 60 * 86400;
 
@@ -102,12 +103,24 @@ sub _getArtistPhotoURL {
 	if ( my $artist = $params->{artists}->next ) {
 		$params->{progress}->update( $artist->name );
 		$i++ % 5 == 0 && Slim::Schema->forceCommit;
-
-		Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
-			$params->{cb}->($artist->id, @_);
-		}, {
-			artist => $artist->name
-		});
+		
+		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->name);
+		
+		if ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+			artist_id => $artist->id,
+			artist    => $artist->name,
+			rawUrl    => 1,		# don't return the proxied URL, we want the raw file
+			force     => 1,		# don't return cached value, this is a scan
+		}) ) {
+			$params->{cb}->($artist->id, $file);
+		}
+		else {
+			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
+				$params->{cb}->($artist->id, @_);
+			}, {
+				artist => $artist->name
+			});
+		}
 
 		return 1;
 	}
@@ -125,7 +138,7 @@ sub _getArtistPhotoURL {
 sub _precacheArtistImage {
 	my ($artist_id, $img) = @_;
 	
-	if ( $artist_id && (my $url = $img->{url}) ) {
+	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 		if ( !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
 			$max = 500;
@@ -155,10 +168,12 @@ sub _precacheArtistImage {
 		# use distributed expiry to not have to update everything at the same time
 		$imgProxyCache->{default_expires_in} = time() + int(rand(EXPIRY));
 
-		my $cachekey = "imageproxy/mai/artist/$artist_id/image_";
-		Slim::Utils::ImageResizer->resize($tmpFile, $cachekey, $specs, undef, $imgProxyCache );
+		Slim::Utils::ImageResizer->resize($tmpFile, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 		
 		unlink $tmpFile;
+	}
+	elsif ( $artist_id && $img && -f $img ) {
+		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 	}
 }
 

@@ -6,17 +6,20 @@ use Slim::Menu::ArtistInfo;
 use Slim::Menu::AlbumInfo;
 use Slim::Menu::TrackInfo;
 use Slim::Menu::GlobalSearch;
+use Slim::Utils::Cache;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::LFM;
+use Plugins::MusicArtistInfo::LocalArtwork;
 use Plugins::MusicArtistInfo::TEN;
 
 use constant CLICOMMAND => 'musicartistinfo';
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
-my $log = logger('plugin.musicartistinfo');
+my $log   = logger('plugin.musicartistinfo');
+my $cache = Slim::Utils::ArtworkCache->new();
 my $prefs;
 my $defaultImg;
 
@@ -241,12 +244,13 @@ sub getArtistPhotos {
 		my $photos = shift;
 
 		# only continue once we have results from all services.
-		return unless $photos->{lfm} && $photos->{allmusic};
+		return unless $photos->{lfm} && $photos->{allmusic} && $photos->{'local'};
 
 		my $items = [];
 
-		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} ) {
+		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} || $photos->{'local'}->{photos} ) {
 			my @photos;
+			push @photos, @{$photos->{'local'}->{photos}} if ref $photos->{'local'}->{photos} eq 'ARRAY';
 			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
 			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
 
@@ -287,6 +291,17 @@ sub getArtistPhotos {
 		$results->{lfm} = shift;
 		$getArtistPhotoCb->($results);
 	}, $args );
+	
+	my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto($args);
+	
+	$results->{'local'} = {
+		photos => $local ? [{ 
+			url => $local,
+			author => cstring($client, 'SETUP_AUDIODIR'),
+		}] : [],
+	};
+	
+	$getArtistPhotoCb->($results);
 }
 
 sub getArtistPhotoCLI {
@@ -307,6 +322,18 @@ sub getArtistPhotoCLI {
 
 	if (!$artist) {
 		$request->addResult('error', 'No artist found');
+		$request->setStatusDone();
+		return;
+	}
+	
+	# try local artwork first
+	if ( my $img = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+		artist    => $artist,
+		artist_id => $artist_id,
+		rawUrl    => 1,
+	}) ) {
+		$request->addResult('url', Slim::Web::ImageProxy::proxiedImage('mai/artist/' . ($artist_id || $artist), 'force'));
+		$request->addResult('artist_id', $artist_id) if $artist_id;
 		$request->setStatusDone();
 		return;
 	}
@@ -743,6 +770,15 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	return $defaultImg unless $artist_id;
 
 	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
+	
+	# try local artwork first
+	if ( my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+		artist    => $artist,
+		artist_id => $artist_id,
+		rawUrl    => 1,
+	}) ) {
+		return $local;
+	}
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
 		my $photo = shift || {};
