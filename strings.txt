@@ -7,7 +7,7 @@ PLUGIN_MUSICARTISTINFO_DESC
 	
 PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	DE	Interpreten-Information
-	EN	Artist Information
+	EN	Artist information
 	
 PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 	DE	Biographie
@@ -15,7 +15,7 @@ PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 
 PLUGIN_MUSICARTISTINFO_ARTISTDETAILS
 	DE	Details über den Interpreten
-	EN	Artist Details
+	EN	Artist details
 
 PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
 	DE	Fotos
@@ -23,33 +23,33 @@ PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
 
 PLUGIN_MUSICARTISTINFO_ARTISTNEWS
 	DE	In den News
-	EN	In the News
+	EN	In the news
 
 PLUGIN_MUSICARTISTINFO_ARTISTBLOGS
 	DE	In der Blogosphäre
-	EN	In the Blogosphere
+	EN	In the blogosphere
 
 PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS
 	EN	Videos
 
 PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS
 	DE	Verwandte Interpreten
-	EN	Related Artists
+	EN	Related artists
 
 PLUGIN_MUSICARTISTINFO_ALBUMINFO
 	DE	Album-Information
-	EN	Album Information
+	EN	Album information
 
 PLUGIN_MUSICARTISTINFO_ALBUMDETAILS
 	DE	Details zum Album
-	EN	Album Details
+	EN	Album details
 
 PLUGIN_MUSICARTISTINFO_ALBUMCREDITS
 	EN	Credits
 
 PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 	DE	Albumkritik
-	EN	Album Review
+	EN	Albumreview
 
 PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	DE	Tut mir Leid, konnte keine relevanten Informationen finden.
@@ -61,15 +61,15 @@ PLUGIN_MUSICARTISTINFO_URLS
 	
 PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE
 	DE	Offizielle Webseite
-	EN	Official Website
+	EN	Official website
 
 PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 	DE	Bilder aus Musikordner
-	EN	Local Artwork
+	EN	Local artwork
 
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
-	EN	Find Album Cover Online
+	EN	Find album cover online
 	
 PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	DE	Alben ohne Plattenhülle suchen
@@ -81,15 +81,15 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	DE	Interpreten-Photos
-	EN	Artists Photos
+	EN	Artists photos
 	
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
-	EN	Show pictures (can slow down browsing under certain conditions)
+	EN	Show pictures (can slow down browsing)
 	
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
 	DE	Ordner für Interpreten-Photos
-	EN	Folder with Artist Photos
+	EN	Folder with artist photos
 	
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Interpreten-Photos angeben, so werden darin gespeicherte Photos verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.jpg (png, gif, z.B. 'Peter Gabriel.jpg'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
@@ -101,15 +101,15 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 
 PLUGIN_MUSICARTISTINFO_IMPORTER
 	DE	Importer Einstellungen
-	EN	Importer Settings
+	EN	Importer settings
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	DE	Die folgenden Einstellungen sind nur wichtig, wenn die Anzeige von Interpreten Bildern aktiviert ist.
 	EN	The following settings are only of importance if you decided to display pictures when browsing artists.
 	
 PLUGIN_MUSICARTISTINFO_IMPORTER_GET_URLS
-	DE	Bilder für Interpreten online suchen
-	EN	Find artist pictures online
+	DE	Bilder für Interpreten während des Scans online suchen
+	EN	Find artist pictures online during library scan
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	DE	Interpreten-Bilder herunterladen und zwischenspeichern
