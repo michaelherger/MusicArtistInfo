@@ -49,21 +49,14 @@ sub initPlugin {
 			Plugins::MusicArtistInfo::Settings->new();
 		}
 
+		# no need to actually initialize the importer, as it will only be executed in the external scanner anyway
+		# but we still need to tell the scanner that there are external importers to be run
+		Slim::Music::Import->addImporter('Plugins::MusicArtistInfo::Importer', {
+			'type'         => 'post',
+			'weight'       => 85,
+			'use'          => 1,
+		}) if $prefs->get('runImporter');
 	}
-	else {
-		# remove our HTML folder from the list of skins if we can't support it
-		Slim::Web::HTTP->getSkinManager->{templateDirs} = [ 
-			grep { $_ !~ m|Plugins/MusicArtistInfo| } @{Slim::Web::HTTP->getSkinManager->{templateDirs}}
-		];
-	}
-
-	# no need to actually initialize the importer, as it will only be executed in the external scanner anyway
-	# but we still need to tell the scanner that there are external importers to be run
-	Slim::Music::Import->addImporter('Plugins::MusicArtistInfo::Importer', {
-		'type'         => 'post',
-		'weight'       => 85,
-		'use'          => 1,
-	}) if $prefs->get('runImporter');
 	
 	$class->SUPER::initPlugin(shift);
 }
