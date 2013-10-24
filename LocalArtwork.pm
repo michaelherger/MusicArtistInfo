@@ -139,7 +139,8 @@ sub getArtistPhoto {
 	my $imageFolder = $prefs->get('artistImageFolder');
 	
 	if ($imageFolder) {
-		$img = _imageInFolder($imageFolder, "\Q$artist\E");
+		my $artist2 = Slim::Utils::Text::ignorePunct($artist);
+		$img = _imageInFolder($imageFolder, "(?:\Q$artist2\E|\Q$artist\E)");
 	}
 	
 	if (!$img && $artist_id && $artist_id ne $artist) {
