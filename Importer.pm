@@ -22,12 +22,14 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 
 my $newTracks = [];
-my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max);
+my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork);
 
 sub initPlugin {
 	my $class = shift;
 	
-	return unless preferences('plugin.musicartistinfo')->get('runImporter');
+	$precacheArtwork = preferences('server')->get('precacheArtwork');
+	
+	return unless $prefs->get('runImporter') && ($precacheArtwork || $prefs->get('lookupArtistPictures'));
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'post',
@@ -130,6 +132,8 @@ sub _getArtistPhotoURL {
 
 sub _precacheArtistImage {
 	my ($artist_id, $img) = @_;
+	
+	return unless $precacheArtwork;
 	
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 		if ( !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
