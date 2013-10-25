@@ -104,16 +104,16 @@ PLUGIN_MUSICARTISTINFO_IMPORTER
 	EN	Importer settings
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
-	DE	Die folgenden Einstellungen sind nur wichtig, wenn die Anzeige von Interpreten Bildern aktiviert ist.
-	EN	The following settings are only of importance if you decided to display pictures when browsing artists.
+	DE	Sie können beim Durchsuchen der Musiksammlung nach Interpreten-Bildern suchen lassen. Diese können als artist.jpg (oder .png/.gif) im Ordner mit einem Album des Interpreten abgelegt sein, oder im unten definierten Bilder-Ordner. Zusätzlich kann online nach Bildern gesucht werden.
+	EN	When scanning your music library we can look for artist pictures. These can be stored in an artist's album folder as artist.jpg (or .png/.gif) or in the image folder defined below. Additionally it is possible to run a search of artist pictures in online sources.
 	
-PLUGIN_MUSICARTISTINFO_IMPORTER_GET_URLS
-	DE	Bilder für Interpreten während des Scans online suchen
-	EN	Find artist pictures online during library scan
+PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
+	DE	Beim Durchsuchen der Musiksammlung Interpreten-Bilder suchen
+	EN	During library scan look for artist pictures
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
-	DE	Interpreten-Bilder herunterladen und zwischenspeichern
-	EN	Download and pre-cache artist pictures
+	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern 
+	EN	Download and pre-cache artist pictures from online sources
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.

@@ -1,8 +1,14 @@
 package Plugins::MusicArtistInfo::Importer;
 
 use strict;
+use Digest::MD5;
+use File::Spec::Functions;
+use File::Slurp;
+use LWP::UserAgent;
 
 use Slim::Music::Import;
+use Slim::Utils::ArtworkCache;
+use Slim::Utils::ImageResizer;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Scanner::API;
@@ -54,42 +60,29 @@ sub startScan {
 
 	$i = 0;
 	
-	my $precacheCB = sub {};
-	
-	if ($prefs->get('precacheArtistPictures')) {
-		require Digest::MD5;
-		require File::Spec::Functions;
-		require File::Slurp;
-		require LWP::UserAgent;
-		require Slim::Utils::ArtworkCache;
-		require Slim::Utils::ImageResizer;
-
-		$precacheCB = \&_precacheArtistImage;
-		$ua = LWP::UserAgent->new(
-			agent   => Slim::Utils::Misc::userAgentString(),
-			timeout => 15,
-		);
+	$ua = LWP::UserAgent->new(
+		agent   => Slim::Utils::Misc::userAgentString(),
+		timeout => 15,
+	) if $prefs->get('lookupArtistPictures');
 		
-	 	$imgProxyCache = Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + EXPIRY);
-	 	$cache = Slim::Utils::Cache->new();
-	 	$cachedir = preferences('server')->get('cachedir');
+ 	$imgProxyCache = Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + EXPIRY);
+ 	$cache         = Slim::Utils::Cache->new();
+	$cachedir      = preferences('server')->get('cachedir');
 
-		$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
+	$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
 		
-		($max) = $specs =~ /(\d+)/;
-		if ($max*1) {
-			# 252 & 500 are known sizes for last.fm
-			if    ($max <= 252) { $max = 252 }
-			elsif ($max <= 500) { $max = 500 }
-			else  { $max = 0 }
-		}
+	($max) = $specs =~ /(\d+)/;
+	if ($max*1) {
+		# 252 & 500 are known sizes for last.fm
+		if    ($max <= 252) { $max = 252 }
+		elsif ($max <= 500) { $max = 500 }
+		else  { $max = 0 }
 	}
 	
 	while ( _getArtistPhotoURL({
 		artists  => $artists,
 		count    => $count,
 		progress => $progress,
-		cb       => $precacheCB,
 	}) ) {}
 	
 	$imgProxyCache->{default_expires_in} = 86400 * 30;
@@ -112,11 +105,11 @@ sub _getArtistPhotoURL {
 			rawUrl    => 1,		# don't return the proxied URL, we want the raw file
 			force     => 1,		# don't return cached value, this is a scan
 		}) ) {
-			$params->{cb}->($artist->id, $file);
+			_precacheArtistImage($artist->id, $file);
 		}
-		else {
+		elsif ($ua) {		# only defined if $prefs->get('lookupArtistPictures')
 			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
-				$params->{cb}->($artist->id, @_);
+				_precacheArtistImage($artist->id, @_);
 			}, {
 				artist => $artist->name
 			});

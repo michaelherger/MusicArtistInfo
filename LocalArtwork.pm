@@ -171,7 +171,7 @@ sub getArtistPhoto {
 sub _imageInFolder {
 	my ($folder, $name) = @_;
 
-	main::DEBUGLOG && $log->debug("Trying to find artwork in $folder");
+	#main::DEBUGLOG && $log->debug("Trying to find artwork in $folder");
 	
 	my $img;
 		

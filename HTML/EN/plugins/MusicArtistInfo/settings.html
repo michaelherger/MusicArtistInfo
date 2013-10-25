@@ -9,12 +9,12 @@
 	[% WRAPPER settingSection %]
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_IMPORTER" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_DESC" %]
 			<input type=checkbox [% IF prefs.pref_runImporter %]checked [% END %] class="stdedit" name="pref_runImporter" id="runImporter" value="1" />
-			<label for="runImporter" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_GET_URLS" | string %]</label>
+			<label for="runImporter" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE" | string %]</label>
 		[% END %]
 		
 		[% WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC" %]
-			<input type=checkbox [% IF prefs.pref_precacheArtistPictures %]checked [% END %] class="stdedit" name="pref_precacheArtistPictures" id="precacheArtistPictures" value="1" />
-			<label for="precacheArtistPictures" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE" | string %]</label>
+			<input type=checkbox [% IF prefs.pref_lookupArtistPictures %]checked [% END %] class="stdedit" name="pref_lookupArtistPictures" id="lookupArtistPictures" value="1" />
+			<label for="lookupArtistPictures" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE" | string %]</label>
 		[% END %]
 		
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC" %]

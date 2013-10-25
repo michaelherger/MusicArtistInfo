@@ -29,7 +29,7 @@ sub initPlugin {
 	$prefs->init({
 		browseArtistPictures => 1,
 		runImporter => 1,
-		precacheArtistPictures => 1,
+		lookupArtistPictures => 1,
 	});
 	
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
