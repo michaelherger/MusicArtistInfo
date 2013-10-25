@@ -719,7 +719,7 @@ sub _getArtistFromSongURL {
 sub _getArtistFromSongId {
 	my $trackId = shift;
 
-	if ($trackId) {
+	if (defined($trackId) && $trackId =~ /^\d+$/) {
 		my $track = Slim::Schema->resultset("Track")->find($trackId);
 
 		return unless $track;
@@ -735,10 +735,12 @@ sub _getArtistFromSongId {
 sub _getArtistFromArtistId {
 	my $artistId = shift;
 
-	if (defined($artistId)) {
+	if (defined($artistId) && $artistId =~ /^\d+$/) {
 		my $artistObj = Slim::Schema->resultset("Contributor")->find($artistId);
 
-		my $artist = $artistObj->name if $artistObj;
+		return unless $artistObj;
+
+		my $artist = $artistObj->name;
 	
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from artist ID: '$artist'");
 
@@ -749,10 +751,12 @@ sub _getArtistFromArtistId {
 sub _getArtistFromAlbumId {
 	my $albumId = shift;
 
-	if (defined($albumId)) {
+	if (defined($albumId) && $albumId =~ /^\d+$/) {
 		my $album = Slim::Schema->resultset("Album")->find($albumId);
 		
-		my $artist = $album->contributor->name if $album;
+		return unless $album;
+
+		my $artist = $album->contributor->name;
 
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from album ID: '$artist'");
 	
