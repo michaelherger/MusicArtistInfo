@@ -62,6 +62,53 @@ sub searchArtists {
 }
 
 
+sub getArtistPhotos {
+	my ( $class, $cb, $args ) = @_;
+
+	my $key = 'ten_artist_photos_' . $args->{artist};
+	my $cache = Slim::Utils::Cache->new;	
+	if ( my $cached = $cache->get($key) ) {
+		$cb->($cached);
+		return;
+	}
+
+	$class->getArtist(sub {
+		my $artist = shift || {};
+
+		return _call('artist/images', {
+			id => $artist->{id},
+			results => 100,
+			license => [qw(gpl lgpl cc-by-nc-nd cc-by-nc-sa unknown cc-by cc-by-sa cc-by-nd cc-by-nc cc-sa gfdl public-domain)],
+		}, sub {
+			my $result = shift;
+			my $items = [];
+
+			if ( $result && $result->{response} ) {
+				foreach ( @{$result->{response}->{images}} ) {
+					next if $_->{license}->{attribution} =~ /youtube|myspace/i;
+					
+					my $author = $_->{license}->{attribution};
+					
+					if ($_->{url} =~ /last\.fm/) { $author = 'Last.fm'; }
+					elsif ($_->{url} =~ /images-amazon/) { $author = 'Amazon'; }
+					elsif ($_->{url} =~ /wikimedia/) { $author = $_->{license}->{attribution} . ' (Wikipedia)'; }
+					
+					$_->{url} =~ s/\._SL\d\d\d_\./._SL600_./;
+					push @$items, {
+						author => $author,
+						url    => $_->{url},
+						height => $_->{height},
+						width  => $_->{width},
+					};
+				}
+			}
+
+			$cache->set($key, { photos => $items });
+			$cb->({ photos => $items });
+		});
+	}, $args);
+}
+
 sub getArtistNews {
 	my ( $class, $cb, $args ) = @_;
 	
@@ -201,6 +248,7 @@ sub _call {
 	
 	my @query;
 	while (my ($k, $v) = each %$args) {
+		warn Data::Dump::dump($k, $v);
 		next if $k =~ /^_/;		# ignore keys starting with an underscore
 		
 		if (ref $v eq 'ARRAY') {
