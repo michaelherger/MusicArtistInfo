@@ -12,6 +12,7 @@ use Slim::Utils::Strings qw(string cstring);
 use Plugins::MusicArtistInfo::AlbumInfo;
 use Plugins::MusicArtistInfo::ArtistInfo;
 
+use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant PLUGIN_TAG => 'musicartistinfo';
 
 my $log = Slim::Utils::Log->addLogCategory( {
@@ -36,7 +37,7 @@ sub initPlugin {
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
 
 	# "Local Artwork" requires LMS 7.8+, as it's using its imageproxy.
-	if (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0) {
+	if (CAN_IMAGEPROXY) {
 		require Plugins::MusicArtistInfo::LocalArtwork;
 		Plugins::MusicArtistInfo::LocalArtwork->init();
 		
@@ -56,6 +57,22 @@ sub initPlugin {
 			'weight'       => 85,
 			'use'          => 1,
 		}) if $prefs->get('runImporter');
+
+		require Slim::Web::ImageProxy;
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/last\.fm/,
+			func  => \&_lastfmImgProxy,
+		);
+
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/images-amazon\.com/,
+			func  => \&_amazonImgProxy,
+		);
+
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/upload\.wikimedia\.org/,
+			func  => \&_wikimediaImgProxy,
+		);
 	}
 	
 	$class->SUPER::initPlugin(shift);
@@ -171,5 +188,65 @@ sub getSmallArtworkAlbums {
 	});
 }
 =cut
+
+sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
+	my ($url, $spec) = @_;
+	
+	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
+
+	my $size = Slim::Web::ImageProxy->getRightSize($spec, {
+		252 => 252,
+		500 => 500,
+	});
+
+	$url =~ s/serve\/(?:\d+|_)\//serve\/$size\// if $size;
+	
+	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
+
+	return $url;
+} }
+
+sub _amazonImgProxy { if (CAN_IMAGEPROXY) {
+	my ($url, $spec) = @_;
+	
+	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
+
+	my $size = minSize(Slim::Web::Graphics->parseSpec($spec)) || 500;
+	$url =~ s/\._SL\d+_\./._SL${size}_./;
+
+	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
+
+	return $url;
+} }
+
+sub _wikimediaImgProxy { if (CAN_IMAGEPROXY) {
+	my ($url, $spec) = @_;
+	
+	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
+
+	my $size = minSize(Slim::Web::Graphics->parseSpec($spec)) || 500;
+
+	if (my ($img) = $url =~ /\/([^\/]*?\.(?:jpe?g|png|svg|gif))$/) {
+		$url =~ s/(\/commons\/)/${1}thumb\//;
+		$url =~ s/$img/$img\/${size}px-$img/;
+	}
+
+	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
+
+	return $url;
+} }
+
+sub minSize {
+	my ($width, $height) = @_;
+	
+	if ($width || $height) {
+		$width  ||= $height;
+		$height ||= $width;
+		
+		return ($width > $height ? $width : $height);
+	}
+	
+	return 0;
+}
 
 1;
