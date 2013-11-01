@@ -46,6 +46,7 @@ sub getAlbumMenu {
 			
 	$args->{album}  ||= $args2->{album};
 	$args->{artist} ||= $args2->{artist};
+	$args->{album}  = _cleanupAlbumName($args->{album});
 	
 	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
 	
