@@ -105,6 +105,11 @@ sub getArtistMenu {
 		type => 'link',
 		url  => \&getRelatedArtists,
 		passthrough => $pt,
+#	},{
+#		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_DISCOGRAPHY'),
+#		type => 'link',
+#		url  => \&getDiscography,
+#		passthrough => $pt,
 	} ];
 	
 	# we don't show pictures, videos and length text content on ip3k
@@ -461,6 +466,55 @@ sub getRelatedArtists {
 		$args,
 	);
 }
+
+=pod
+sub getDiscography {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::Discogs->getDiscography($client, sub {
+		my $items = shift;
+		warn Data::Dump::dump($items);
+		
+		$items = [ map { {
+			name => $_->{title},
+			image => $_->{image},
+		} } @{$items->{releases}} ];
+		
+		$cb->($items);
+	}, $args);
+	
+	return;
+	
+	Plugins::MusicArtistInfo::MusicBrainz->getDiscography($client, 
+		sub {
+			my $releases = shift;
+
+			# we don't really want the full list - collapse albums by name, sort by date
+			my %seen;
+			my $items = [ map { {
+				name => $_->{title} . ($_->{'date'} ? ' (' . $_->{'date'} . ')' : '')
+			} } sort {
+				my $r;
+				my $hasDateA = $a->{title} =~ /^(?:\d{2,4}[\.\-]){2}\d{2,4}/;
+				my $hasDateB = $b->{title} =~ /^(?:\d{2,4}[\.\-]){2}\d{2,4}/;
+				
+				if ($hasDateA && !$hasDateB) { $r = 1 }
+				elsif ($hasDateB && !$hasDateA) { $r = -1 }
+				else { $r = $a->{title} cmp $b->{title} }
+				$r; 
+			} grep {
+				$seen{$_->{title}}++;
+				$seen{$_->{title}} < 2;
+			} @$releases ];
+			
+			warn Data::Dump::dump($items);
+			
+			$cb->($items);
+		}, 
+		$args
+	);
+}
+=cut
 
 sub getArtistNews {
 	my ($client, $cb, $params, $args) = @_;

@@ -112,6 +112,147 @@ sub getAlbum {
 	});
 }
 
+=pod
+sub getDiscography {
+	my ( $class, $client, $cb, $args ) = @_;
+	
+	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
+	
+	if (!$artist) {
+		$cb->();
+		return;
+	}
+	
+	$class->getArtist($client, sub {
+		my $artistInfo = shift;
+		
+		warn Data::Dump::dump($artistInfo);
+		
+		if (!$artistInfo || !$artistInfo->{id}) {
+			$cb->();
+			return;
+		}
+		
+		_call('artists/' . $artistInfo->{id} . '/releases', {
+			per_page => 100
+		}, sub {
+			my $items = shift;
+			my $result = {};
+			
+			if ( $items && (my $releases = $items->{releases}) ) {
+				if ( ref $releases eq 'ARRAY' ) {
+					my @releases;
+					
+					foreach ( @$releases ) {
+						next if grep /unofficial|single|45 rpm|promo|\bPAL\b|12"|mini|7"|NTSC|\bEP\b/i, split /, /, $_->{format};
+						next if $_->{type} && lc($_->{type}) ne 'master';
+						next if $_->{role} && lc($_->{role}) ne 'main';
+
+warn Data::Dump::dump($_);						
+						push @releases, {
+							title  => $_->{title},
+							author => 'Discogs',
+							image  => proxiedImage($_->{thumb}),
+#							label  => $_->{label},
+							year   => $_->{year},
+							resource => $_->{resource_url},
+						};
+					}
+					
+					# sort by year descending
+					$result->{releases} = [ sort { $b->{year} <=> $a->{year} } @releases ] if @releases;
+				}
+			}
+			
+			if ( !$result->{releases} ) {
+				$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+			}
+			
+			$cb->($result);
+		});
+		
+	}, $args);
+
+=pod
+	_call('database/search', {
+		type   => 'master',
+		artist => $artist,
+		per_page => 100,
+	}, sub {
+		my $items = shift;
+		my $result = {};
+		
+		if ( $items && (my $releases = $items->{results}) ) {
+			if ( ref $releases eq 'ARRAY' ) {
+				my @releases;
+				
+				foreach ( @$releases ) {
+					next if grep /unofficial|single|45 rpm|promo|\bPAL\b|12"|mini|7"|NTSC|\bEP\b/i, @{$_->{format}};
+					
+					push @releases, {
+						title  => $_->{title},
+						author => 'Discogs',
+						image  => proxiedImage($_->{thumb}),
+						label  => $_->{label},
+						year   => $_->{year},
+						resource => $_->{resource_url},
+					};
+				}
+				
+				# sort by year descending
+				$result->{releases} = [ sort { $b->{year} <=> $a->{year} }@releases ] if @releases;
+			}
+		}
+		
+		if ( !$result->{releases} ) {
+			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+		}
+		
+		$cb->($result);
+	});
+=cut
+=pod
+}
+
+sub getArtist {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
+	
+	if (!$artist) {
+		$cb->();
+		return;
+	}
+
+	_call('database/search', {
+		type => 'artist',
+		q    => $artist,
+	}, sub {
+		my $items = shift;
+		
+		my $artistInfo;
+		
+		if ( $items = $items->{results} ) {
+			my $alt;
+			foreach ( @$items ) {
+				$_->{title} = Slim::Utils::Unicode::utf8decode($_->{title});
+	
+				if ( Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /$artist/i ) {
+					if ($_->{thumb} !~ /record90\.png$/) {
+						$artistInfo = $_;
+						last;
+					}
+					else {
+						$artistInfo ||= $_;
+					}
+				}
+			}
+		}
+		
+		$cb->($artistInfo);
+	});
+}
+=cut
 
 sub _call {
 	my ( $resource, $args, $cb ) = @_;
@@ -140,7 +281,7 @@ sub _call {
 	my $cb2 = sub {
 		my $response = shift;
 		
-		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
+		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(Data::Dump::dump($response, @_));
 		my $result = eval { from_json( $response->content ) };
 	
 		$result ||= {};
