@@ -248,7 +248,7 @@ sub _call {
 	
 	my @query;
 	while (my ($k, $v) = each %$args) {
-		warn Data::Dump::dump($k, $v);
+		#warn Data::Dump::dump($k, $v);
 		next if $k =~ /^_/;		# ignore keys starting with an underscore
 		
 		if (ref $v eq 'ARRAY') {
