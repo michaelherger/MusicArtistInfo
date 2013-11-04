@@ -46,10 +46,22 @@ sub startScan {
 	my $class = shift;
 	
 	# Find distinct artists to check for artwork
-	my $artists = Slim::Schema->search('Contributor');
+	my $sql = 'SELECT contributors.id, contributors.name FROM contributors ';
+	$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
+	$sql   .= 'JOIN albums ON contributor_album.album = albums.id ';
+	$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') AND (albums.compilation IS NULL OR albums.compilation = 0)';
+	$sql   .= "GROUP BY contributors.id";
+
+	my $dbh = Slim::Schema->dbh;
+	
+	my ($count) = $dbh->selectrow_array( qq{
+		SELECT COUNT(*) FROM ( $sql ) AS t1
+	}) || 0;
+	
+	my $sth = $dbh->prepare_cached($sql);
+	$sth->execute();
 
 	my $progress = undef;
-	my $count    = $artists->count || 0;
 
 	if ($count) {
 		$progress = Slim::Utils::Progress->new({ 
@@ -82,7 +94,7 @@ sub startScan {
 	}
 	
 	while ( _getArtistPhotoURL({
-		artists  => $artists,
+		sth      => $sth,
 		count    => $count,
 		progress => $progress,
 	}) ) {}
@@ -95,25 +107,25 @@ sub _getArtistPhotoURL {
 	my $params = shift;
 
 	# get next artist from db
-	if ( my $artist = $params->{artists}->next ) {
-		$params->{progress}->update( $artist->name );
+	if ( my $artist = $params->{sth}->fetchrow_hashref ) {
+		$params->{progress}->update( $artist->{name} );
 		$i++ % 5 == 0 && Slim::Schema->forceCommit;
 		
-		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->name);
+		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->{name});
 		
 		if ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
-			artist_id => $artist->id,
-			artist    => $artist->name,
+			artist_id => $artist->{id},
+			artist    => $artist->{name},
 			rawUrl    => 1,		# don't return the proxied URL, we want the raw file
 			force     => 1,		# don't return cached value, this is a scan
 		}) ) {
-			_precacheArtistImage($artist->id, $file);
+			_precacheArtistImage($artist->{id}, $file);
 		}
 		elsif ($ua) {		# only defined if $prefs->get('lookupArtistPictures')
 			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
-				_precacheArtistImage($artist->id, @_);
+				_precacheArtistImage($artist->{id}, @_);
 			}, {
-				artist => $artist->name
+				artist => $artist->{name}
 			});
 		}
 
