@@ -1,4 +1,6 @@
-[% PROCESS settings/header.html %]
+[% PROCESS settings/header.html; IF limited %]
+	<div>[% "PLUGIN_MUSICARTISTINFO_SORRY" | string %]</div>
+[% ELSE %]
 	[% WRAPPER setting title="PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS" desc="" %]
 		<select class="stdedit" name="pref_browseArtistPictures" id="pref_browseArtistPictures">
 			<option [% IF prefs.pref_browseArtistPictures %]selected [% END %]value="1">[% "PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON" | string %]</option>
@@ -22,4 +24,4 @@
 		[% END %]
 		
 	[% END %]
-[% PROCESS settings/footer.html %]
+[% END; PROCESS settings/footer.html %]

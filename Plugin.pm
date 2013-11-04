@@ -44,11 +44,6 @@ sub initPlugin {
 		# revert skin pref from previous skinning exercise...
 		preferences('server')->set('skin', 'Default') if lc(preferences('server')->get('skin')) eq 'musicartistinfo';
 		$prefs->remove('skinSet');
-		
-		if (main::WEBUI) {
-			require Plugins::MusicArtistInfo::Settings;
-			Plugins::MusicArtistInfo::Settings->new();
-		}
 
 		# no need to actually initialize the importer, as it will only be executed in the external scanner anyway
 		# but we still need to tell the scanner that there are external importers to be run
@@ -73,6 +68,11 @@ sub initPlugin {
 			match => qr/upload\.wikimedia\.org/,
 			func  => \&_wikimediaImgProxy,
 		);
+	}
+	
+	if (main::WEBUI) {
+		require Plugins::MusicArtistInfo::Settings;
+		Plugins::MusicArtistInfo::Settings->new(CAN_IMAGEPROXY);
 	}
 	
 	$class->SUPER::initPlugin(shift);
