@@ -22,12 +22,16 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 
 my $newTracks = [];
-my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork);
+my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork, $saveArtwork, $imageFolder);
 
 sub initPlugin {
 	my $class = shift;
 	
 	$precacheArtwork = preferences('server')->get('precacheArtwork');
+	if ( $saveArtwork = $prefs->get('saveArtwork') ) {
+		$imageFolder = $prefs->get('artistImageFolder');
+		$saveArtwork = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
+	}
 	
 	return unless $prefs->get('runImporter') && ($precacheArtwork || $prefs->get('lookupArtistPictures'));
 
@@ -88,7 +92,7 @@ sub startScan {
 
 	$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
 		
-	($max) = $specs =~ /(\d+)/;
+	($max) = $specs =~ /(\d+)/ unless $saveArtwork;
 	if ($max*1) {
 		# 252 & 500 are known sizes for last.fm
 		if    ($max <= 252) { $max = 252 }
@@ -109,9 +113,11 @@ sub startScan {
 sub _getArtistPhotoURL {
 	my $params = shift;
 
+	my $progress = $params->{progress};
+
 	# get next artist from db
 	if ( my $artist = $params->{sth}->fetchrow_hashref ) {
-		$params->{progress}->update( $artist->{name} );
+		$progress->update( $artist->{name} ) if $progress;
 		$i++ % 5 == 0 && Slim::Schema->forceCommit;
 		
 		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->{name});
@@ -122,11 +128,11 @@ sub _getArtistPhotoURL {
 			rawUrl    => 1,		# don't return the proxied URL, we want the raw file
 			force     => 1,		# don't return cached value, this is a scan
 		}) ) {
-			_precacheArtistImage($artist->{id}, $file);
+			_precacheArtistImage($artist, $file);
 		}
 		elsif ($ua) {		# only defined if $prefs->get('lookupArtistPictures')
 			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
-				_precacheArtistImage($artist->{id}, @_);
+				_precacheArtistImage($artist, @_);
 			}, {
 				artist => $artist->{name}
 			});
@@ -135,32 +141,45 @@ sub _getArtistPhotoURL {
 		return 1;
 	}
 
-	if ( my $progress = $params->{progress} ) {
+	if ( $progress ) {
 		$progress->final($params->{count});
 		$log->error( "getArtistPhotoURL finished in " . $progress->duration );
 	}
 
-	Slim::Music::Import->endImporter('plugin_musicartistinfo_artistPhoto');
+	Slim::Music::Import->endImporter('plugin_musicartistinfo_artistPhoto') if main::SCANNER;
 	
 	return 0;
 }
 
 sub _precacheArtistImage {
-	my ($artist_id, $img) = @_;
+	my ($artist, $img) = @_;
 	
-	return unless $precacheArtwork;
+	return unless $precacheArtwork || $saveArtwork;
+	
+	my $artist_id = $artist->{id};
 	
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
-		if ( !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
+		if ( !$saveArtwork && !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
 			$max = 500;
 		}
 
-		$url =~ s/\/_\//\/$max\// if $max;
+		$url =~ s/\/_\//\/$max\// if $max && !$saveArtwork;
+		#$url =~ s/\/(?:252|500)\//\/_\// if $saveArtwork;
 		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 		
-		my $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
+		my $tmpFile;
+		
+		# if user wants us to save a copy on the disk, write to our image folder instead
+		if ($saveArtwork) {
+			$tmpFile = File::Spec::Functions::catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist->{name}) );
+			my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
+			$tmpFile .= ".$ext";
+		}
+		else {
+			 $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
+		}
 
 		if (my $image = $cache->get("mai_$url")) {
 			File::Slurp::write_file($tmpFile, $image);
@@ -175,16 +194,16 @@ sub _precacheArtistImage {
 			}
 		}
 		
-		return unless -f $tmpFile;
+		return unless $precacheArtwork && -f $tmpFile;
 		
 		# use distributed expiry to not have to update everything at the same time
 		$imgProxyCache->{default_expires_in} = time() + int(rand(EXPIRY));
 
 		Slim::Utils::ImageResizer->resize($tmpFile, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 		
-		unlink $tmpFile;
+		unlink $tmpFile unless $saveArtwork;
 	}
-	elsif ( $artist_id && $img && -f $img ) {
+	elsif ( $precacheArtwork && $artist_id && $img && -f $img ) {
 		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 	}
 }
