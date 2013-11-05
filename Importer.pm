@@ -28,7 +28,7 @@ sub initPlugin {
 	my $class = shift;
 	
 	$precacheArtwork = preferences('server')->get('precacheArtwork');
-	if ( $saveArtwork = $prefs->get('saveArtwork') ) {
+	if ( $saveArtwork = $prefs->get('saveArtistPictures') ) {
 		$imageFolder = $prefs->get('artistImageFolder');
 		$saveArtwork = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
 	}
@@ -165,7 +165,6 @@ sub _precacheArtistImage {
 		}
 
 		$url =~ s/\/_\//\/$max\// if $max && !$saveArtwork;
-		#$url =~ s/\/(?:252|500)\//\/_\// if $saveArtwork;
 		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 		
@@ -187,7 +186,7 @@ sub _precacheArtistImage {
 		else {
 			my $response = $ua->get( $url, ':content_file' => $tmpFile );
 			if ($response && $response->is_success) {
-				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveFile;
+				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveArtwork;
 			}
 			else {
 				$log->warn("Image download failed for $url: " . $response->message);

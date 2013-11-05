@@ -18,7 +18,7 @@ sub name {
 }
 
 sub prefs {
-	return ($prefs, 'browseArtistPictures', 'runImporter', 'lookupArtistPictures', 'artistImageFolder');
+	return ($prefs, 'browseArtistPictures', 'runImporter', 'lookupArtistPictures', 'artistImageFolder', 'saveArtistPictures');
 }
 
 sub page {
@@ -27,6 +27,13 @@ sub page {
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup) = @_;
+	
+	# disable saving to image folder if it isn't writeable
+	my $imageFolder = $paramRef->{pref_artistImageFolder} || $prefs->get('artistImageFolder');
+	
+	if ( !($imageFolder && -d $imageFolder && -w $imageFolder) ) {
+		$paramRef->{savePicturesDisabled} = 1;
+	}
 	
 	$paramRef->{limited} = !$CAN_IMAGEPROXY;
 	
