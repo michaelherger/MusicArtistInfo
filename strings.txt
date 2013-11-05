@@ -124,12 +124,12 @@ PLUGIN_MUSICARTISTINFO_IMPORTER
 	EN	Importer settings
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
-	DE	Sie können beim Durchsuchen der Musiksammlung nach Interpreten-Bildern suchen lassen. Diese können als artist.jpg (oder .png/.gif) im Ordner mit einem Album des Interpreten abgelegt sein, oder im unten definierten Bilder-Ordner. Zusätzlich kann online nach Bildern gesucht werden.
-	EN	When scanning your music library we can look for artist pictures. These can be stored in an artist's album folder as artist.jpg (or .png/.gif) or in the image folder defined below. Additionally it is possible to run a search of artist pictures in online sources.
+	DE	Sie können beim Durchsuchen der Musiksammlung nach Interpreten-Bildern und fehlenden Plattenhüllen suchen lassen. Diese können als artist.jpg (oder .png/.gif) im Ordner mit einem Album des Interpreten abgelegt sein, oder in den unten definierten Bilder-Ordnern. Zusätzlich kann online nach Bildern gesucht werden.
+	EN	When scanning your music library we can look for artist pictures and find missing cover arts online. These can be stored in an artist's album folder as artist.jpg (or .png/.gif) or in one of the image folders defined below. Additionally it is possible to run a search of artist pictures in online sources.
 	
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
-	DE	Beim Durchsuchen der Musiksammlung Interpreten-Bilder suchen
-	EN	During library scan look for artist pictures
+	DE	Beim Durchsuchen der Musiksammlung Interpreten-Bilder und Plattenhüllen online suchen
+	EN	During library scan look online for artist pictures and missing cover art
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern 
@@ -138,6 +138,14 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.
 	EN	Downloading and pre-caching of artist pictures can be quite time-consuming, but will speed up browsing by artist considerably.
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
+	DE	Fehlende Plattenhüllen aus Online-Quellen herunterladen und zwischenspeichern 
+	EN	Download missing cover art from online sources
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
+	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern. Die Daten werden jedoch wenn möglich lokal gespeichert und beim nächsten Scan wieder verwendet.
+	EN	Downloading missing cover art can be quite time-consuming. Found artwork will be stored locally (if possible), to be re-used in future rescans.
 	
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.

@@ -7,6 +7,7 @@ use Slim::Utils::Prefs;
 my $CAN_IMAGEPROXY;
 
 my $prefs = preferences('plugin.musicartistinfo');
+my $serverprefs = preferences('server');
 
 sub new {
 	(my $class, $CAN_IMAGEPROXY) = @_;
@@ -18,7 +19,7 @@ sub name {
 }
 
 sub prefs {
-	return ($prefs, 'browseArtistPictures', 'runImporter', 'lookupArtistPictures', 'artistImageFolder', 'saveArtistPictures');
+	return ($prefs, 'browseArtistPictures', 'runImporter', 'lookupArtistPictures', 'lookupCoverArt', 'artistImageFolder', 'saveArtistPictures', 'saveCoverArt');
 }
 
 sub page {
@@ -27,6 +28,11 @@ sub page {
 
 sub handler {
 	my ($class, $client, $paramRef, $pageSetup) = @_;
+
+	# artfolder is a server setting - need to handle it manually
+	if ($paramRef->{'saveSettings'}) {
+		$serverprefs->set('artfolder', $paramRef->{artfolder});
+	}
 	
 	# disable saving to image folder if it isn't writeable
 	my $imageFolder = $paramRef->{pref_artistImageFolder} || $prefs->get('artistImageFolder');
@@ -35,7 +41,12 @@ sub handler {
 		$paramRef->{savePicturesDisabled} = 1;
 	}
 	
-	$paramRef->{limited} = !$CAN_IMAGEPROXY;
+	$paramRef->{limited}   = !$CAN_IMAGEPROXY;
+	$paramRef->{artfolder} = $serverprefs->get('artfolder');
+	
+	if ( !($paramRef->{artfolder} && -d $paramRef->{artfolder} && -w $paramRef->{artfolder}) ) {
+		$paramRef->{saveAlbumCoversDisabled} = 1;
+	}
 	
 	$class->SUPER::handler($client, $paramRef, $pageSetup)
 }

@@ -25,18 +25,14 @@ my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
 
 my $newTracks = [];
-my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork, $saveArtwork, $imageFolder, $filenameTemplate);
+my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork, $saveArtistPictures, $saveCoverArt, $imageFolder, $filenameTemplate);
 
 sub initPlugin {
 	my $class = shift;
 	
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
-	if ( $saveArtwork = $prefs->get('saveArtistPictures') ) {
-		$imageFolder = $prefs->get('artistImageFolder');
-		$saveArtwork = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
-	}
 	
-	return unless $prefs->get('runImporter') && ($precacheArtwork || $prefs->get('lookupArtistPictures'));
+	return unless $prefs->get('runImporter') && ($precacheArtwork || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt'));
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'post',
@@ -51,6 +47,8 @@ my $i;
 
 sub startScan {
 	my $class = shift;
+
+	$cachedir = $serverprefs->get('cachedir');
 
 	$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
 		
@@ -109,11 +107,17 @@ sub _scanAlbumCovers {
 	$ua = LWP::UserAgent->new(
 		agent   => Slim::Utils::Misc::userAgentString(),
 		timeout => 15,
-	);
+	) if $prefs->get('lookupCoverArt');
 		
 	$imageFolder = $serverprefs->get('artfolder');
 	$filenameTemplate = $serverprefs->get('coverArt') || 'ARTIST - ALBUM';
 	$filenameTemplate =~ s/^%//;
+
+	if ( $saveCoverArt = $prefs->get('saveCoverArt') ) {
+		$saveCoverArt = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
+	}
+
+	$max = 0 if $saveCoverArt;
 	
 	while ( _getAlbumCoverURL({
 		tracks   => $tracks,
@@ -176,10 +180,9 @@ sub _getAlbumCoverURL {
 			push @filenames, "\Q$filename1\E";
 
 			if ( my $file = Plugins::MusicArtistInfo::Common::imageInFolder($imageFolder, '(?:' . join('|', @filenames) . ')') ) {
-				logError($file);
 				_precacheAlbumCover($artist, $albumname, $file, $params);
 			}
-			else {
+			elsif ($ua) {
 				Plugins::MusicArtistInfo::Discogs->getAlbumCover(undef, sub {
 					my $albumInfo = shift;
 					
@@ -208,7 +211,7 @@ sub _getAlbumCoverURL {
 
 	if ( $progress ) {
 		$progress->final($params->{count}) ;
-		$log->error( "downloadArtwork finished in " . $progress->duration );
+		$log->error( "getAlbumCoverURL finished in " . $progress->duration );
 	}
 
 	Slim::Music::Import->endImporter('plugin_musicartistinfo_albumCover');
@@ -228,7 +231,10 @@ sub _precacheAlbumCover {
 		$ext =~ s/jpeg/jpg/;
 		$file .= ".$ext";
 		
+		my $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
+		
 		if ($url =~ /^http:/) {
+			$file = $tmpFile unless $saveCoverArt;
 			my $response = $ua->get( $url, ':content_file' => $file );
 			if ( !($response && $response->is_success && -e $file) ) {
 				$file = undef;
@@ -250,6 +256,8 @@ sub _precacheAlbumCover {
 			
 			$params->{sth_update_tracks}->execute( $file, $coverid, $albumid );
 			$params->{sth_update_albums}->execute( $coverid, $albumid );
+			
+			unlink $file unless $saveCoverArt;
 		}
 	}
 }
@@ -296,18 +304,14 @@ sub _scanArtistPhotos {
 		
  	$imgProxyCache = Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + EXPIRY);
  	$cache         = Slim::Utils::Cache->new();
-	$cachedir      = $serverprefs->get('cachedir');
 	$imageFolder   = $prefs->get('artistImageFolder');
 
-	$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
-		
-	($max) = $specs =~ /(\d+)/ unless $saveArtwork;
-	if ($max*1) {
-		# 252 & 500 are known sizes for last.fm
-		if    ($max <= 252) { $max = 252 }
-		elsif ($max <= 500) { $max = 500 }
-		else  { $max = 0 }
+	if ( $saveArtistPictures = $prefs->get('saveArtistPictures') ) {
+		$imageFolder = $prefs->get('artistImageFolder');
+		$saveArtistPictures = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
 	}
+
+	$max = 0 if $saveArtistPictures;
 	
 	while ( _getArtistPhotoURL({
 		sth      => $sth,
@@ -363,24 +367,24 @@ sub _getArtistPhotoURL {
 sub _precacheArtistImage {
 	my ($artist, $img) = @_;
 	
-	return unless $precacheArtwork || $saveArtwork;
+	return unless $precacheArtwork || $saveArtistPictures;
 	
 	my $artist_id = $artist->{id};
 	
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
-		if ( !$saveArtwork && !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
+		if ( !$saveArtistPictures && !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
 			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
 			$max = 500;
 		}
 
-		$url =~ s/\/_\//\/$max\// if $max && !$saveArtwork;
+		$url =~ s/\/_\//\/$max\// if $max && !$saveArtistPictures;
 		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 		
 		my $tmpFile;
 		
 		# if user wants us to save a copy on the disk, write to our image folder instead
-		if ($saveArtwork) {
+		if ($saveArtistPictures) {
 			$tmpFile = File::Spec::Functions::catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist->{name}) );
 			my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
 			$tmpFile .= ".$ext";
@@ -395,7 +399,7 @@ sub _precacheArtistImage {
 		else {
 			my $response = $ua->get( $url, ':content_file' => $tmpFile );
 			if ($response && $response->is_success) {
-				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveArtwork;
+				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveArtistPictures;
 			}
 			else {
 				$log->warn("Image download failed for $url: " . $response->message);
@@ -409,7 +413,7 @@ sub _precacheArtistImage {
 
 		Slim::Utils::ImageResizer->resize($tmpFile, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 		
-		unlink $tmpFile unless $saveArtwork;
+		unlink $tmpFile unless $saveArtistPictures;
 	}
 	elsif ( $precacheArtwork && $artist_id && $img && -f $img ) {
 		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );

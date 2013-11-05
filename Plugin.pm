@@ -31,7 +31,9 @@ sub initPlugin {
 		browseArtistPictures => 1,
 		runImporter => 1,
 		lookupArtistPictures => 1,
+		lookupCoverArt => 1,
 		saveArtistPictures => 1,
+		saveCoverArt => 1,
 	});
 	
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
