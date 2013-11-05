@@ -264,8 +264,6 @@ sub _call {
 
 	my $params = join('&', @query);
 	my $url = BASE_URL . $method;
-
-	main::INFOLOG && $log->is_info && $log->info(_debug( "Async API call: GET $url?$params" ));
 	
 	my $cb2 = sub {
 		my $response = shift;
@@ -285,14 +283,9 @@ sub _call {
 		$cb->($result);
 	};
 	
-	Slim::Networking::SimpleAsyncHTTP->new( 
-		$cb2, 
-		$cb2, 
-		{
-			timeout => 15,
-			cache   => 1,
-		}
-	)->get($url . '?' . $params);
+	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2, {
+		cache => 1
+	});
 }
 
 sub _debug {

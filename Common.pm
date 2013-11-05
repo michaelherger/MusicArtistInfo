@@ -60,15 +60,17 @@ sub imageInFolder {
 }
 
 sub call {
-	my ($class, $url, $cb) = @_;
+	my ($class, $url, $cb, $params) = @_;
 
 	main::INFOLOG && $log->is_info && $log->info((main::SCANNER ? 'Sync' : 'Async') . " API call: GET $url" );
+	
+	$params->{timeout} ||= 15;
 	
 	if (main::SCANNER) {
 		require LWP::UserAgent;
 		$ua ||= LWP::UserAgent->new(
 			agent   => Slim::Utils::Misc::userAgentString(),
-			timeout => 15,
+			timeout => $params->{timeout},
 		);
 		
 		my $request = HTTP::Request->new( GET => $url );
@@ -80,11 +82,7 @@ sub call {
 		Slim::Networking::SimpleAsyncHTTP->new( 
 			$cb,
 			$cb,
-			{
-				timeout => 15,
-				cache   => 1,
-				expires => 86400,	# force caching - discogs doesn't set the appropriate headers
-			}
+			$params
 		)->get($url);
 	}
 }

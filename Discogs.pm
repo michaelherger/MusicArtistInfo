@@ -332,7 +332,10 @@ sub _call {
 		$cb->($result);
 	};
 	
-	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2);
+	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2, {
+		cache   => 1,
+		expires => 86400,	# force caching - discogs doesn't set the appropriate headers
+	});
 }
 
 

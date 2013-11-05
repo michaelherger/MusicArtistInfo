@@ -271,7 +271,9 @@ sub _call {
 		$cb->($result);
 	};
 	
-	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2);
+	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2, {
+		cache => 1
+	});
 }
 
 sub _debug {
