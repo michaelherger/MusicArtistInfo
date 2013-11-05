@@ -187,7 +187,7 @@ sub _precacheArtistImage {
 		else {
 			my $response = $ua->get( $url, ':content_file' => $tmpFile );
 			if ($response && $response->is_success) {
-				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw'));
+				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveFile;
 			}
 			else {
 				$log->warn("Image download failed for $url: " . $response->message);
