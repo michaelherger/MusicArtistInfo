@@ -124,7 +124,7 @@ sub getMissingArtworkAlbums {
 		push @$items, {
 			type => 'slideshow',
 			name => $album->title . ' ' . cstring($client, 'BY') . " $artist",
-			url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCover,
+			url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers,
 			passthrough => [{ 
 				album  => $album->title,
 				artist => $artist,
@@ -172,7 +172,7 @@ sub getSmallArtworkAlbums {
 					type => 'slideshow',
 					image => '/music/' . $track->{coverid} . '/cover',
 					name => $title . ' ' . cstring($client, 'BY') . " $artist",
-					url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCover,
+					url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers,
 					passthrough => [{ 
 						album  => $title,
 						artist => $artist,

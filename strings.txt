@@ -83,6 +83,10 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	DE	Interpretenbilder suchen
 	EN	Artist picture lookup
 
+PLUGIN_MUSICARTISTINFO_ALBUMCOVER_PROGRESS
+	DE	Plattenhüllen online suchen
+	EN	Album cover lookup
+
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	DE	Interpreten-Photos
 	EN	Artists photos

@@ -11,6 +11,8 @@ use Slim::Utils::Log;
 use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
+*_imageInFolder = \&Plugins::MusicArtistInfo::Common::imageInFolder;
+
 my $log   = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
@@ -166,29 +168,6 @@ sub getArtistPhoto {
 	}
 	
 	return ($args->{rawUrl} || !$img) ? $img : _proxiedUrl($img);
-}
-
-sub _imageInFolder {
-	my ($folder, $name) = @_;
-
-	#main::DEBUGLOG && $log->debug("Trying to find artwork in $folder");
-	
-	my $img;
-		
-	if ( opendir(DIR, $folder) ) {
-		while (readdir(DIR)) {
-			if (/$name\.(?:jpe?g|png|gif)$/i) {
-				$img = catdir($folder, $_);
-				last;
-			}
-		}
-		closedir(DIR);
-	}
-	else {
-		$log->error("Unable to open dir '$folder'");
-	}
-	
-	return $img;
 }
 
 1;

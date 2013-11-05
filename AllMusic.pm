@@ -418,7 +418,7 @@ sub getAlbumDetails {
 	}
 }
 
-sub getAlbumCover {
+sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumCoverCB = sub {

@@ -4,13 +4,15 @@ use strict;
 
 use Slim::Menu::AlbumInfo;
 use Slim::Menu::TrackInfo;
-use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
+use Plugins::MusicArtistInfo::Common;
 use Plugins::MusicArtistInfo::LFM;
+
+*_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
@@ -76,7 +78,7 @@ sub getAlbumMenu {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUM_COVER'),
 			# we don't want slideshow mode on controllers, but web UI only
 			type => ($client && $client->controllerUA || '') =~ /squeezeplay/i ? 'link' : 'slideshow',
-			url  => \&getAlbumCover,
+			url  => \&getAlbumCovers,
 			passthrough => $pt,
 		};
 	}
@@ -130,12 +132,12 @@ sub getAlbumReview {
 	);
 }
 
-sub getAlbumCover {
+sub getAlbumCovers {
 	my ($client, $cb, $params, $args) = @_;
 
 	my $results = {};
 
-	my $getAlbumCoverCb = sub {
+	my $getAlbumCoversCb = sub {
 		my $covers = shift;
 		
 		# only continue once we have results from all services.
@@ -195,23 +197,23 @@ sub getAlbumCover {
 
 	# there's a rate limiting issue on discogs.com: don't use it without imageproxy, as this seems to work around the limitation...
 	if (CAN_IMAGEPROXY) {
-		Plugins::MusicArtistInfo::Discogs->getAlbumCover($client, sub {
+		Plugins::MusicArtistInfo::Discogs->getAlbumCovers($client, sub {
 			$results->{discogs} = shift;
-			$getAlbumCoverCb->($results);
+			$getAlbumCoversCb->($results);
 		}, $args);
 	}
 	else {
 		$results->{discogs} = {};
 	}
 
-	Plugins::MusicArtistInfo::AllMusic->getAlbumCover($client, sub {
+	Plugins::MusicArtistInfo::AllMusic->getAlbumCovers($client, sub {
 		$results->{allmusic} = shift;
-		$getAlbumCoverCb->($results);
+		$getAlbumCoversCb->($results);
 	}, $args);
 	
-	Plugins::MusicArtistInfo::LFM->getAlbumCover($client, sub {
+	Plugins::MusicArtistInfo::LFM->getAlbumCovers($client, sub {
 		$results->{lfm} = shift;
-		$getAlbumCoverCb->($results);
+		$getAlbumCoversCb->($results);
 	}, $args);
 }
 
@@ -407,27 +409,5 @@ sub _getAlbumFromSongURL {
 		}
 	}
 }
-
-sub _cleanupAlbumName {
-	my $album = shift;
-	
-	main::INFOLOG && $log->info("Cleaning up album name: '$album'");
-
-	# remove everything between () or []... But don't for PG's eponymous first four albums :-)
-	$album =~ s/[\(\[].*?[\)\]]//g if $album !~ /Peter Gabriel \[[1-4]\]/i;
-	
-	# remove stuff like "CD02", "1 of 2"
-	$album =~ s/\b(disc \d+ of \d+)\b//ig;
-	$album =~ s/\d+\/\d+//ig;
-	$album =~ s/\b(cd\s*\d+|\d+ of \d+|disc \d+)\b//ig;
-	# remove trailing non-word characters
-	$album =~ s/[\s\W]{2,}$//;
-	$album =~ s/\s*$//;
-
-	main::INFOLOG && $log->info("Album name cleaned up:  '$album'");
-
-	return $album;
-}
-
 
 1;

@@ -4,11 +4,8 @@ use strict;
 use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
-use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
-use Slim::Utils::Strings qw(string cstring);
-use Slim::Web::ImageProxy qw(proxiedImage);
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant BASE_URL => 'http://api.discogs.com/';
@@ -16,19 +13,59 @@ use constant BASE_URL => 'http://api.discogs.com/';
 my $log   = logger('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new();
 
-if (CAN_IMAGEPROXY) {
-	Slim::Web::ImageProxy->registerHandler(
-		match => qr/api\.discogs\.com/,
-		func  => \&artworkUrl,
-	);
+if (!main::SCANNER) {
+	require Slim::Utils::Strings;
+	
+	if (CAN_IMAGEPROXY) {
+		require Slim::Web::ImageProxy;
+		
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/api\.discogs\.com/,
+			func  => \&artworkUrl,
+		);
+	}
 }
 
 sub getAlbumCover {
 	my ( $class, $client, $cb, $args ) = @_;
+
+	$args->{rawUrl} = 1 unless defined $args->{rawUrl};
+	
+	my $key = "mai_discogs_albumcover_" . Slim::Utils::Text::ignoreCaseArticles($args->{artist} . $args->{album}, 1);
+	
+	if (my $cached = $cache->get($key)) {
+		$cb->($cached);
+		return;
+	}
+
+	$class->getAlbumCovers($client, sub {
+		my $covers = shift;
+		
+		my $cover = {};
+		
+		if ($covers && $covers->{images} && ref $covers->{images} eq 'ARRAY') {
+			foreach ( @{$covers->{images}} ) {
+				next unless $_->{type} eq 'primary';
+				
+				$cover = $_;
+				last;
+			}
+		}
+		
+		$cache->set($key, $cover, 86400);
+		$cb->($cover);
+	}, $args);
+}
+
+sub getAlbumCovers {
+	my ( $class, $client, $cb, $args ) = @_;
 	
 	if (!CAN_IMAGEPROXY) {
 		$cb->();
+		return;
 	}
+	
+	my $rawUrl = delete $args->{rawUrl};
 	
 	$class->getAlbum($client, sub {
 		my $albumInfo = shift;
@@ -48,9 +85,10 @@ sub getAlbumCover {
 							
 							push @images, {
 								author => 'Discogs',
-								url    => proxiedImage($_->{uri}),
+								url    => $rawUrl ? $_->{uri} : Slim::Web::ImageProxy::proxiedImage($_->{uri}),
 								width  => $_->{width},
 								height => $_->{height},
+								type   => $rawUrl ? $_->{type} : undef,
 							};
 							
 							$cache->set('150_' . $_->{uri}, $_->{uri150}) if $_->{uri150};
@@ -60,16 +98,16 @@ sub getAlbumCover {
 					}
 				}
 				
-				if ( !$result->{images} ) {
-					$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+				if ( !$result->{images} && !main::SCANNER ) {
+					$result->{error} ||= Slim::Utils::Strings::cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 				}
 				
 				$cb->($result);
 			});
 		}
 		else {
-			$cb->({
-				error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')
+			$cb->(main::SCANNER ? undef : {
+				error => Slim::Utils::Strings::cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')
 			});
 		}	
 	}, $args);
@@ -152,7 +190,7 @@ warn Data::Dump::dump($_);
 						push @releases, {
 							title  => $_->{title},
 							author => 'Discogs',
-							image  => proxiedImage($_->{thumb}),
+							image  => Slim::Web::ImageProxy::proxiedImage($_->{thumb}),
 #							label  => $_->{label},
 							year   => $_->{year},
 							resource => $_->{resource_url},
@@ -165,7 +203,7 @@ warn Data::Dump::dump($_);
 			}
 			
 			if ( !$result->{releases} ) {
-				$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+				$result->{error} ||= Slim::Utils::Strings::cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 			}
 			
 			$cb->($result);
@@ -192,7 +230,7 @@ warn Data::Dump::dump($_);
 					push @releases, {
 						title  => $_->{title},
 						author => 'Discogs',
-						image  => proxiedImage($_->{thumb}),
+						image  => Slim::Web::ImageProxy::proxiedImage($_->{thumb}),
 						label  => $_->{label},
 						year   => $_->{year},
 						resource => $_->{resource_url},
@@ -205,7 +243,7 @@ warn Data::Dump::dump($_);
 		}
 		
 		if ( !$result->{releases} ) {
-			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+			$result->{error} ||= Slim::Utils::Strings::cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
 		
 		$cb->($result);
@@ -275,8 +313,6 @@ sub _call {
 
 	my $params = join('&', @query);
 	my $url = $resource =~ /^https?:/ ? $resource : (BASE_URL . $resource);
-
-	main::INFOLOG && $log->is_info && $log->info("Async API call: GET $url?$params");
 	
 	my $cb2 = sub {
 		my $response = shift;
@@ -296,19 +332,11 @@ sub _call {
 		$cb->($result);
 	};
 	
-	Slim::Networking::SimpleAsyncHTTP->new( 
-		$cb2, 
-		$cb2, 
-		{
-			timeout => 15,
-			cache   => 1,
-			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
-		}
-	)->get($url . '?' . $params);
+	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2);
 }
 
 
-sub artworkUrl {
+sub artworkUrl { if (!main::SCANNER) {
 	my ($url, $spec) = @_;
 	
 	main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
@@ -321,6 +349,6 @@ sub artworkUrl {
 	main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
 
 	return $url;
-}
+} }
 
 1;

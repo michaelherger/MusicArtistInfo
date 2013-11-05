@@ -144,6 +144,31 @@ sub getArtistPhoto {
 
 sub getAlbumCover {
 	my ( $class, $client, $cb, $args ) = @_;
+
+	my $key = "mai_lfm_albumcover_" . Slim::Utils::Text::ignoreCaseArticles($args->{artist} . $args->{album}, 1);
+	
+	if (my $cached = $cache->get($key)) {
+		$cb->($cached);
+		return;
+	}
+
+	$class->getAlbumCovers($client, sub {
+		my $covers = shift;
+		
+		my $cover = {};
+
+		# XXX - can we be smarter than return the first image?		
+		if ($covers && $covers->{images} && ref $covers->{images} eq 'ARRAY') {
+			$cover = $covers->{images}->[0];
+		}
+		
+		$cache->set($key, $cover, 86400);
+		$cb->($cover);
+	}, $args);	
+}
+
+sub getAlbumCovers {
+	my ( $class, $client, $cb, $args ) = @_;
 	
 	$class->getAlbum(sub {
 		my $albumInfo = shift;
@@ -170,7 +195,7 @@ sub getAlbumCover {
 			}
 		}
 
-		if ( !$result->{images} ) {
+		if ( !$result->{images} && !main::SCANNER ) {
 			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
 		
@@ -207,8 +232,6 @@ sub getAlbum {
 	});
 }
 
-
-my $ua;
 sub _call {
 	my ( $args, $cb ) = @_;
 	
@@ -230,8 +253,6 @@ sub _call {
 	my $params = join('&', @query);
 	my $url = BASE_URL;
 
-	main::INFOLOG && $log->is_info && $log->info(_debug( (main::SCANNER ? 'Sync' : 'Async') . " API call: GET $url?$params" ));
-	
 	my $cb2 = sub {
 		my $response = shift;
 		
@@ -250,29 +271,7 @@ sub _call {
 		$cb->($result);
 	};
 	
-	# in scanner mode we don't want to load the async http code
-	if (main::SCANNER) {
-		require LWP::UserAgent;
-		$ua ||= LWP::UserAgent->new(
-			agent   => Slim::Utils::Misc::userAgentString(),
-			timeout => 15,
-		);
-		
-		my $request = HTTP::Request->new( GET => $url . '?' . $params );
-		my $response = $ua->request( $request );
-		
-		$cb2->($response);
-	}
-	else {
-		Slim::Networking::SimpleAsyncHTTP->new( 
-			$cb2, 
-			$cb2, 
-			{
-				timeout => 15,
-				cache   => 1,
-			}
-		)->get($url . '?' . $params);
-	}
+	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2);
 }
 
 sub _debug {
