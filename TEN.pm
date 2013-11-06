@@ -2,12 +2,12 @@ package Plugins::MusicArtistInfo::TEN;
 
 use strict;
 use Date::Parse qw(str2time);
-use JSON::XS::VersionOneAndTwo;
-use URI::Escape qw(uri_escape uri_escape_utf8);
+use URI::Escape qw(uri_escape);
 
-use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string);
+
+use Plugins::MusicArtistInfo::Common;
 
 use constant BASE_URL => 'http://developer.echonest.com/api/v4/';
 
@@ -246,52 +246,11 @@ sub getArtistURLs {
 sub _call {
 	my ( $method, $args, $cb ) = @_;
 	
-	my @query;
-	while (my ($k, $v) = each %$args) {
-		#warn Data::Dump::dump($k, $v);
-		next if $k =~ /^_/;		# ignore keys starting with an underscore
-		
-		if (ref $v eq 'ARRAY') {
-			foreach (@$v) {
-				push @query, $k . '=' . uri_escape_utf8($_);
-			}
-		}
-		else {
-			push @query, $k . '=' . uri_escape_utf8($v);
-		}
-	}
-	push @query, 'api_key=' . aid();
-
-	my $params = join('&', @query);
-	my $url = BASE_URL . $method;
-	
-	my $cb2 = sub {
-		my $response = shift;
-		
-		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
-		my $result = eval { from_json( $response->content ) };
-	
-		$result ||= {};
-		
-		if ($@) {
-			 $log->error($@);
-			 $result->{error} = $@;
-		}
-
-		main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($result);
-			
-		$cb->($result);
-	};
-	
-	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2, {
-		cache => 1
-	});
-}
-
-sub _debug {
-	my $msg = shift;
-	$msg =~ s/$aid/\*/gi if $aid;
-	return $msg;
+	Plugins::MusicArtistInfo::Common->call(
+		BASE_URL . $method . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)}, 'api_key=' . aid() ), 
+		$cb,
+		{ cache => 1 }
+	);
 }
 
 sub aid {

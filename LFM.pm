@@ -1,13 +1,13 @@
 package Plugins::MusicArtistInfo::LFM;
 
 use strict;
-use JSON::XS::VersionOneAndTwo;
-use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Text;
 use Slim::Utils::Strings qw(string cstring);
+
+use Plugins::MusicArtistInfo::Common;
 
 use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
 
@@ -235,51 +235,11 @@ sub getAlbum {
 sub _call {
 	my ( $args, $cb ) = @_;
 	
-	my @query;
-	while (my ($k, $v) = each %$args) {
-		next if $k =~ /^_/;		# ignore keys starting with an underscore
-		
-		if (ref $v eq 'ARRAY') {
-			foreach (@$v) {
-				push @query, $k . '=' . uri_escape_utf8($_);
-			}
-		}
-		else {
-			push @query, $k . '=' . uri_escape_utf8($v);
-		}
-	}
-	push @query, 'api_key=' . aid(), 'format=json';
-
-	my $params = join('&', @query);
-	my $url = BASE_URL;
-
-	my $cb2 = sub {
-		my $response = shift;
-		
-		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
-		my $result = eval { from_json( $response->content ) };
-	
-		$result ||= {};
-		
-		if ($@) {
-			 $log->error($@);
-			 $result->{error} = $@;
-		}
-
-		main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($result);
-			
-		$cb->($result);
-	};
-	
-	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2, {
-		cache => 1
-	});
-}
-
-sub _debug {
-	my $msg = shift;
-	$msg =~ s/$aid/\*/gi if $aid;
-	return $msg;
+	Plugins::MusicArtistInfo::Common->call(
+		BASE_URL . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)}, 'api_key=' . aid(), 'format=json' ), 
+		$cb,
+		{ cache => 1 }
+	);
 }
 
 sub aid {

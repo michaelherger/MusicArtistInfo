@@ -1,11 +1,11 @@
 package Plugins::MusicArtistInfo::Discogs;
 
 use strict;
-use JSON::XS::VersionOneAndTwo;
-use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+
+use Plugins::MusicArtistInfo::Common;
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant BASE_URL => 'http://api.discogs.com/';
@@ -295,47 +295,14 @@ sub getArtist {
 sub _call {
 	my ( $resource, $args, $cb ) = @_;
 	
-	$args ||= {};
-	
-	my @query;
-	while (my ($k, $v) = each %$args) {
-		next if $k =~ /^_/;		# ignore keys starting with an underscore
-		
-		if (ref $v eq 'ARRAY') {
-			foreach (@$v) {
-				push @query, $k . '=' . uri_escape_utf8($_);
-			}
+	Plugins::MusicArtistInfo::Common->call(
+		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)} ), 
+		$cb,
+		{
+			cache   => 1,
+			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
 		}
-		else {
-			push @query, $k . '=' . uri_escape_utf8($v);
-		}
-	}
-
-	my $params = join('&', @query);
-	my $url = $resource =~ /^https?:/ ? $resource : (BASE_URL . $resource);
-	
-	my $cb2 = sub {
-		my $response = shift;
-		
-		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(Data::Dump::dump($response, @_));
-		my $result = eval { from_json( $response->content ) };
-	
-		$result ||= {};
-		
-		if ($@) {
-			 $log->error($@);
-			 $result->{error} = $@;
-		}
-
-		main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($result);
-			
-		$cb->($result);
-	};
-	
-	Plugins::MusicArtistInfo::Common->call($url . '?' . $params, $cb2, {
-		cache   => 1,
-		expires => 86400,	# force caching - discogs doesn't set the appropriate headers
-	});
+	);
 }
 
 

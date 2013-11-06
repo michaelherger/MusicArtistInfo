@@ -2,6 +2,8 @@ package Plugins::MusicArtistInfo::Common;
 
 use strict;
 use File::Spec::Functions qw(catdir);
+use JSON::XS::VersionOneAndTwo;
+use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Log;
 
@@ -62,9 +64,29 @@ sub imageInFolder {
 sub call {
 	my ($class, $url, $cb, $params) = @_;
 
-	main::INFOLOG && $log->is_info && $log->info((main::SCANNER ? 'Sync' : 'Async') . " API call: GET $url" );
+	$url =~ s/\?$//;
+
+	main::INFOLOG && $log->is_info && $log->info((main::SCANNER ? 'Sync' : 'Async') . ' API call: GET ' . _debug($url) );
 	
 	$params->{timeout} ||= 15;
+	
+	my $cb2 = sub {
+		my $response = shift;
+		
+		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
+		my $result = eval { from_json( $response->content ) };
+	
+		$result ||= {};
+		
+		if ($@) {
+			 $log->error($@);
+			 $result->{error} = $@;
+		}
+
+		main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($result);
+			
+		$cb->($result);
+	};
 	
 	if (main::SCANNER) {
 		require LWP::UserAgent;
@@ -76,17 +98,44 @@ sub call {
 		my $request = HTTP::Request->new( GET => $url );
 		my $response = $ua->request( $request );
 		
-		$cb->($response);
+		$cb2->($response);
 	}
 	else {
 		Slim::Networking::SimpleAsyncHTTP->new( 
-			$cb,
-			$cb,
+			$cb2,
+			$cb2,
 			$params
 		)->get($url);
 	}
 }
 
+sub getQueryString {
+	my ($class, $args) = @_;
+
+	$args ||= {};
+	my @query;
+	
+	while (my ($k, $v) = each %$args) {
+		next if $k =~ /^_/;		# ignore keys starting with an underscore
+		
+		if (ref $v eq 'ARRAY') {
+			foreach (@$v) {
+				push @query, $k . '=' . uri_escape_utf8($_);
+			}
+		}
+		else {
+			push @query, $k . '=' . uri_escape_utf8($v);
+		}
+	}
+	
+	return \@query;
+}
+
+sub _debug {
+	my $msg = shift;
+	$msg =~ s/api_key=.*?(&|$)//gi;
+	return $msg;
+}
 
 
 1;
