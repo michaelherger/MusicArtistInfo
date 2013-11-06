@@ -68,12 +68,8 @@ sub _scanAlbumCovers {
 	my $class = shift;
 	
 	# Find distinct albums to check for artwork.
-	my $tracks = Slim::Schema->search('Track', {
-		'me.audio'   => 1,
-		'me.coverid' => { '='  => undef },
-	}, {
-		'join'     => 'album',
-		'group_by' => 'album',
+	my $albums = Slim::Schema->search('Album', {
+		'me.artwork' => { '='  => undef },
 	});
 
 	my $dbh = Slim::Schema->dbh;
@@ -91,7 +87,7 @@ sub _scanAlbumCovers {
 	} );
 	
 	my $progress = undef;
-	my $count    = $tracks->count;
+	my $count    = $albums->count;
 
 	if ($count) {
 		$progress = Slim::Utils::Progress->new({ 
@@ -120,7 +116,7 @@ sub _scanAlbumCovers {
 	$max = 0 if $saveCoverArt;
 	
 	while ( _getAlbumCoverURL({
-		tracks   => $tracks,
+		albums   => $albums,
 		count    => $count,
 		progress => $progress,
 		sth_update_tracks => $sth_update_tracks,
@@ -134,11 +130,11 @@ sub _getAlbumCoverURL {
 	my $progress = $params->{progress};
 
 	# get next track from db
-	if ( my $track = $params->{tracks}->next ) {
+	if ( my $album = $params->{albums}->next ) {
 		
-		my $albumname = $track->album->name;
-		my $albumid   = $track->album->id;
-		my $artist    = $track->album->contributor ? $track->album->contributor->name : '';
+		my $albumname = $album->name;
+		my $albumid   = $album->id;
+		my $artist    = $album->contributor ? $album->contributor->name : '';
 		
 		$progress->update( "$artist - $albumname" ) if $progress;
 		$i++ % 5 == 0 && Slim::Schema->forceCommit;
@@ -152,7 +148,6 @@ sub _getAlbumCoverURL {
 			};
 			
 			$params->{albumid} = $albumid;
-			$params->{track}   = $track;
 			
 			my @filenames;
 			
@@ -243,15 +238,12 @@ sub _precacheAlbumCover {
 		}
 
 		if ($file && -e $file) {
-			my $track     = $params->{track};
 			my $progress  = $params->{progress};
 			my $albumid   = $params->{albumid};
 			
-			my $coverid = $track->generateCoverId({
+			my $coverid = Slim::Schema::Track->generateCoverId({
 				cover => $file,
-				url   => $track->url,
-				mtime => $track->timestamp,
-				size  => $track->filesize,
+				url   => $file,,
 			});
 			
 			$params->{sth_update_tracks}->execute( $file, $coverid, $albumid );
@@ -415,8 +407,9 @@ sub _precacheArtistImage {
 		
 		unlink $tmpFile unless $saveArtistPictures;
 	}
-	elsif ( $precacheArtwork && $artist_id && $img && -f $img ) {
-		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
+	elsif ( $precacheArtwork && $artist_id && $img ) {
+		$img = Slim::Utils::Misc::pathFromFileURL($img) if $img =~ /^file/;
+		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache ) if -f $img;
 	}
 }
 
