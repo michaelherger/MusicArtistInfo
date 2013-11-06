@@ -111,7 +111,7 @@ sub _proxiedUrl {
 
 	my $imageId = 'mai/localartwork/' . md5_hex($url);
 	$cache->set( $imageId, $url, 3600 );
-	return Slim::Web::ImageProxy::proxiedImage($imageId, 'force');
+	return "imageproxy/$imageId/image.png";
 }
 
 sub artworkUrl {

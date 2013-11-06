@@ -343,7 +343,7 @@ sub getArtistPhotoCLI {
 		artist_id => $artist_id,
 		rawUrl    => 1,
 	}) ) {
-		$request->addResult('url', Slim::Web::ImageProxy::proxiedImage('mai/artist/' . ($artist_id || $artist), 'force'));
+		$request->addResult('url', 'imageproxy/mai/artist/' . ($artist_id || $artist) . '/image.png');
 		$request->addResult('artist_id', $artist_id) if $artist_id;
 		$request->setStatusDone();
 		return;
@@ -890,7 +890,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 					my $items = shift;
 	
 					$items->{items} = [ map { 
-						$_->{image} ||= Slim::Web::ImageProxy::proxiedImage('mai/artist/' . $_->{id}, 'force');
+						$_->{image} ||= 'imageproxy/mai/artist/' . $_->{id} . '/image.png';
 						$_;
 					} @{$items->{items}} ];
 	
