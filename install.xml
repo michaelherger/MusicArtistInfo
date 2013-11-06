@@ -11,7 +11,7 @@
 	<id1>50444d32-494c-4d4f-4149-324b4e3858444c</id1>
 	<id2>c6abc51e-847b-91ab-a0de-2ede33875e24</id2>
 	<module>Plugins::MusicArtistInfo::Plugin</module>
-	<importmodule>Plugins::MusicArtistInfo::Importer</importmodule>
+	<importmodule>Plugins::MusicArtistInfo::ImporterHelper</importmodule>
 	<targetApplication>
 		<id>SqueezeCenter</id>
 		<maxVersion>*</maxVersion>
