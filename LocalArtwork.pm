@@ -134,7 +134,9 @@ sub getArtistPhoto {
 	
 	my $cachekey = 'mai_artist_photo_' . Slim::Utils::Text::ignoreCaseArticles($artist, 1);
 	if ( !$args->{force} && (my $local = $cache->get($cachekey)) ) {
-		return $args->{rawUrl} ? $local : _proxiedUrl($local);
+		if (-f $local) {
+			return $args->{rawUrl} ? $local : _proxiedUrl($local);
+		}
 	}
 	
 	my $img;

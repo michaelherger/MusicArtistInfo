@@ -49,6 +49,7 @@ sub imageInFolder {
 		
 	if ( opendir(DIR, $folder) ) {
 		while (readdir(DIR)) {
+			next if /^\._/;	# skip artefacts from OSX
 			if (/$name\.(?:jpe?g|png|gif)$/i) {
 				$img = catdir($folder, $_);
 				last;
