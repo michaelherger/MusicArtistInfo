@@ -40,6 +40,8 @@ sub cleanupAlbumName {
 
 sub imageInFolder {
 	my ($folder, $name) = @_;
+	
+	return unless $folder && $name;
 
 	#main::DEBUGLOG && $log->debug("Trying to find artwork in $folder");
 	
