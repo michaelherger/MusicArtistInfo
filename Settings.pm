@@ -32,6 +32,11 @@ sub handler {
 	# artfolder is a server setting - need to handle it manually
 	if ($paramRef->{'saveSettings'}) {
 		$serverprefs->set('artfolder', $paramRef->{artfolder});
+		
+		my (undef, @prefs) = $class->prefs();
+		foreach (@prefs) {
+			$paramRef->{"pref_$_"} ||= '';
+		}
 	}
 	
 	# disable saving to image folder if it isn't writeable
