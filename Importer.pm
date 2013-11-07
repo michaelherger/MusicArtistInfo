@@ -18,8 +18,6 @@ use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
-use constant EXPIRY => 60 * 86400;
-
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
@@ -293,7 +291,7 @@ sub _scanArtistPhotos {
 		timeout => 15,
 	) : undef;
 		
- 	$imgProxyCache = Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + EXPIRY);
+ 	$imgProxyCache = Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', -1);
  	$cache         = Slim::Utils::Cache->new();
 	$imageFolder   = $prefs->get('artistImageFolder');
 
@@ -309,8 +307,6 @@ sub _scanArtistPhotos {
 		count    => $count,
 		progress => $progress,
 	}) ) {}
-	
-	$imgProxyCache->{default_expires_in} = 86400 * 30;
 }
 
 
@@ -399,9 +395,6 @@ sub _precacheArtistImage {
 		
 		return unless $precacheArtwork && -f $tmpFile;
 		
-		# use distributed expiry to not have to update everything at the same time
-		$imgProxyCache->{default_expires_in} = time() + int(rand(EXPIRY));
-
 		Slim::Utils::ImageResizer->resize($tmpFile, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 		
 		unlink $tmpFile unless $saveArtistPictures;
