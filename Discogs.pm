@@ -60,12 +60,7 @@ sub getAlbumCover {
 sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	if (!CAN_IMAGEPROXY) {
-		$cb->();
-		return;
-	}
-	
-	my $rawUrl = delete $args->{rawUrl};
+	my $rawUrl = delete $args->{rawUrl} || main::SCANNER || !CAN_IMAGEPROXY;
 	
 	$class->getAlbum($client, sub {
 		my $albumInfo = shift;

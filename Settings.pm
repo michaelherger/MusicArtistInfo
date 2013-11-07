@@ -4,15 +4,11 @@ use strict;
 use base qw(Slim::Web::Settings);
 
 use Slim::Utils::Prefs;
-my $CAN_IMAGEPROXY;
+
+use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
-
-sub new {
-	(my $class, $CAN_IMAGEPROXY) = @_;
-	$class->SUPER::new();
-}
 
 sub name {
 	return 'PLUGIN_MUSICARTISTINFO';
@@ -39,14 +35,14 @@ sub handler {
 		}
 	}
 	
-	# disable saving to image folder if it isn't writeable
 	my $imageFolder = $paramRef->{pref_artistImageFolder} || $prefs->get('artistImageFolder');
 	
+	# disable saving to image folder if it isn't writeable
 	if ( !($imageFolder && -d $imageFolder && -w $imageFolder) ) {
 		$paramRef->{savePicturesDisabled} = 1;
 	}
 	
-	$paramRef->{limited}   = !$CAN_IMAGEPROXY;
+	$paramRef->{limited}   = !CAN_IMAGEPROXY;
 	$paramRef->{artfolder} = $serverprefs->get('artfolder');
 	
 	if ( !($paramRef->{artfolder} && -d $paramRef->{artfolder} && -w $paramRef->{artfolder}) ) {

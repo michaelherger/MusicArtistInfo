@@ -1,36 +1,32 @@
 package Plugins::MusicArtistInfo::Importer;
 
+# this is a helper class to only load the actual importer if LMS is compatible
+
 use strict;
+use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use Digest::MD5;
-use File::Spec::Functions;
-use File::Slurp;
+use File::Spec::Functions qw(catdir);
 use LWP::UserAgent;
 
 use Slim::Music::Import;
-use Slim::Utils::ArtworkCache;
-use Slim::Utils::ImageResizer;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
-use Slim::Utils::Scanner::API;
 
 use Plugins::MusicArtistInfo::Common;
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
+my ($i, $ua, $imageFolder, $filenameTemplate, $saveCoverArt, $max, $cachedir);
+
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
 
-my $newTracks = [];
-my ($ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork, $saveArtistPictures, $saveCoverArt, $imageFolder, $filenameTemplate);
-
 sub initPlugin {
 	my $class = shift;
 	
-	$precacheArtwork = $serverprefs->get('precacheArtwork');
-	
-	return unless $prefs->get('runImporter') && ($precacheArtwork || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt'));
+	return unless $prefs->get('runImporter') && ($serverprefs->get('precacheArtwork') || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt'));
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'post',
@@ -41,25 +37,15 @@ sub initPlugin {
 	return 1;
 }
 
-my $i;
-
-sub startScan {
+sub startScan { 
 	my $class = shift;
 
-	$cachedir = $serverprefs->get('cachedir');
-
-	$specs = join(',', Slim::Music::Artwork::getResizeSpecs());
-		
-	($max) = $specs =~ /(\d+)/;
-	if ($max*1) {
-		# 252 & 500 are known sizes for last.fm
-		if    ($max <= 252) { $max = 252 }
-		elsif ($max <= 500) { $max = 500 }
-		else  { $max = 0 }
-	}
-	
 	$class->_scanAlbumCovers();
-	$class->_scanArtistPhotos();
+
+	if (CAN_IMAGEPROXY) {
+		require Plugins::MusicArtistInfo::Importer2;
+		return Plugins::MusicArtistInfo::Importer2->startScan(@_);
+	}
 }
 
 sub _scanAlbumCovers {
@@ -84,10 +70,9 @@ sub _scanAlbumCovers {
 		WHERE  id = ?
 	} );
 	
-	my $progress = undef;
-	my $count    = $albums->count;
+	my ($progress, $count);
 
-	if ($count) {
+	if ($count = $albums->count) {
 		$progress = Slim::Utils::Progress->new({ 
 			'type'  => 'importer',
 			'name'  => 'plugin_musicartistinfo_albumCover',
@@ -95,8 +80,6 @@ sub _scanAlbumCovers {
 			'bar'   => 1
 		});
 	}
-	
-	$i = 0;
 	
 	$ua = LWP::UserAgent->new(
 		agent   => Slim::Utils::Misc::userAgentString(),
@@ -111,7 +94,7 @@ sub _scanAlbumCovers {
 		$saveCoverArt = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
 	}
 
-	$max = 0 if $saveCoverArt;
+	$max = 500 unless $saveCoverArt;
 	
 	while ( _getAlbumCoverURL({
 		albums   => $albums,
@@ -216,15 +199,19 @@ sub _precacheAlbumCover {
 	my ($artist, $album, $url, $params) = @_;
 	
 	if ( $artist && $album && $url ) {
+		$cachedir ||= $serverprefs->get('cachedir');
+	
+		$url =~ s/\/_\//\/$max\// if $max && !$saveCoverArt;
+		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 
 		# XXX - use correct setting for placeholders!
-		my $file = File::Spec::Functions::catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist) . ' - ' . Slim::Utils::Text::ignorePunct($album) );
+		my $file = catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist) . ' - ' . Slim::Utils::Text::ignorePunct($album) );
 		my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
 		$ext =~ s/jpeg/jpg/;
 		$file .= ".$ext";
 		
-		my $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
+		my $tmpFile = catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
 		
 		if ($url =~ /^http:/) {
 			$file = $tmpFile unless $saveCoverArt;
@@ -248,160 +235,6 @@ sub _precacheAlbumCover {
 			
 			unlink $file unless $saveCoverArt;
 		}
-	}
-}
-
-sub _scanArtistPhotos {
-	my $class = shift;
-	
-	# Find distinct artists to check for artwork
-	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
-	my $va  = $serverprefs->get('variousArtistAutoIdentification');
-	my $sql = 'SELECT contributors.id, contributors.name FROM contributors ';
-	$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
-	$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
-	$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
-	$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0)' if $va;
-	$sql   .= "GROUP BY contributors.id";
-
-	my $dbh = Slim::Schema->dbh;
-	
-	my ($count) = $dbh->selectrow_array( qq{
-		SELECT COUNT(*) FROM ( $sql ) AS t1
-	}) || 0;
-	
-	my $sth = $dbh->prepare_cached($sql);
-	$sth->execute();
-
-	my $progress = undef;
-
-	if ($count) {
-		$progress = Slim::Utils::Progress->new({ 
-			'type'  => 'importer',
-			'name'  => 'plugin_musicartistinfo_artistPhoto',
-			'total' => $count,
-			'bar'   => 1
-		});
-	}
-
-	$i = 0;
-	
-	$ua = $prefs->get('lookupArtistPictures') ? LWP::UserAgent->new(
-		agent   => Slim::Utils::Misc::userAgentString(),
-		timeout => 15,
-	) : undef;
-		
- 	$imgProxyCache = Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', -1);
- 	$cache         = Slim::Utils::Cache->new();
-	$imageFolder   = $prefs->get('artistImageFolder');
-
-	if ( $saveArtistPictures = $prefs->get('saveArtistPictures') ) {
-		$imageFolder = $prefs->get('artistImageFolder');
-		$saveArtistPictures = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
-	}
-
-	$max = 0 if $saveArtistPictures;
-	
-	while ( _getArtistPhotoURL({
-		sth      => $sth,
-		count    => $count,
-		progress => $progress,
-	}) ) {}
-}
-
-
-sub _getArtistPhotoURL {
-	my $params = shift;
-
-	my $progress = $params->{progress};
-
-	# get next artist from db
-	if ( my $artist = $params->{sth}->fetchrow_hashref ) {
-		$progress->update( $artist->{name} ) if $progress;
-		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
-		
-		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->{name});
-		
-		if ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
-			artist_id => $artist->{id},
-			artist    => $artist->{name},
-			rawUrl    => 1,		# don't return the proxied URL, we want the raw file
-			force     => 1,		# don't return cached value, this is a scan
-		}) ) {
-			_precacheArtistImage($artist, $file);
-		}
-		elsif ($ua) {		# only defined if $prefs->get('lookupArtistPictures')
-			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
-				_precacheArtistImage($artist, @_);
-			}, {
-				artist => $artist->{name}
-			});
-		}
-
-		return 1;
-	}
-
-	if ( $progress ) {
-		$progress->final($params->{count});
-		$log->error( "getArtistPhotoURL finished in " . $progress->duration );
-	}
-
-	Slim::Music::Import->endImporter('plugin_musicartistinfo_artistPhoto');
-	
-	return 0;
-}
-
-sub _precacheArtistImage {
-	my ($artist, $img) = @_;
-	
-	return unless $precacheArtwork || $saveArtistPictures;
-	
-	my $artist_id = $artist->{id};
-	
-	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
-		if ( !$saveArtistPictures && !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
-			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
-			$max = 500;
-		}
-
-		$url =~ s/\/_\//\/$max\// if $max && !$saveArtistPictures;
-		
-		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
-		
-		my $tmpFile;
-		
-		# if user wants us to save a copy on the disk, write to our image folder instead
-		if ($saveArtistPictures) {
-			$tmpFile = File::Spec::Functions::catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist->{name}) );
-			my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
-			$tmpFile .= ".$ext";
-		}
-		else {
-			 $tmpFile = File::Spec::Functions::catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
-		}
-
-		if (my $image = $cache->get("mai_$url")) {
-			File::Slurp::write_file($tmpFile, $image);
-		}
-		else {
-			my $response = $ua->get( $url, ':content_file' => $tmpFile );
-			if ($response && $response->is_success) {
-				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveArtistPictures;
-			}
-			else {
-				$log->warn("Image download failed for $url: " . $response->message);
-			}
-		}
-		
-		return unless $precacheArtwork && -f $tmpFile;
-		
-		Slim::Utils::ImageResizer->resize($tmpFile, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
-		
-		unlink $tmpFile unless $saveArtistPictures;
-	}
-	elsif ( $precacheArtwork && $artist_id && $img ) {
-		$img = Slim::Utils::Misc::pathFromFileURL($img) if $img =~ /^file/;
-		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache ) if -f $img;
 	}
 }
 

@@ -128,8 +128,8 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	EN	When scanning your music library we can look for artist pictures and find missing cover arts online. These can be stored in an artist's album folder as artist.jpg (or .png/.gif) or in one of the image folders defined below. Additionally it is possible to run a search of artist pictures in online sources.
 	
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
-	DE	Beim Durchsuchen der Musiksammlung Interpreten-Bilder und Plattenhüllen online suchen
-	EN	During library scan look online for artist pictures and missing cover art
+	DE	Beim Durchsuchen der Musiksammlung Bilder online suchen
+	EN	Find artwork online during library scan
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern 

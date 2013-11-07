@@ -39,6 +39,14 @@ sub initPlugin {
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
 
+	# no need to actually initialize the importer, as it will only be executed in the external scanner anyway
+	# but we still need to tell the scanner that there are external importers to be run
+	Slim::Music::Import->addImporter('Plugins::MusicArtistInfo::Importer', {
+		'type'         => 'post',
+		'weight'       => 85,
+		'use'          => 1,
+	}) if $prefs->get('runImporter');
+
 	# "Local Artwork" requires LMS 7.8+, as it's using its imageproxy.
 	if (CAN_IMAGEPROXY) {
 		require Plugins::MusicArtistInfo::LocalArtwork;
@@ -47,14 +55,6 @@ sub initPlugin {
 		# revert skin pref from previous skinning exercise...
 		preferences('server')->set('skin', 'Default') if lc(preferences('server')->get('skin')) eq 'musicartistinfo';
 		$prefs->remove('skinSet');
-
-		# no need to actually initialize the importer, as it will only be executed in the external scanner anyway
-		# but we still need to tell the scanner that there are external importers to be run
-		Slim::Music::Import->addImporter('Plugins::MusicArtistInfo::Importer', {
-			'type'         => 'post',
-			'weight'       => 85,
-			'use'          => 1,
-		}) if $prefs->get('runImporter');
 
 		require Slim::Web::ImageProxy;
 		Slim::Web::ImageProxy->registerHandler(
@@ -75,7 +75,7 @@ sub initPlugin {
 	
 	if (main::WEBUI) {
 		require Plugins::MusicArtistInfo::Settings;
-		Plugins::MusicArtistInfo::Settings->new(CAN_IMAGEPROXY);
+		Plugins::MusicArtistInfo::Settings->new();
 	}
 	
 	$class->SUPER::initPlugin(shift);
