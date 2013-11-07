@@ -137,7 +137,7 @@ sub _getAlbumCoverURL {
 		my $artist    = $album->contributor ? $album->contributor->name : '';
 		
 		$progress->update( "$artist - $albumname" ) if $progress;
-		$i++ % 5 == 0 && Slim::Schema->forceCommit;
+		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
 		
 		# Only lookup albums that have artist names
 		if ($artist && $albumname) {
@@ -238,8 +238,7 @@ sub _precacheAlbumCover {
 		}
 
 		if ($file && -e $file) {
-			my $progress  = $params->{progress};
-			my $albumid   = $params->{albumid};
+			my $albumid = $params->{albumid};
 			
 			my $coverid = Slim::Schema::Track->generateCoverId({
 				cover => $file,
@@ -323,7 +322,7 @@ sub _getArtistPhotoURL {
 	# get next artist from db
 	if ( my $artist = $params->{sth}->fetchrow_hashref ) {
 		$progress->update( $artist->{name} ) if $progress;
-		$i++ % 5 == 0 && Slim::Schema->forceCommit;
+		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
 		
 		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->{name});
 		
