@@ -156,21 +156,21 @@ sub _getAlbumCoverURL {
 			push @filenames, "\Q$filename1\E";
 
 			if ( my $file = Plugins::MusicArtistInfo::Common::imageInFolder($imageFolder, '(?:' . join('|', @filenames) . ')') ) {
-				_precacheAlbumCover($artist, $albumname, $file, $params);
+				_setAlbumCover($artist, $albumname, $file, $params);
 			}
 			elsif ($ua) {
 				Plugins::MusicArtistInfo::Discogs->getAlbumCover(undef, sub {
 					my $albumInfo = shift;
 					
 					if ($albumInfo->{url}) {
-						_precacheAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
+						_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
 					}
 					else {
 						Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
 							my $albumInfo = shift;
 							
 							if ($albumInfo->{url}) {
-								_precacheAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
+								_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
 							}
 							else {
 								# nothing to do?
@@ -195,7 +195,7 @@ sub _getAlbumCoverURL {
 	return 0;
 }
 
-sub _precacheAlbumCover {
+sub _setAlbumCover {
 	my ($artist, $album, $url, $params) = @_;
 	
 	if ( $artist && $album && $url ) {
