@@ -139,11 +139,19 @@ sub _getAlbumCoverURL {
 			};
 
 			my @filenames = (
-				$replacer->($artist, $albumname2),
 				$replacer->($artist, $albumname),
+				$replacer->($artist, $albumname2),
 				$replacer->(Slim::Utils::Text::ignorePunct($artist), Slim::Utils::Text::ignorePunct($albumname)),
 				$replacer->(Slim::Utils::Text::ignorePunct($artist), Slim::Utils::Text::ignorePunct($albumname2)),
 			);
+			
+			if ($album->compilation) {
+				push @filenames, 
+					$replacer->('Various Artists', $albumname),
+					$replacer->('Various Artists', $albumname2),
+					$replacer->('Various Artists', Slim::Utils::Text::ignorePunct($albumname)),
+					$replacer->('Various Artists', Slim::Utils::Text::ignorePunct($albumname2));
+			}
 
 			if ( my $file = Plugins::MusicArtistInfo::Common::imageInFolder($imageFolder, @filenames) ) {
 				_setAlbumCover($artist, $albumname, $file, $params);
@@ -163,8 +171,25 @@ sub _getAlbumCoverURL {
 								_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
 							}
 							else {
-								# nothing to do?
-								$log->warn("No cover found for: $artist - $albumname");
+								# another try if this is a compilation album
+								if ($album->compilation) {
+									$args->{artist} = 'Various Artists';
+									Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
+										my $albumInfo = shift;
+										
+										if ($albumInfo->{url}) {
+											_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
+										}
+										else {
+											# nothing to do?
+											$log->warn("No cover found for: $artist - $albumname");
+										}
+									}, $args);
+								}
+								else {
+									# nothing to do?
+									$log->warn("No cover found for: $artist - $albumname");
+								}
 							}
 						}, $args);
 					}
