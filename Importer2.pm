@@ -19,7 +19,7 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
 
-my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $max, $precacheArtwork, $saveArtistPictures, $imageFolder);
+my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $saveArtistPictures, $imageFolder);
 
 sub startScan {
 	my $class = shift;
@@ -141,6 +141,7 @@ sub _precacheArtistImage {
 	my $artist_id = $artist->{id};
 
 	$specs         ||= join(',', Slim::Music::Artwork::getResizeSpecs());
+	$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
  	$cache         ||= Slim::Utils::Cache->new();
 	$cachedir      ||= $serverprefs->get('cachedir');
 	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', -1);
@@ -190,7 +191,20 @@ sub _precacheArtistImage {
 	elsif ( $precacheArtwork && $artist_id ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
 		$img = Slim::Utils::Misc::pathFromFileURL($img) if $img =~ /^file/;
-		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache ) if -f $img;
+		
+		return unless $img && -f $img;
+		
+		my $mtime = (stat(_))[9];
+
+		# see whether the file has changed at all - otherwise return quickly
+		if (my $cached = $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+			if ($cached->{original_path} eq $img && $cached->{mtime} == $mtime) {
+				main::DEBUGLOG && $log->is_debug && $log->debug("Pre-cached image has not changed: $img");
+				return;
+			}
+		}
+
+		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 	}
 }
 
