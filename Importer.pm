@@ -130,32 +130,22 @@ sub _getAlbumCoverURL {
 			
 			$params->{albumid} = $albumid;
 			
-			my @filenames;
-			
-			my $filename1 = $filenameTemplate;
-			$filename1 =~ s/ARTIST/$artist/;
-			$filename1 =~ s/ALBUM/$albumname2/;
-			push @filenames, "\Q$filename1\E";
+			my $replacer = sub {
+				my ($artist, $album) = @_;
+				my $filename = $filenameTemplate;
+				$filename =~ s/ARTIST/$artist/;
+				$filename =~ s/ALBUM/$album/;
+				return $filename;
+			};
 
-			$filename1 = $filenameTemplate;
-			$filename1 =~ s/ARTIST/$artist/;
-			$filename1 =~ s/ALBUM/$albumname/;
-			push @filenames, "\Q$filename1\E";
+			my @filenames = (
+				$replacer->($artist, $albumname2),
+				$replacer->($artist, $albumname),
+				$replacer->(Slim::Utils::Text::ignorePunct($artist), Slim::Utils::Text::ignorePunct($albumname)),
+				$replacer->(Slim::Utils::Text::ignorePunct($artist), Slim::Utils::Text::ignorePunct($albumname2)),
+			);
 
-			$filename1 = $filenameTemplate;
-			$albumname2 = Slim::Utils::Text::ignorePunct($albumname);
-			my $artist2 = Slim::Utils::Text::ignorePunct($artist);
-			$filename1 =~ s/ARTIST/$artist2/;
-			$filename1 =~ s/ALBUM/$albumname2/;
-			push @filenames, "\Q$filename1\E";
-
-			$filename1 = $filenameTemplate;
-			$albumname2 = Slim::Utils::Text::ignorePunct($albumname2);
-			$filename1 =~ s/ARTIST/$artist2/;
-			$filename1 =~ s/ALBUM/$albumname2/;
-			push @filenames, "\Q$filename1\E";
-
-			if ( my $file = Plugins::MusicArtistInfo::Common::imageInFolder($imageFolder, '(?:' . join('|', @filenames) . ')') ) {
+			if ( my $file = Plugins::MusicArtistInfo::Common::imageInFolder($imageFolder, @filenames) ) {
 				_setAlbumCover($artist, $albumname, $file, $params);
 			}
 			elsif ($ua) {

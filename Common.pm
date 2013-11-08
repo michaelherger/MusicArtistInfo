@@ -23,12 +23,14 @@ sub cleanupAlbumName {
 	main::INFOLOG && $log->info("Cleaning up album name: '$album'");
 
 	# remove everything between () or []... But don't for PG's eponymous first four albums :-)
-	$album =~ s/[\(\[].*?[\)\]]//g if $album !~ /Peter Gabriel \[[1-4]\]/i;
+	$album =~ s/[\(\[].*?[\)\]]//g if $album !~ /Peter Gabriel .*\b[1-4]\b/i;
 	
 	# remove stuff like "CD02", "1 of 2"
 	$album =~ s/\b(disc \d+ of \d+)\b//ig;
 	$album =~ s/\d+\/\d+//ig;
 	$album =~ s/\b(cd\s*\d+|\d+ of \d+|disc \d+)\b//ig;
+	$album =~ s/- live\b//i;
+
 	# remove trailing non-word characters
 	$album =~ s/[\s\W]{2,}$//;
 	$album =~ s/\s*$//;
@@ -39,26 +41,27 @@ sub cleanupAlbumName {
 }
 
 sub imageInFolder {
-	my ($folder, $name) = @_;
+	my ($folder, @names) = @_;
 	
-	return unless $folder && $name;
+	return unless $folder && @names;
 
 	#main::DEBUGLOG && $log->debug("Trying to find artwork in $folder");
 	
 	my $img;
-		
-	if ( opendir(DIR, $folder) ) {
-		while (readdir(DIR)) {
-			next if /^\._/;	# skip artefacts from OSX
-			if (/$name\.(?:jpe?g|png|gif)$/i) {
-				$img = catdir($folder, $_);
+	my %seen;
+	
+	foreach my $name (@names) {
+		next if $seen{$name}++;
+		foreach my $ext ('jpg', 'JPG', 'jpeg', 'png', 'gif') {
+			my $file = catdir($folder, $name . ".$ext");
+
+			if (-f $file) {
+				$img = $file;
 				last;
 			}
 		}
-		closedir(DIR);
-	}
-	else {
-		$log->error("Unable to open dir '$folder'");
+		
+		last if $img;
 	}
 
 	return $img;

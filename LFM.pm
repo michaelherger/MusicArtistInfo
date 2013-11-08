@@ -22,15 +22,7 @@ sub init {
 sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
 
-	# last.fm doesn't try to be smart about names: "the beatles" != "beatles" - don't punish users with correct tags
-	# this is an ugly hack, but we can't set the ignoredarticles pref, as this triggers a rescan...
-	my $ignoredArticles = $Slim::Utils::Text::ignoredArticles;
-	%Slim::Utils::Text::caseArticlesCache = ();
-	$Slim::Utils::Text::ignoredArticles = qr/^\s+/;
-
-	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
-
-	$Slim::Utils::Text::ignoredArticles = $ignoredArticles;
+	my $artist = $args->{artist};
 	
 	if (!$artist) {
 		$cb->();
@@ -205,27 +197,16 @@ sub getAlbumCovers {
 
 sub getAlbum {
 	my ( $class, $cb, $args ) = @_;
-
-	# last.fm doesn't try to be smart about names: "the beatles" != "beatles" - don't punish users with correct tags
-	# this is an ugly hack, but we can't set the ignoredarticles pref, as this triggers a rescan...
-	my $ignoredArticles = $Slim::Utils::Text::ignoredArticles;
-	%Slim::Utils::Text::caseArticlesCache = ();
-	$Slim::Utils::Text::ignoredArticles = qr/^\s+/;
-
-	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
-	my $album  = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
-
-	$Slim::Utils::Text::ignoredArticles = $ignoredArticles;
 	
-	if (!$artist || !$album) {
+	if (!$args->{artist} || !$args->{album}) {
 		$cb->();
 		return;
 	}
 
 	_call({
 		method => 'album.getinfo',
-		artist => $artist,
-		album  => $album,
+		artist => $args->{artist},
+		album  => $args->{album},
 		autocorrect => 1,
 	}, sub {
 		$cb->(shift);

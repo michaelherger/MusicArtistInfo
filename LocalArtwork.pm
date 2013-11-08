@@ -136,7 +136,7 @@ sub defaultArtistPhoto {
 
 	# check whether the user has a generic 'artist.jpg' image in his folder
 	if ( $checkFallbackArtistImg < time && (my $imageFolder = $prefs->get('artistImageFolder')) ) {
-		$fallbackArtistImg = _imageInFolder($imageFolder, "artist");
+		$fallbackArtistImg = _imageInFolder($imageFolder, 'artist');
 		# only check every minute...
 		$checkFallbackArtistImg = time + 60;
 	}
@@ -162,8 +162,8 @@ sub getArtistPhoto {
 	
 	if ($imageFolder) {
 		my $artist2 = Slim::Utils::Text::ignorePunct($artist);
-		$img = _imageInFolder($imageFolder, "(?:\Q$artist2\E|\Q$artist\E)");
-		
+		$img = _imageInFolder($imageFolder, $artist2, $artist);
+
 		# don't look up generic artists like "no artist" or "various artists" etc.
 		if (!$img) {
 			my $vaString = Slim::Music::Info::variousArtistString();
@@ -187,7 +187,7 @@ sub getArtistPhoto {
 			$path = dirname($path) if !-d $path;
 			
 			# look for pictures called $artist or literal artist.jpg in the album folder
-			$img = _imageInFolder($path, "(?:\Q$artist\E|artist)");
+			$img = _imageInFolder($path, $artist, 'artist');
 			last if $img;
 		}
 	}
