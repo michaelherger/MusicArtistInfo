@@ -147,7 +147,7 @@ sub defaultArtistPhoto {
 sub getArtistPhoto {
 	my ( $class, $args ) = @_;
 	
-	my $artist    = $args->{artist};
+	my $artist    = $args->{artist} || 'no artist';
 	my $artist_id = $args->{artist_id};
 	
 	my $cachekey = 'mai_artist_photo_' . Slim::Utils::Text::ignoreCaseArticles($artist, 1);

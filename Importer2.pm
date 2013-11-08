@@ -47,6 +47,9 @@ sub _scanArtistPhotos {
 		SELECT COUNT(*) FROM ( $sql ) AS t1
 	}) || 0;
 	
+	my $vaObj = Slim::Schema->variousArtistsObject;
+	$count++ if $vaObj;
+	
 	my $sth = $dbh->prepare_cached($sql);
 	$sth->execute();
 
@@ -77,6 +80,10 @@ sub _scanArtistPhotos {
 		sth      => $sth,
 		count    => $count,
 		progress => $progress,
+		vaObj    => $vaObj ? {
+			id => $vaObj->id,
+			name => $vaObj->name,
+		} : undef,
 	}) ) {}
 }
 
@@ -87,7 +94,7 @@ sub _getArtistPhotoURL {
 	my $progress = $params->{progress};
 
 	# get next artist from db
-	if ( my $artist = $params->{sth}->fetchrow_hashref ) {
+	if ( my $artist = ($params->{sth}->fetchrow_hashref || $params->{vaObj}) ) {
 		$progress->update( $artist->{name} ) if $progress;
 		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
 		
@@ -109,7 +116,7 @@ sub _getArtistPhotoURL {
 			});
 		}
 
-		return 1;
+		return 1 if $artist != $params->{vaObj};
 	}
 
 	if ( $progress ) {
