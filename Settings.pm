@@ -28,7 +28,8 @@ sub handler {
 	# artfolder is a server setting - need to handle it manually
 	if ($paramRef->{'saveSettings'}) {
 		$serverprefs->set('artfolder', $paramRef->{artfolder});
-		
+
+		# XXX - what's wrong here? We should not need to do this!
 		my (undef, @prefs) = $class->prefs();
 		foreach (@prefs) {
 			$paramRef->{"pref_$_"} ||= '';

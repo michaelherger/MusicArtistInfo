@@ -25,6 +25,15 @@ sub startScan {
 	my $class = shift;
 	
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
+			
+	if ( $saveArtistPictures = $prefs->get('saveArtistPictures') ) {
+		$imageFolder = $prefs->get('artistImageFolder');
+		$saveArtistPictures = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
+	}
+	
+	# only run scanner if we want to show artist pictures and pre-cache or at least download pictures
+	return unless $prefs->get('browseArtistPictures') && ( $precacheArtwork || ($saveArtistPictures && $prefs->get('lookupArtistPictures')) );
+	
 	$class->_scanArtistPhotos();
 }
 
@@ -68,11 +77,6 @@ sub _scanArtistPhotos {
 		agent   => Slim::Utils::Misc::userAgentString(),
 		timeout => 15,
 	) if $prefs->get('lookupArtistPictures');
-		
-	if ( $saveArtistPictures = $prefs->get('saveArtistPictures') ) {
-		$imageFolder = $prefs->get('artistImageFolder');
-		$saveArtistPictures = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
-	}
 
 	$max = 500 unless $saveArtistPictures;
 	
