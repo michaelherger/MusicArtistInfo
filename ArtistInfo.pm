@@ -21,7 +21,6 @@ use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSIO
 my $log   = logger('plugin.musicartistinfo');
 my $cache = Slim::Utils::ArtworkCache->new();
 my $prefs;
-my $defaultImg;
 
 sub init {
 #                                                                |requires Client
@@ -59,10 +58,6 @@ sub init {
 		Slim::Web::ImageProxy->registerHandler(
 			match => qr/mai\/artist\/.+/,
 			func  => \&_artworkUrl,
-		);
-		
-		$defaultImg = Slim::Utils::Misc::fileURLFromPath( 
-			Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png')
 		);
 		
 		# dirty re-direct of the Artists menu...
@@ -831,7 +826,9 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	
 	main::DEBUGLOG && $log->debug("Artist ID is '$artist_id'");
 	
-	return $defaultImg unless $artist_id;
+	return Slim::Utils::Misc::fileURLFromPath(
+		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
+	) unless $artist_id;
 
 	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
 	
@@ -841,13 +838,16 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		artist_id => $artist_id,
 		rawUrl    => 1,
 	}) ) {
+		main::DEBUGLOG && $log->debug("Found local artwork: $local");
 		return $local;
 	}
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
 		my $photo = shift || {};
+
+		main::DEBUGLOG && $log->debug("Got online artwork: " . Data::Dump::dump($photo));
 		
-		my $img = $defaultImg;
+		my $img;
 		my $sizeMap = {
 			252 => 252,
 			500 => 500,
@@ -859,6 +859,13 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 			# if we've hit one of those huge files, go with a known max of 500px
 			$defaultSize = 500 if ($photo->{width} && $photo->{width} > 1500) || ($photo->{height} && $photo->{height} > 1500);
 		}
+		else {
+			$img = Slim::Utils::Misc::fileURLFromPath( 
+				Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
+			);
+		}
+
+		main::DEBUGLOG && $log->debug("Using: $img");
 		
 		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || $defaultSize;
 		$img =~ s/\/_\//\/$size\//;

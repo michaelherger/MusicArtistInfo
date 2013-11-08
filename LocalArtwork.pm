@@ -16,32 +16,37 @@ use Slim::Utils::Prefs;
 my $log   = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
+my ($defaultArtistImg, $fallbackArtistImg, $checkFallbackArtistImg);
 
-sub init { if (!main::SCANNER) {
-	require Slim::Menu::AlbumInfo;
-	require Slim::Menu::FolderInfo;
-	require Slim::Menu::TrackInfo;
-	require Slim::Web::ImageProxy;
+sub init { 
+	if (!main::SCANNER) {
+		require Slim::Menu::AlbumInfo;
+		require Slim::Menu::FolderInfo;
+		require Slim::Menu::TrackInfo;
+		require Slim::Web::ImageProxy;
+	
+		Slim::Menu::AlbumInfo->registerInfoProvider( moreartwork => (
+			func => \&albumInfoHandler,
+			after => 'moremusicinfo',
+		) );
+	
+		Slim::Menu::FolderInfo->registerInfoProvider( moreartwork => (
+			func => \&folderInfoHandler,
+		) );
+	
+		Slim::Menu::TrackInfo->registerInfoProvider( moreartwork => (
+			func => \&trackInfoHandler,
+			after => 'moremusicinfo',
+		) );
+	
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/mai\/localartwork\/[a-f\d]+/,
+			func  => \&artworkUrl,
+		);
+	} 
 
-	Slim::Menu::AlbumInfo->registerInfoProvider( moreartwork => (
-		func => \&albumInfoHandler,
-		after => 'moremusicinfo',
-	) );
-
-	Slim::Menu::FolderInfo->registerInfoProvider( moreartwork => (
-		func => \&folderInfoHandler,
-	) );
-
-	Slim::Menu::TrackInfo->registerInfoProvider( moreartwork => (
-		func => \&trackInfoHandler,
-		after => 'moremusicinfo',
-	) );
-
-	Slim::Web::ImageProxy->registerHandler(
-		match => qr/mai\/localartwork\/[a-f\d]+/,
-		func  => \&artworkUrl,
-	);
-} }
+	$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png');
+}
 
 sub albumInfoHandler {
 	my ( $client, $url, $album ) = @_;
@@ -126,6 +131,20 @@ sub artworkUrl {
 	return $fileUrl;
 }
 
+sub defaultArtistPhoto {
+	my ( $class ) = @_;
+
+	# check whether the user has a generic 'artist.jpg' image in his folder
+	if ( $checkFallbackArtistImg < time && (my $imageFolder = $prefs->get('artistImageFolder')) ) {
+		$fallbackArtistImg = _imageInFolder($imageFolder, "artist");
+		# only check every minute...
+		$checkFallbackArtistImg = time + 60;
+	}
+	
+	logError($fallbackArtistImg || $defaultArtistImg);
+	return $fallbackArtistImg || $defaultArtistImg;
+}
+
 sub getArtistPhoto {
 	my ( $class, $args ) = @_;
 	
@@ -145,6 +164,16 @@ sub getArtistPhoto {
 	if ($imageFolder) {
 		my $artist2 = Slim::Utils::Text::ignorePunct($artist);
 		$img = _imageInFolder($imageFolder, "(?:\Q$artist2\E|\Q$artist\E)");
+		
+		# don't look up generic artists like "no artist" or "various artists" etc.
+		if (!$img) {
+			my $vaString = Slim::Music::Info::variousArtistString();
+			my $noArtistString = Slim::Utils::Strings::string('NO_ARTIST');
+			
+			if ( $artist =~ /^(?:no artist|Various Artist|Various$|va$|\Q$vaString\E|\Q$noArtistString\E)/i ) {
+				$img = $class->defaultArtistPhoto();
+			}
+		}
 	}
 	
 	if (!$img && $artist_id && $artist_id ne $artist) {
@@ -158,6 +187,7 @@ sub getArtistPhoto {
 			my $path = Slim::Utils::Misc::pathFromFileURL($track->url);
 			$path = dirname($path) if !-d $path;
 			
+			# look for pictures called $artist or literal artist.jpg in the album folder
 			$img = _imageInFolder($path, "(?:\Q$artist\E|artist)");
 			last if $img;
 		}

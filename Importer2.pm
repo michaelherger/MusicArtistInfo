@@ -176,7 +176,8 @@ sub _precacheArtistImage {
 		
 		unlink $tmpFile unless $saveArtistPictures;
 	}
-	elsif ( $precacheArtwork && $artist_id && $img ) {
+	elsif ( $precacheArtwork && $artist_id ) {
+		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
 		$img = Slim::Utils::Misc::pathFromFileURL($img) if $img =~ /^file/;
 		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache ) if -f $img;
 	}
