@@ -897,7 +897,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 					my $items = shift;
 	
 					$items->{items} = [ map { 
-						$_->{image} ||= 'imageproxy/mai/artist/' . $_->{id} . '/image.png';
+						$_->{image} ||= 'imageproxy/mai/artist/' . ($_->{id} || 0) . '/image.png';
 						$_;
 					} @{$items->{items}} ];
 	
