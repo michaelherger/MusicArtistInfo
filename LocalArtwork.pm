@@ -141,7 +141,6 @@ sub defaultArtistPhoto {
 		$checkFallbackArtistImg = time + 60;
 	}
 	
-	logError($fallbackArtistImg || $defaultArtistImg);
 	return $fallbackArtistImg || $defaultArtistImg;
 }
 
