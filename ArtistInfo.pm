@@ -881,8 +881,9 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 # this is an ugly hack to manipulate the main artist menu to inject artist artwork
 my $retry = 0.5;
 sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
+	main::DEBUGLOG && $log->is_debug && $prefs->get('browseArtistPictures') && $log->debug('Trying to redirect Artists menu...');
+	
 	if ( my ($node) = grep { $_->{id} eq 'myMusicArtists' } @{ Slim::Menu::BrowseLibrary->_getNodeList() } ) {
-		main::DEBUGLOG && $log->debug('Trying to redirect Artists menu...');
 		
 		if ( $prefs->get('browseArtistPictures') && !$node->{mainCB} ) {
 			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu!');
