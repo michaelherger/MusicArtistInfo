@@ -144,7 +144,7 @@ sub _precacheArtistImage {
 	$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
  	$cache         ||= Slim::Utils::Cache->new();
 	$cachedir      ||= $serverprefs->get('cachedir');
-	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', -1);
+	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', '3M');	# expire in three months - IDs might change
 	
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 
