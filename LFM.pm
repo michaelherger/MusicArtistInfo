@@ -29,8 +29,9 @@ sub getArtistPhotos {
 		return;
 	}
 
+	my $key = "lfm_artist_photos_" . Slim::Utils::Text::ignoreCaseArticles($artist, 1);
 	$cache ||= Slim::Utils::Cache->new;	
-	if ( my $cached = $cache->get("lfm_artist_photos_$artist") ) {
+	if ( my $cached = $cache->get($key) ) {
 		$cb->($cached);
 		return;
 	}
@@ -90,7 +91,7 @@ sub getArtistPhotos {
 					$result->{photos} = \@images;
 
 					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
-					$cache->set("lfm_artist_photos_$artist", $result, 86400 * 30);
+					$cache->set($key, $result, 86400 * 30);
 				}
 			}
 		}
