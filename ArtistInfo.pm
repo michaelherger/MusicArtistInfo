@@ -12,7 +12,6 @@ use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::LFM;
-use Plugins::MusicArtistInfo::LocalArtwork;
 use Plugins::MusicArtistInfo::TEN;
 
 use constant CLICOMMAND => 'musicartistinfo';
@@ -54,6 +53,7 @@ sub init {
 	if (CAN_IMAGEPROXY) {
 		require Slim::Web::HTTP;
 		require Slim::Web::ImageProxy;
+		require Plugins::MusicArtistInfo::LocalArtwork;
 
 		Slim::Web::ImageProxy->registerHandler(
 			match => qr/mai\/artist\/.+/,
@@ -298,14 +298,19 @@ sub getArtistPhotos {
 		$getArtistPhotoCb->($results);
 	}, $args );
 	
-	my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto($args);
-	
-	$results->{'local'} = {
-		photos => $local ? [{ 
-			url => $local,
-			author => cstring($client, 'SETUP_AUDIODIR'),
-		}] : [],
-	};
+	if (CAN_IMAGEPROXY) {
+		my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto($args);
+		
+		$results->{'local'} = {
+			photos => $local ? [{ 
+				url => $local,
+				author => cstring($client, 'SETUP_AUDIODIR'),
+			}] : [],
+		};
+	}
+	else {
+		$results->{'local'}->{photos} = [];
+	}
 	
 	$getArtistPhotoCb->($results);
 }
@@ -333,11 +338,12 @@ sub getArtistPhotoCLI {
 	}
 	
 	# try local artwork first
-	if ( my $img = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+	if ( CAN_IMAGEPROXY && (my $img = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 		artist    => $artist,
 		artist_id => $artist_id,
 		rawUrl    => 1,
-	}) ) {
+	})) ) {
+		logError('imageproxy/mai/artist/' . ($artist_id || $artist) . '/image.png');
 		$request->addResult('url', 'imageproxy/mai/artist/' . ($artist_id || $artist) . '/image.png');
 		$request->addResult('artist_id', $artist_id) if $artist_id;
 		$request->setStatusDone();

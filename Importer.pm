@@ -15,7 +15,6 @@ use Slim::Utils::Prefs;
 use Plugins::MusicArtistInfo::Common;
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
-use Plugins::MusicArtistInfo::LocalArtwork;
 
 my ($i, $ua, $imageFolder, $filenameTemplate, $saveCoverArt, $max, $cachedir);
 
