@@ -23,8 +23,6 @@ my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precac
 
 sub startScan {
 	my $class = shift;
-
-	Plugins::MusicArtistInfo::LocalArtwork->init();
 	
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
 			

@@ -43,9 +43,9 @@ sub init {
 			match => qr/mai\/localartwork\/[a-f\d]+/,
 			func  => \&artworkUrl,
 		);
-	} 
 
-	$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png');
+		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png');
+	} 
 }
 
 sub albumInfoHandler {
