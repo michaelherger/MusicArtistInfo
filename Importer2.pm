@@ -19,20 +19,18 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
 
-my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $saveArtistPictures, $imageFolder);
+my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder);
 
 sub startScan {
 	my $class = shift;
 	
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
 			
-	if ( $saveArtistPictures = $prefs->get('saveArtistPictures') ) {
-		$imageFolder = $prefs->get('artistImageFolder');
-		$saveArtistPictures = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
-	}
+	$imageFolder = $prefs->get('artistImageFolder');
+	$imageFolder = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
 	
 	# only run scanner if we want to show artist pictures and pre-cache or at least download pictures
-	return unless $prefs->get('browseArtistPictures') && ( $precacheArtwork || ($saveArtistPictures && $prefs->get('lookupArtistPictures')) );
+	return unless $prefs->get('browseArtistPictures') && ( $precacheArtwork || $prefs->get('lookupArtistPictures') );
 	
 	$class->_scanArtistPhotos();
 }
@@ -78,7 +76,7 @@ sub _scanArtistPhotos {
 		timeout => 15,
 	) if $prefs->get('lookupArtistPictures');
 
-	$max = 500 unless $saveArtistPictures;
+	$max = 500 unless $imageFolder;
 	
 	while ( _getArtistPhotoURL({
 		sth      => $sth,
@@ -136,7 +134,7 @@ sub _getArtistPhotoURL {
 sub _precacheArtistImage {
 	my ($artist, $img) = @_;
 	
-	return unless $precacheArtwork || $saveArtistPictures;
+	return unless $precacheArtwork || $imageFolder;
 	
 	my $artist_id = $artist->{id};
 
@@ -148,45 +146,38 @@ sub _precacheArtistImage {
 	
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 
-		if ( !$saveArtistPictures && !$max && (($img->{width} && $img->{width} > 1500) || ($img->{height} && $img->{height} > 1500)) ) {
-			main::INFOLOG && $log->is_info && $log->info("Full size image is huge - try smaller copy instead (500px)\n" . Data::Dump::dump($img));
-			$max = 500;
-		}
-
-		$url =~ s/\/_\//\/$max\// if $max && !$saveArtistPictures;
+		$url =~ s/\/_\//\/$max\// if $max;
 		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 		
-		my $tmpFile;
+		my $file;
 		
 		# if user wants us to save a copy on the disk, write to our image folder instead
-		if ($saveArtistPictures) {
-			$tmpFile = catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist->{name}) );
-			my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
-			$tmpFile .= ".$ext";
+		if ($imageFolder) {
+			$file = Plugins::MusicArtistInfo::Importer::filename($url, $imageFolder, $artist->{name});
 		}
 		else {
-			 $tmpFile = catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
+			$file = catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
 		}
 
 		if (my $image = $cache->get("mai_$url")) {
-			File::Slurp::write_file($tmpFile, $image);
+			File::Slurp::write_file($file, $image);
 		}
 		else {
-			my $response = $ua->get( $url, ':content_file' => $tmpFile );
+			my $response = $ua->get( $url, ':content_file' => $file );
 			if ($response && $response->is_success) {
-				$cache->set("mai_$url", scalar File::Slurp::read_file($tmpFile, binmode => ':raw')) unless $saveArtistPictures;
+				$cache->set("mai_$url", scalar File::Slurp::read_file($file, binmode => ':raw'), 86400) unless $imageFolder;
 			}
 			else {
 				$log->warn("Image download failed for $url: " . $response->message);
 			}
 		}
 		
-		return unless $precacheArtwork && -f $tmpFile;
+		return unless $precacheArtwork && -f $file;
 		
-		Slim::Utils::ImageResizer->resize($tmpFile, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
+		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 		
-		unlink $tmpFile unless $saveArtistPictures;
+		unlink $file unless $file =~ /^$imageFolder/;
 	}
 	elsif ( $precacheArtwork && $artist_id ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();

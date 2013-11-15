@@ -27,20 +27,8 @@
 			[% IF saveAlbumCoverDisabled %]<div style="color:red"><br/>[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED" | string %]</div>[% END %]
 		[% END %]
 		
-		[% WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DESC" %]
-			<input type="checkbox" [% IF prefs.pref_saveCoverArt || saveAlbumCoverDisabled %]checked [% END %] class="stdedit" name="pref_saveCoverArt" id="pref_saveCoverArt" value="1" [% IF saveAlbumCoverDisabled %]disabled[% END %] />
-			<label for="pref_saveCoverArt" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE" | string %]</label>
-			[% IF saveAlbumCoverDisabled %]<div style="color:red"><br/>[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED" | string %]</div>[% END %]
-		[% END %]
-		
 		[% IF !limited; WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_artistImageFolder" id="pref_artistImageFolder" value="[% prefs.pref_artistImageFolder %]" size="40">
-		[% END; END %]
-		
-		[% IF !limited; WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DESC" %]
-			<input type="checkbox" [% IF prefs.pref_saveArtistPictures || savePicturesDisabled %]checked [% END %] class="stdedit" name="pref_saveArtistPictures" id="pref_saveArtistPictures" value="1" [% IF savePicturesDisabled %]disabled[% END %] />
-			<label for="pref_saveArtistPictures" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE" | string %]</label>
-			[% IF savePicturesDisabled %]<div style="color:red"><br/>[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED" | string %]</div>[% END %]
 		[% END; END %]
 		
 	[% END %]

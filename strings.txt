@@ -102,14 +102,6 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Interpreten-Photos angeben, so werden darin gespeicherte Photos verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.jpg (png, gif, z.B. 'Peter Gabriel.jpg'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for artist photos, this will be used as an additional source for pictures. Use filenames like %ARTIST.jpg (png, gif, eg. 'Peter Gabriel.jpg'). If a file is found in this folder, then no online-source will be used.
-	
-PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE
-	DE	Heruntergeladene Bilder speichern
-	EN	Save downloaded pictures
-
-PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DESC
-	DE	Heruntergeladene Bilder können im angegebenen Ordner für zukünftige Verwendung gespeichert werden. Bitte beachte, dass dies einigen Speicherplatz in Anspruch nehmen kann!
-	EN	Save downloaded pictures in the folder for artist photos (if defined). Please note that this can consume a considerable amount of disk space.
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
 	DE	Speichern der heruntergeladenen Bilder ist nicht möglich! Bitte stellen Sie sicher, dass der angegebene Ordner existiert und von Logitech Media Server beschreibbar ist!

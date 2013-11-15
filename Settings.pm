@@ -15,7 +15,7 @@ sub name {
 }
 
 sub prefs {
-	return ($prefs, 'browseArtistPictures', 'runImporter', 'lookupArtistPictures', 'lookupCoverArt', 'artistImageFolder', 'saveArtistPictures', 'saveCoverArt');
+	return ($prefs, 'browseArtistPictures', 'runImporter', 'lookupArtistPictures', 'lookupCoverArt', 'artistImageFolder');
 }
 
 sub page {
@@ -39,14 +39,14 @@ sub handler {
 	my $imageFolder = $paramRef->{pref_artistImageFolder} || $prefs->get('artistImageFolder');
 	
 	# disable saving to image folder if it isn't writeable
-	if ( !($imageFolder && -d $imageFolder && -w $imageFolder) ) {
+	if ( $imageFolder && !(-d $imageFolder && -w $imageFolder) ) {
 		$paramRef->{savePicturesDisabled} = 1;
 	}
 	
 	$paramRef->{limited}   = !CAN_IMAGEPROXY;
 	$paramRef->{artfolder} = $serverprefs->get('artfolder');
 	
-	if ( !($paramRef->{artfolder} && -d $paramRef->{artfolder} && -w $paramRef->{artfolder}) ) {
+	if ( $paramRef->{artfolder} && !(-d $paramRef->{artfolder} && -w $paramRef->{artfolder}) ) {
 		$paramRef->{saveAlbumCoversDisabled} = 1;
 	}
 	

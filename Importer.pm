@@ -222,11 +222,7 @@ sub _setAlbumCover {
 		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 
-		# XXX - use correct setting for placeholders!
-		my $file = catdir( $imageFolder, Slim::Utils::Text::ignorePunct($artist) . ' - ' . Slim::Utils::Text::ignorePunct($album) );
-		my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
-		$ext =~ s/jpeg/jpg/;
-		$file .= ".$ext";
+		my $file = filename($url, $imageFolder, $artist, $album);
 		
 		if ($url =~ /^http:/) {
 			my $response = $ua->get( $url, ':content_file' => $file );
@@ -248,6 +244,17 @@ sub _setAlbumCover {
 			$params->{sth_update_albums}->execute( $coverid, $albumid );
 		}
 	}
+}
+
+sub filename {
+	my ($class, $url, $folder, $artist, $album) = @_;
+
+	# XXX - use correct setting for placeholders!
+	my $file = catdir( $folder, Slim::Utils::Text::ignorePunct($artist) . ($album ? (' - ' . Slim::Utils::Text::ignorePunct($album)) : '') );
+	my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
+	$ext =~ s/jpeg/jpg/;
+	
+	return "$file.$ext";
 }
 
 sub _initCacheFolder {
