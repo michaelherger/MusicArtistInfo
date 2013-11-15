@@ -16,7 +16,7 @@ use Plugins::MusicArtistInfo::Common;
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 
-my ($i, $ua, $imageFolder, $filenameTemplate, $saveCoverArt, $max, $cachedir);
+my ($i, $ua, $imageFolder, $filenameTemplate, $max, $cachedir);
 
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
@@ -32,6 +32,8 @@ sub initPlugin {
 		'weight'       => 85,
 		'use'          => 1,
 	});
+
+	$class->_initCacheFolder();
 	
 	return 1;
 }
@@ -86,14 +88,15 @@ sub _scanAlbumCovers {
 	) if $prefs->get('lookupCoverArt');
 		
 	$imageFolder = $serverprefs->get('artfolder');
-	$filenameTemplate = $serverprefs->get('coverArt') || 'ARTIST - ALBUM';
-	$filenameTemplate =~ s/^%//;
-
-	if ( $saveCoverArt = $prefs->get('saveCoverArt') ) {
-		$saveCoverArt = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
+	
+	# use our own folder in the cache folder if the user has not defined an artfolder
+	if ( !($imageFolder && -d $imageFolder && -w $imageFolder) ) {
+		$max = 500;		# if user doesn't care about artwork folder, then he doesn't care about artwork. Only download smaller size.
+		$imageFolder = $class->_cacheFolder;
 	}
 
-	$max = 500 unless $saveCoverArt;
+	$filenameTemplate = $serverprefs->get('coverArt') || 'ARTIST - ALBUM';
+	$filenameTemplate =~ s/^%//;
 	
 	while ( _getAlbumCoverURL({
 		albums   => $albums,
@@ -215,7 +218,7 @@ sub _setAlbumCover {
 	if ( $artist && $album && $url ) {
 		$cachedir ||= $serverprefs->get('cachedir');
 	
-		$url =~ s/\/_\//\/$max\// if $max && !$saveCoverArt;
+		$url =~ s/\/_\//\/$max\// if $max;
 		
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
 
@@ -225,10 +228,7 @@ sub _setAlbumCover {
 		$ext =~ s/jpeg/jpg/;
 		$file .= ".$ext";
 		
-		my $tmpFile = catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
-		
 		if ($url =~ /^http:/) {
-			$file = $tmpFile unless $saveCoverArt;
 			my $response = $ua->get( $url, ':content_file' => $file );
 			if ( !($response && $response->is_success && -e $file) ) {
 				$file = undef;
@@ -246,10 +246,46 @@ sub _setAlbumCover {
 			
 			$params->{sth_update_tracks}->execute( $file, $coverid, $albumid );
 			$params->{sth_update_albums}->execute( $coverid, $albumid );
-			
-			unlink $file unless $saveCoverArt;
 		}
 	}
+}
+
+sub _initCacheFolder {
+	# purge cached files
+	$imageFolder = $serverprefs->get('artfolder');
+	
+	my $useCustomFolder = $imageFolder && -d $imageFolder && -w $imageFolder;
+	require File::Copy if $useCustomFolder;
+
+	my $cacheDir = catdir($serverprefs->get('cachedir'), 'mai_coverart');
+	mkdir $cacheDir unless -d $cacheDir;
+
+	opendir my ($dirh), $cacheDir;
+	
+	# cleanup of temporary coverart folder
+	if ($dirh) {
+		for ( readdir $dirh ) {
+			my $file = catdir($cacheDir, $_);
+			
+			next unless -f $file && -w _;
+			
+			# remove old files - let them be re-downloaded every now and then
+			if (-M _ > 60 + rand(15)) {
+				unlink $file or logError("Unable to remove file: $file: $!");
+			}
+			elsif ($useCustomFolder) {
+				my $target = catdir($imageFolder, $_);
+				# move files from temporary cache folder to user's artfolder (if possible)
+				File::Copy::move($file, $target) unless -f $target;
+			}
+		}
+
+		closedir $dirh;
+	}
+}
+
+sub _cacheFolder {
+	catdir($serverprefs->get('cachedir'), 'mai_coverart');
 }
 
 1;
