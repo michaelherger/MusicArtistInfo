@@ -247,7 +247,7 @@ sub _setAlbumCover {
 }
 
 sub filename {
-	my ($class, $url, $folder, $artist, $album) = @_;
+	my ($url, $folder, $artist, $album) = @_;
 
 	# XXX - use correct setting for placeholders!
 	my $file = catdir( $folder, Slim::Utils::Text::ignorePunct($artist) . ($album ? (' - ' . Slim::Utils::Text::ignorePunct($album)) : '') );
