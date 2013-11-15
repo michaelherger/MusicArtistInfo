@@ -27,12 +27,14 @@ sub init {
 #                                                                |  |  |has Tags
 #                                                                |  |  |  |Function to call
 #                                                                C  Q  T  F
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [1, 1, 1, \&getArtistWeblinksCLI]);
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'],  [1, 1, 1, \&getArtistWeblinksCLI]);
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'],   [1, 1, 1, \&getArtistWeblinksCLI]);
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'],   [1, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [0, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'],  [0, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'],   [0, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'],   [0, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'artistphoto'],
 	                                                            [0, 1, 1, \&getArtistPhotoCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'biography'],
+	                                                            [0, 1, 1, \&getBiographyCLI]);
 
 	Slim::Menu::GlobalSearch->registerInfoProvider( moreartistinfo => (
 		func => \&searchHandler,
@@ -235,6 +237,58 @@ sub getBiography {
 	);
 }
 
+sub getBiographyCLI {
+	my $request = shift;
+
+	my ($artist, $artist_id) = _checkRequest($request, ['biography']);
+
+	return unless $artist;
+	
+	getBiography($request->client(), 
+		sub {
+			my $items = shift || [];
+
+			if ( !$items || !scalar @$items ) {
+				$request->addResult('error', 'unknown');
+			}
+			elsif ( $items->[0]->{error} ) {
+				$request->addResult('error', $items->[0]->{error});
+			}
+			elsif ($items) {
+				my $item = shift @$items;
+				$request->addResult('biography', $item->{name});
+				$request->addResult('artist_id', $artist_id) if $artist_id;
+				$request->addResult('artist', $artist) if $artist;
+			}
+
+			$request->setStatusDone();
+		},{},{
+			artist => $artist
+		}
+	);
+}
+
+sub _checkRequest {
+	my ($request, $methods) = @_;
+	
+	# check this is the correct query.
+	if ($request->isNotQuery([[CLICOMMAND], $methods])) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+	
+	$request->setStatusProcessing();
+
+	my $artist_id = $request->getParam('artist_id');
+	my $artist = $request->getParam('artist') || _getArtistFromArtistId($artist_id);
+
+	return ($artist, $artist_id) if $artist;
+
+	$request->addResult('error', 'No artist found');
+	$request->setStatusDone();
+	return;
+}
+
 sub getArtistPhotos {
 	my ($client, $cb, $params, $args) = @_;
 
@@ -318,24 +372,9 @@ sub getArtistPhotos {
 sub getArtistPhotoCLI {
 	my $request = shift;
 
-	my $handler;
-	# check this is the correct query.
-	if ( $request->isNotQuery([[CLICOMMAND], ['artistphoto']]) ) {
-		$request->setStatusBadDispatch();
-		return;
-	}
-	
-	$request->setStatusProcessing();
-	
-	my $client = $request->client();
-	my $artist_id = $request->getParam('artist_id');
-	my $artist = $request->getParam('artist') || _getArtistFromArtistId($artist_id);
+	my ($artist, $artist_id) = _checkRequest($request, ['artistphoto']);
 
-	if (!$artist) {
-		$request->addResult('error', 'No artist found');
-		$request->setStatusDone();
-		return;
-	}
+	return unless $artist;
 	
 	# try local artwork first
 	if ( CAN_IMAGEPROXY && (my $img = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
@@ -350,7 +389,7 @@ sub getArtistPhotoCLI {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::LFM->getArtistPhoto($client, sub {
+	Plugins::MusicArtistInfo::LFM->getArtistPhoto($request->client(), sub {
 		my $photo = shift || {};
 
 		if ($photo->{error}) {
@@ -617,30 +656,24 @@ sub _gotWebLinks {
 sub getArtistWeblinksCLI {
 	my $request = shift;
 
+	my ($artist, $artist_id) = _checkRequest($request, ['videos', 'blogs', 'news', 'urls']);
+
+	return unless $artist;
+
 	my $handler;
-	# check this is the correct query.
-	if ($request->isNotQuery([[CLICOMMAND], ['videos', 'blogs', 'news', 'urls']]) || !$request->client()) {
-		$request->setStatusBadDispatch();
-		return;
-	}
-	elsif ($request->isQuery([[CLICOMMAND], ['news']]) || !$request->client()) {
+	if ($request->isQuery([[CLICOMMAND], ['news']])) {
 		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistNews(@_) };
 	}
-	elsif ($request->isQuery([[CLICOMMAND], ['blogs']]) || !$request->client()) {
+	elsif ($request->isQuery([[CLICOMMAND], ['blogs']])) {
 		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistBlogs(@_) };
 	}
-	elsif ($request->isQuery([[CLICOMMAND], ['videos']]) || !$request->client()) {
+	elsif ($request->isQuery([[CLICOMMAND], ['videos']])) {
 		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistVideos(@_) };
 	}
-	elsif ($request->isQuery([[CLICOMMAND], ['urls']]) || !$request->client()) {
+	elsif ($request->isQuery([[CLICOMMAND], ['urls']])) {
 		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistURLs(@_) };
 	}
 	
-	$request->setStatusProcessing();
-	
-	my $client = $request->client();
-	my $artist = $request->getParam('artist');
-
 	$handler->(
 		sub {
 			my $items = shift || {};
@@ -657,15 +690,6 @@ sub getArtistWeblinksCLI {
 			elsif ($items->{items}) {
 				foreach (@{$items->{items}}) {
 					my $url = $_->{url};
-
-#					if ($url =~ /youtube/) {
-#						my ($id) = $url =~ /v=(\w+)\b/;
-#						logError($id);
-#						$url = 'http://y2u.be/' . $id;
-#						logError($url);
-#					}
-					
-#					logError($url);
 
 					$hasImages ||= $_->{image_url};
 					

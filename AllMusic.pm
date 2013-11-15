@@ -675,9 +675,9 @@ sub _get {
 			my $result;
 			my $error;
 
-			main::DEBUGLOG && $log->is_debug && Data::Dump::dump($response->content);
+			main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($response->content);
 			
-			if ( $response->headers->content_type =~ /html/ ) {
+			if ( $response->headers->content_type =~ /html/ && $response->content ) {
 				my $tree = HTML::TreeBuilder->new;
 				$tree->ignore_unknown(0);		# allmusic.com uses unknown "section" tag
 				$tree->parse_content( $response->content );

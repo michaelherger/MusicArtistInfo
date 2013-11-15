@@ -14,11 +14,19 @@ use Plugins::MusicArtistInfo::LFM;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
 
+use constant CLICOMMAND => 'musicartistinfo';
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
 my $log = logger('plugin.musicartistinfo');
 
 sub init {
+#                                                                     |requires Client
+#                                                                     |  |is a Query
+#                                                                     |  |  |has Tags
+#                                                                     |  |  |  |Function to call
+#                                                                     C  Q  T  F
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'albumreview'], [0, 1, 1, \&getAlbumInfoCLI]);
+
 	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
 		func => \&_objInfoHandler,
 		after => 'moreartistinfo',
@@ -309,6 +317,62 @@ sub getAlbumCredits {
 			$cb->($items);
 		},
 		$args,
+	);
+}
+
+sub getAlbumReviewCLI {
+	my $request = shift;
+
+	# check this is the correct query.
+	if ($request->isNotQuery([[CLICOMMAND], ['albumreview']])) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+	
+	$request->setStatusProcessing();
+
+	my $client = $request->client();
+
+	my $args;
+	my $artist = $request->getParam('artist');
+	my $album  = $request->getParam('album');
+	
+	if ($artist && $album) {
+		$args = {
+			album  => $album,
+			artist => $artist
+		};
+	}
+	else {
+		$args = _getAlbumFromAlbumId($request->param('album_id'));
+	}
+
+	if ( !($args && $args->{artist} && $args->{album}) ) {
+		$request->addResult('error', 'No album found');
+		$request->setStatusDone();
+		return;
+	}
+	
+	getAlbumReview($client,
+		sub {
+			my $items = shift || [];
+
+			if ( !$items || !scalar @$items ) {
+				$request->addResult('error', 'unknown');
+			}
+			elsif ( $items->[0]->{error} ) {
+				$request->addResult('error', $items->[0]->{error});
+			}
+			elsif ($items) {
+				my $item = shift @$items;
+				$request->addResult('albumreview', $item->{name});
+				$request->addResult('album_id', $args->{album_id}) if $args->{album_id};
+				$request->addResult('album', $args->{album}) if $args->{album};
+				$request->addResult('artist', $args->{artist}) if $args->{artist};
+			}
+
+			$request->setStatusDone();
+		},{}, $args
 	);
 }
 
