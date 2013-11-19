@@ -25,7 +25,7 @@ sub init {
 #                                                                     |  |  |has Tags
 #                                                                     |  |  |  |Function to call
 #                                                                     C  Q  T  F
-	Slim::Control::Request::addDispatch([CLICOMMAND, 'albumreview'], [0, 1, 1, \&getAlbumInfoCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'albumreview'], [0, 1, 1, \&getAlbumReviewCLI]);
 
 	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
 		func => \&_objInfoHandler,
