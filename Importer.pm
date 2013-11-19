@@ -234,10 +234,16 @@ sub _setAlbumCover {
 
 		if ($file && -e $file) {
 			my $albumid = $params->{albumid};
+
+			my $track;
 			
+			if ( my $albumObj = Slim::Schema->find('Album', $albumid) ) {
+				$track = $albumObj->tracks->first;
+			}
+
 			my $coverid = Slim::Schema::Track->generateCoverId({
 				cover => $file,
-				url   => $file,,
+				url   => ($track ? $track->url : undef) || $file,
 			});
 			
 			$params->{sth_update_tracks}->execute( $file, $coverid, $albumid );
