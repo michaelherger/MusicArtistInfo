@@ -45,7 +45,22 @@ sub init {
 		);
 
 		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png');
+		
+		_initDefaultArtistImg();
+		$prefs->setChange(\&_initDefaultArtistImg, 'artistImageFolder');
 	} 
+}
+
+sub _initDefaultArtistImg {
+	return unless $defaultArtistImg;
+	
+	if ( my $imageFolder = $prefs->get('artistImageFolder') ) {
+		my $img = catdir($imageFolder, 'artist.png');
+		if ( !-f $img ) {
+			require File::Copy;
+			File::Copy::copy($defaultArtistImg, $img);
+		}
+	}
 }
 
 sub albumInfoHandler {
