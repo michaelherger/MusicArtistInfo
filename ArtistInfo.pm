@@ -382,7 +382,6 @@ sub getArtistPhotoCLI {
 		artist_id => $artist_id,
 		rawUrl    => 1,
 	})) ) {
-		logError('imageproxy/mai/artist/' . ($artist_id || $artist) . '/image.png');
 		$request->addResult('url', 'imageproxy/mai/artist/' . ($artist_id || $artist) . '/image.png');
 		$request->addResult('artist_id', $artist_id) if $artist_id;
 		$request->setStatusDone();
@@ -397,8 +396,8 @@ sub getArtistPhotoCLI {
 			$request->addResult('error', $photo->{error})
 		}
 		else {
-			$request->addResult('url', $photo->{url});
-			$request->addResult('credits', $photo->{author} || ''),
+			$request->addResult('url', $photo->{url} || '');
+			$request->addResult('credits', $photo->{author}) if $photo->{author};
 			$request->addResult('artist_id', $artist_id) if $artist_id;
 		}
 
