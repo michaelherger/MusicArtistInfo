@@ -256,14 +256,18 @@ sub getBiographyCLI {
 			}
 			elsif ($items) {
 				my $item = shift @$items;
+				# CLI clients expect real line breaks, not literal \n
+				$item->{name} =~ s/\\n/\n/g;
 				$request->addResult('biography', $item->{name});
 				$request->addResult('artist_id', $artist_id) if $artist_id;
 				$request->addResult('artist', $artist) if $artist;
 			}
 
 			$request->setStatusDone();
-		},{},{
-			artist => $artist
+		},{
+			isWeb  => $request->getParam('html'),
+		},{
+			artist => $artist,
 		}
 	);
 }

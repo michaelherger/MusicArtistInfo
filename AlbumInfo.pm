@@ -365,6 +365,8 @@ sub getAlbumReviewCLI {
 			}
 			elsif ($items) {
 				my $item = shift @$items;
+				# CLI clients expect real line breaks, not literal \n
+				$item->{name} =~ s/\\n/\n/g;
 				$request->addResult('albumreview', $item->{name});
 				$request->addResult('album_id', $args->{album_id}) if $args->{album_id};
 				$request->addResult('album', $args->{album}) if $args->{album};
@@ -372,7 +374,9 @@ sub getAlbumReviewCLI {
 			}
 
 			$request->setStatusDone();
-		},{}, $args
+		},{
+			isWeb  => $request->getParam('html'),
+		}, $args
 	);
 }
 
