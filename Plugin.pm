@@ -227,9 +227,17 @@ sub _wikimediaImgProxy { if (CAN_IMAGEPROXY) {
 
 	my $size = minSize(Slim::Web::Graphics->parseSpec($spec)) || 500;
 
-	if (my ($img) = $url =~ /\/([^\/]*?\.(?:jpe?g|png|svg|gif))$/) {
+	# if url comes with resizing parameters already, only replace the size
+	# http://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Radio_SRF_3.svg/500px-Radio_SRF_3.svg.png
+	if ( $url =~ m|/thumb/.*/\d+px|i ) {
+		$url =~ s/\/\d+px/\/$1${size}px/;
+	}
+	# otherwise fix url to get resized image
+	# http://upload.wikimedia.org/wikipedia/commons/e/ee/Radio_SRF_3.svg
+	elsif (my ($img) = $url =~ /\/([^\/]*?\.(?:jpe?g|png|svg|gif))$/) {
 		$url =~ s/(\/commons\/)/${1}thumb\//;
 		$url =~ s/$img/$img\/${size}px-$img/;
+		$url =~ s/(\.svg)$/$1.png/;		
 	}
 
 	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
