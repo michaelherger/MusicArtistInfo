@@ -344,7 +344,7 @@ sub getAlbumReviewCLI {
 		};
 	}
 	else {
-		$args = _getAlbumFromAlbumId($request->param('album_id'));
+		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
 	}
 
 	if ( !($args && $args->{artist} && $args->{album}) ) {
