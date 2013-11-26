@@ -326,7 +326,7 @@ sub getAlbumReview {
 				
 				my $cover = $tree->look_down('_tag', 'div', 'class', 'album-contain');
 				if ( $cover && (my $img = $cover->look_down('_tag', 'img')) ) {
-					$result->{image} = $img->attr('src');
+					$result->{image} = _makeLinkAbsolute($img->attr('src'));
 				}
 				
 				$result->{author} = $author->as_trimmed_text if $author;
@@ -453,7 +453,7 @@ sub getAlbumCovers {
 					elsif ( $img && $img->{image} ) {
 						$result->{images} = [ {
 							author => $img->{image}->{author} || 'AllMusic.com',
-							url    => $img->{image}->{url},
+							url    => _makeLinkAbsolute($img->{image}->{url}),
 							height => $img->{image}->{height},
 							width  => $img->{image}->{width},
 						} ];
@@ -605,18 +605,29 @@ sub _cleanupLinksAndImages {
 	# clean up links and images
 	foreach ( $tree->look_down('_tag', 'a') ) {
 		# make external links absolute
-		$_->attr('href', BASE_URL . $_->attr('href')) if $_->attr('href') !~ /^http/;
+		$_->attr('href', _makeLinkAbsolute($_->attr('href')));
 		# open links in new window
 		$_->attr('target', 'allmusic');
 	}
 
 	foreach ( $tree->look_down('_tag', 'img', 'class', 'lazy') ) {
 		my $src = $_->attr('data-original') || next;
-		$_->attr('src', $src);
+		$_->attr('src', _makeLinkAbsolute($src));
 		$_->attr('data-original', '');
 	}
 	
 	return $tree;
+}
+
+sub _makeLinkAbsolute {
+	my $src = shift;
+	
+	if ($src !~ /^http/) {
+		$src =~ s/^\///;		# remove leading slash to prevent double slashes
+		$src = BASE_URL . $src;
+	}
+	
+	return $src;
 }
 
 sub _parseArtistInfo {
