@@ -115,9 +115,9 @@ sub _getAlbumCoverURL {
 	# get next track from db
 	if ( my $album = $params->{albums}->next ) {
 		
-		my $albumname = $album->name;
+		my $albumname = Slim::Utils::Unicode::utf8decode($album->name);
 		my $albumid   = $album->id;
-		my $artist    = $album->contributor ? $album->contributor->name : '';
+		my $artist    = $album->contributor ? Slim::Utils::Unicode::utf8decode($album->contributor->name) : '';
 		
 		$progress->update( "$artist - $albumname" ) if $progress;
 		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
@@ -255,8 +255,21 @@ sub _setAlbumCover {
 sub filename {
 	my ($url, $folder, $artist, $album) = @_;
 
+	$artist = Slim::Utils::Misc::cleanupFilename(
+		Slim::Utils::Unicode::encode_locale(
+			Slim::Utils::Text::ignorePunct($artist)
+		)
+	);
+
+	$album ||= '';
+	$album = ' - ' . Slim::Utils::Misc::cleanupFilename(
+		Slim::Utils::Unicode::encode_locale(
+			Slim::Utils::Text::ignorePunct($artist)
+		)
+	) if $album;
+
 	# XXX - use correct setting for placeholders!
-	my $file = catdir( $folder, Slim::Utils::Text::ignorePunct($artist) . ($album ? (' - ' . Slim::Utils::Text::ignorePunct($album)) : '') );
+	my $file = catdir( $folder, $artist . $album );
 	my ($ext) = $url =~ /\.(png|jpe?g|gif)/i;
 	$ext =~ s/jpeg/jpg/;
 	

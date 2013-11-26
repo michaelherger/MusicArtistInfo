@@ -97,6 +97,8 @@ sub _getArtistPhotoURL {
 
 	# get next artist from db
 	if ( my $artist = ($params->{sth}->fetchrow_hashref || $params->{vaObj}) ) {
+		$artist->{name} = Slim::Utils::Unicode::utf8decode($artist->{name});
+
 		$progress->update( $artist->{name} ) if $progress;
 		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
 		
