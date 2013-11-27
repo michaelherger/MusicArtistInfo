@@ -92,7 +92,7 @@ sub getArtist {
 			} grep {
 				my $name = Slim::Utils::Unicode::utf8decode($_->{name});
 	
-				$_->{score} >= 80 && Slim::Utils::Text::ignoreCaseArticles($name, 1) =~ /$artist/i;
+				$_->{score} >= 80 && Slim::Utils::Text::ignoreCaseArticles($name, 1) =~ /\Q$artist\E/i;
 			} @$items;
 		}
 		

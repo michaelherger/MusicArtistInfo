@@ -258,7 +258,7 @@ sub getArtist {
 			$current = Slim::Utils::Text::ignoreCaseArticles($current, 1);
 			
 			# alternatively pick first to partially match the name
-			if ( !$artistInfo && $current =~ /$artist/i ) {
+			if ( !$artistInfo && $current =~ /\Q$artist\E/i ) {
 				$artistInfo = $_;
 			}
 		}
@@ -543,13 +543,13 @@ sub getAlbum {
 			$_->{name} = Slim::Utils::Unicode::utf8decode($_->{name});
 			$_->{artist}->{name} = Slim::Utils::Unicode::utf8decode($_->{artist}->{name});
 
-			if ( Slim::Utils::Text::ignoreCaseArticles($_->{artist}->{name}, 1) =~ /$artist/i ) {
+			if ( Slim::Utils::Text::ignoreCaseArticles($_->{artist}->{name}, 1) =~ /\Q$artist\E/i ) {
 				if ( lc($_->{name}) eq $albumLC ) {
 					$albumInfo = $_;
 					last;
 				}
 	
-				if ( !$albumInfo && Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /$album/i ) {
+				if ( !$albumInfo && Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /\Q$album\E/i ) {
 					$albumInfo = $_;
 				}
 			}

@@ -133,8 +133,8 @@ sub getAlbum {
 			foreach ( @$items ) {
 				$_->{title} = Slim::Utils::Unicode::utf8decode($_->{title});
 	
-				if ( Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /$artist/i
-					&& Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /$album/i ) {
+				if ( Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /\Q$artist\E/i
+					&& Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /\Q$album\E/i ) {
 					$albumInfo = $_;
 					last;
 				}
@@ -270,7 +270,7 @@ sub getArtist {
 			foreach ( @$items ) {
 				$_->{title} = Slim::Utils::Unicode::utf8decode($_->{title});
 	
-				if ( Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /$artist/i ) {
+				if ( Slim::Utils::Text::ignoreCaseArticles($_->{title}, 1) =~ /\Q$artist\E/i ) {
 					if ($_->{thumb} !~ /record90\.png$/) {
 						$artistInfo = $_;
 						last;
