@@ -271,8 +271,6 @@ sub getAlbumInfo {
 
 sub getAlbumCredits {
 	my ($client, $cb, $params, $args) = @_;
-	
-	warn Data::Dump::dump($args);
 
 	Plugins::MusicArtistInfo::AllMusic->getAlbumCredits($client,
 		sub {

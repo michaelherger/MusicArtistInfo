@@ -878,7 +878,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
 		my $photo = shift || {};
 
-		main::DEBUGLOG && $log->debug("Got online artwork: " . Data::Dump::dump($photo));
+		main::DEBUGLOG && $log->is_debug && $log->debug("Got online artwork: " . Data::Dump::dump($photo));
 		
 		my $img;
 		my $sizeMap = {
@@ -898,7 +898,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 			);
 		}
 
-		main::DEBUGLOG && $log->debug("Using: $img");
+		main::DEBUGLOG && $log->is_debug && $log->debug("Using: $img");
 		
 		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || $defaultSize;
 		$img =~ s/\/_\//\/$size\//;
