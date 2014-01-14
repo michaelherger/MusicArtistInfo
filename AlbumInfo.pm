@@ -437,14 +437,15 @@ sub _getAlbumFromAlbumId {
 
 sub _getAlbumFromSongURL {
 	my $client = shift;
+	my $url = shift;
 	
 	return unless $client;
 
-	my %album;
+	if ( !defined $url && (my $song = Slim::Player::Playlist::song($client)) ) {
+		$url = $song->url;
+	}
 
-	if (my $url = Slim::Player::Playlist::song($client)) {
-		$url = $url->url;
-
+	if ( $url ) {
 		my $track = Slim::Schema->objectForUrl($url);
 
 		my ($artist, $album);
