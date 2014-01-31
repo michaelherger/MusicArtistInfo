@@ -85,7 +85,7 @@ sub playerMenu {}
 sub webPages {
 	my $class = shift;
 	
-	my $url   = 'plugins/' . PLUGIN_TAG . '/index.html';
+	my $url = 'plugins/' . PLUGIN_TAG . '/missingartwork.html';
 	
 	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => $url } );
 	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => "html/images/cover.png" });
@@ -94,12 +94,30 @@ sub webPages {
 		my $client = $_[0];
 		
 		Slim::Web::XMLBrowser->handleWebIndex( {
-			client  => $client,
-			feed    => \&getMissingArtworkAlbums,
-			type    => 'link',
-			title   => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK'),
-			timeout => 35,
-			args    => \@_
+			client => $client,
+			path   => 'missingartwork.html',
+			feed   => \&getMissingArtworkAlbums,
+			type   => 'link',
+			title  => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK'),
+			args   => \@_
+		} );
+	} );
+
+	$url = 'plugins/' . PLUGIN_TAG . '/smallartwork.html';
+	
+	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => $url } );
+	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => "html/images/cover.png" });
+
+	Slim::Web::Pages->addPageFunction( $url, sub {
+		my $client = $_[0];
+		
+		Slim::Web::XMLBrowser->handleWebIndex( {
+			client => $client,
+			feed   => \&getSmallArtworkAlbums,
+			path   => 'smallartwork.html',
+			type   => 'link',
+			title  => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK'),
+			args   => \@_
 		} );
 	} );
 }
@@ -137,58 +155,129 @@ sub getMissingArtworkAlbums {
 	});
 }
 
-=pod
 sub getSmallArtworkAlbums {
 	my ($client, $cb, $params, $args) = @_;
 
-	# Find distinct albums to check for artwork.
-	my $collate = Slim::Utils::OSDetect->getOS()->sqlHelperClass()->collate();
-	my $rs = Slim::Schema->search('Genre', undef, { 'order_by' => "me.namesort $collate" });
-
-	my $cache = Slim::Utils::ArtworkCache->new();
-	my $sth = Slim::Schema->dbh->prepare("SELECT album, cover, coverid FROM tracks WHERE NOT coverid IS NULL GROUP BY album");
-	$sth->execute();
-	
-	my $items = [];
-	while ( my $track = $sth->fetchrow_hashref ) {
-		my $size;
-		$size = $track->{cover} if $track->{cover} =~ /^\d+$/;
+	$args ||= {};
+	my $minSize = $params->{search} || $args->{minSize};
+	if (!$minSize) {
+		my $items = [{
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_MIN_SIZE'),
+			type => 'search',
+			url  => \&getSmallArtworkAlbums,
+		}];
 		
-		if ( !$size && -f $track->{cover} ) {
-			$size = -s _;
+		foreach (1500, 1000, 800, 500, 400, 300) {
+			unshift @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_MIN_SIZE_X', $_),
+				type => 'link',
+				url  => \&getSmallArtworkAlbums,
+				passthrough => [{
+					minSize => $_
+				}],
+			}
 		}
 		
-		# what's a reasonable threshold here? Doesn't make much sense with lossy jpg vs. lossless png etc.
-		if ( $size && $size > 50000 ) {
-			my $album = Slim::Schema->search('Album', {
-				'me.id' => { '=' => $track->{album} }
-			})->first;
+		$cb->({
+			items => $items,
+		});
+		return;
+	}
+
+	# this query is expensive - try to grab it from the cache
+	my $cache = Slim::Utils::Cache->new();
+	my $items = $cache->get('mai_smallartwork' . $minSize);
+	
+	if ($items) {
+		$cb->({
+			items => [ map { 
+				$_->{url} = \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers;
+				$_;
+			} @$items ],
+		});
+		return;
+	}
+	
+	require Slim::Utils::GDResizer;
+
+	# Find distinct albums to check for artwork.
+	my $sth = Slim::Schema->dbh->prepare("SELECT album, cover, url, coverid FROM tracks WHERE NOT coverid IS NULL GROUP BY album");
+	$sth->execute();
+	
+	$items = [];
+	while ( my $track = $sth->fetchrow_hashref ) {
+		my $file = $track->{cover} =~ /^\d+$/
+				? Slim::Utils::Misc::pathFromFileURL($track->{url})
+				: $track->{cover};
+		
+		# skip files which don't exist
+		if ( !$file || !-e $file ) {
+			$log->warn("File doesn't exits: " . ($file || 'undef'));
+			next;
+		}
+
+		my ($offset, $length, $origref);
+		
+		# Load image data from tags if necessary
+		if ( $file && $file !~ /\.(?:jpe?g|gif|png)$/i ) {
+			# Double-check that this isn't an image file
+#			if ( !_content_type_file($file, 0, 1) ) {
+				($offset, $length, $origref) = Slim::Utils::GDResizer::_read_tag($file);
 			
-			if ($album) {
-				my $artist = $album->contributor->name;
-				my $title  = $album->title;
-				
-				push @$items, {
-					type => 'slideshow',
-					image => '/music/' . $track->{coverid} . '/cover',
-					name => $title . ' ' . cstring($client, 'BY') . " $artist",
-					url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers,
-					passthrough => [{ 
-						album  => $title,
-						artist => $artist,
-					}]
-				};
-			}
+				if ( !$offset ) {
+					if ( !$origref ) {
+						$log->error("Unable to find any image tag in $file");
+						next;
+					}
+					
+					$file = '';
+				}
+#			}
+		}
+
+		$origref ||= Slim::Utils::GDResizer::_slurp($file, $length ? $offset : undef, $length || undef) if $file;
+		
+		if ( !$origref ) {
+			$log->error("Unable to find any image data in $file");
+			next;
+		}
+		
+		my ($w, $h) = Slim::Utils::GDResizer->getSize($origref);
+		
+		next if $w > $minSize && $h > $minSize;
+		
+		my $album = Slim::Schema->search('Album', {
+			'me.id' => { '=' => $track->{album} }
+		})->first;
+		
+		if ($album) {
+			my $artist = $album->contributor->name;
+			my $title  = $album->title;
+			
+			push @$items, {
+				type => 'slideshow',
+				image => '/music/' . $track->{coverid} . '/cover',
+				name => $title . ' ' . cstring($client, 'BY') . " $artist (${w}x${h}px)",
+#				url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers,
+				passthrough => [{ 
+					album  => $title,
+					artist => $artist,
+				}]
+			};
 		}
 	}
 	
 	$items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$items ];
+
+	$cache->set('mai_smallartwork' . $minSize, $items, 60);
 	
 	$cb->({
-		items => $items,
+		items => [ map { 
+			$_->{url} = \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers;
+			$_;
+		} @$items ],
 	});
 }
-=cut
 
 sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 	my ($url, $spec) = @_;

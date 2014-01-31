@@ -78,6 +78,10 @@ PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	DE	Alben ohne Plattenhülle suchen
 	EN	Find albums with missing artwork
+	
+PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
+	DE	Alben mit kleinen Plattenhülle suchen
+	EN	Find albums with small artwork
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	DE	Interpretenbilder suchen
@@ -142,3 +146,11 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
 	EN	I'm sorry, but in order to profit from all the advanced features of this plugin (eg. artist pictures when browsing artists) you'll need to run Logitech Media Server 7.8 or later.
+
+PLUGIN_MUSICARTISTINFO_MIN_SIZE_X
+	DE	Kleiner als %s Bildpunkte
+	EN	Smaller than %s pixels
+
+PLUGIN_MUSICARTISTINFO_MIN_SIZE
+	DE	Mindestgrösse (Kantenlänge)
+	EN	Minimum picture size
