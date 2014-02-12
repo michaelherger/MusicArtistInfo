@@ -244,7 +244,7 @@ sub getSmallArtworkAlbums {
 		
 		my ($w, $h) = Slim::Utils::GDResizer->getSize($origref);
 		
-		next if $w > $minSize && $h > $minSize;
+		next if $w >= $minSize && $h >= $minSize;
 		
 		my $album = Slim::Schema->search('Album', {
 			'me.id' => { '=' => $track->{album} }
