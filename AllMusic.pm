@@ -536,6 +536,11 @@ sub getAlbum {
 	
 	$class->searchAlbums($client, sub {
 		my $items = shift;
+
+		if (!$items || ref $items ne 'ARRAY') {
+			$cb->();
+			return;
+		}
 		
 		my $albumInfo;
 		
