@@ -37,9 +37,9 @@ sub init {
 		after => 'moreartistinfo',
 	) );
 	
-	if (CAN_IMAGEPROXY) {
-		require Plugins::MusicArtistInfo::Discogs;
-	}
+#	if (CAN_IMAGEPROXY) {
+#		require Plugins::MusicArtistInfo::Discogs;
+#	}
 	
 	Plugins::MusicArtistInfo::LFM->aid($_[1]);
 }
@@ -204,7 +204,7 @@ sub getAlbumCovers {
 	};
 
 	# there's a rate limiting issue on discogs.com: don't use it without imageproxy, as this seems to work around the limitation...
-	if (CAN_IMAGEPROXY) {
+	if (0 && CAN_IMAGEPROXY) {
 		Plugins::MusicArtistInfo::Discogs->getAlbumCovers($client, sub {
 			$results->{discogs} = shift;
 			$getAlbumCoversCb->($results);

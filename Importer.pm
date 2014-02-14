@@ -13,7 +13,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::Common;
-use Plugins::MusicArtistInfo::Discogs;
+#use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 
 my ($i, $ua, $imageFolder, $filenameTemplate, $max, $cachedir);
@@ -159,13 +159,13 @@ sub _getAlbumCoverURL {
 				_setAlbumCover($artist, $albumname, $file, $params);
 			}
 			elsif ($ua) {
-				Plugins::MusicArtistInfo::Discogs->getAlbumCover(undef, sub {
-					my $albumInfo = shift;
-					
-					if ($albumInfo->{url}) {
-						_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
-					}
-					else {
+#				Plugins::MusicArtistInfo::Discogs->getAlbumCover(undef, sub {
+#					my $albumInfo = shift;
+#					
+#					if ($albumInfo->{url}) {
+#						_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
+#					}
+#					else {
 						Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
 							my $albumInfo = shift;
 							
@@ -194,8 +194,8 @@ sub _getAlbumCoverURL {
 								}
 							}
 						}, $args);
-					}
-				}, $args);
+#					}
+#				}, $args);
 			}
 		}
 
