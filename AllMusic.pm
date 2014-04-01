@@ -242,7 +242,7 @@ sub getArtist {
 	}
 	
 	$class->searchArtists($client, sub {
-		my $items = shift;
+		my $items = shift || [];
 		
 		my $artistInfo;
 		
