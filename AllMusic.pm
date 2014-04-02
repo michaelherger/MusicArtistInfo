@@ -242,8 +242,13 @@ sub getArtist {
 	}
 	
 	$class->searchArtists($client, sub {
-		my $items = shift || [];
+		my $items = shift;
 		
+		if (!$items || ref $items ne 'ARRAY') {
+			$cb->();
+			return;
+		}
+
 		my $artistInfo;
 		
 		foreach (@$items) {
