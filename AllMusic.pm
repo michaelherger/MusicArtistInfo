@@ -17,8 +17,8 @@ use Slim::Utils::Strings qw(string cstring);
 
 use constant BASE_URL         => 'http://www.allmusic.com/';
 use constant SEARCH_URL       => BASE_URL . 'search/typeahead/all/%s';
-use constant ALBUMSEARCH_URL  => BASE_URL . 'search/albums/%s, %s/all/1';
-use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s/all/1';
+use constant ALBUMSEARCH_URL  => BASE_URL . 'search/albums/%s%%2C%%20%s';
+use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s';
 use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biography';
 use constant RELATED_URL      => BASE_URL . 'artist/%s/related';
 use constant ALBUMREVIEW_URL  => BASE_URL . 'album/%s';
@@ -283,7 +283,7 @@ sub searchArtists {
 			my $tree   = shift;
 			my $result = [];
 			
-			my $results = $tree->look_down("_tag", "ul");
+			my $results = $tree->look_down("_tag" => "ul", "class" => "search-results");
 
 			foreach ($results->content_list) {
 				my $artist = $_->look_down('_tag', 'div', 'class', 'name') || next;
@@ -584,7 +584,7 @@ sub searchAlbums {
 			my $tree   = shift;
 			my $result = [];
 			
-			if ( my $results = $tree->look_down("_tag", "ul") ) {
+			if ( my $results = $tree->look_down("_tag" => "ul", "class" => "search-results") ) {
 				foreach ($results->content_list) {
 					my $title  = $_->look_down('_tag', 'div', 'class', 'title') || next;
 					my $url    = $title->look_down('_tag', 'a') || next;
