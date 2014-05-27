@@ -40,13 +40,13 @@ sub _scanArtistPhotos {
 	
 	# Find distinct artists to check for artwork
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
-	my $va  = $serverprefs->get('variousArtistAutoIdentification');
+#	my $va  = $serverprefs->get('variousArtistAutoIdentification');
 	my $sql = 'SELECT contributors.id, contributors.name FROM contributors ';
-	$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
-	$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
-	$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
-	$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0)' if $va;
-	$sql   .= "GROUP BY contributors.id";
+#	$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
+#	$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
+#	$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
+#	$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0)' if $va;
+#	$sql   .= "GROUP BY contributors.id";
 
 	my $dbh = Slim::Schema->dbh;
 	
@@ -57,7 +57,7 @@ sub _scanArtistPhotos {
 	my $vaObj = Slim::Schema->variousArtistsObject;
 	$count++ if $vaObj;
 	
-	my $sth = $dbh->prepare_cached($sql);
+	my $sth = $dbh->prepare($sql);
 	$sth->execute();
 
 	my $progress = undef;

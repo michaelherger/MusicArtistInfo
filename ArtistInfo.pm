@@ -916,8 +916,9 @@ my $retry = 0.5;
 sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 	main::DEBUGLOG && $log->is_debug && $prefs->get('browseArtistPictures') && $log->debug('Trying to redirect Artists menu...');
 	
-	if ( my ($node) = grep { $_->{id} eq 'myMusicArtists' } @{ Slim::Menu::BrowseLibrary->_getNodeList() } ) {
-		
+	foreach my $node ( @{ Slim::Menu::BrowseLibrary->_getNodeList() } ) {
+		next unless $node->{id} =~ /^myMusicArtists/;
+	
 		if ( $prefs->get('browseArtistPictures') && !$node->{mainCB} ) {
 			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu!');
 	
@@ -952,7 +953,8 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 
 		$retry = 0;
 	}
-	elsif ($retry) {
+
+	if ($retry) {
 		$retry *= 2;
 		$retry = $retry > 30 ? 30 : $retry;
 		
