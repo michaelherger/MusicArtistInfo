@@ -918,7 +918,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 		next unless $node->{id} =~ /^myMusicArtists/;
 	
 		if ( $prefs->get('browseArtistPictures') && !$node->{mainCB} ) {
-			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu!');
+			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu: ' . $node->{id});
 	
 			Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
 	
