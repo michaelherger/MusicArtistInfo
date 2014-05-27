@@ -63,10 +63,8 @@ sub init {
 		);
 		
 		# dirty re-direct of the Artists menu...
-		# XXX - make this optional?
-		# XXX - should pre-cache artwork if enabled?
 		require Slim::Utils::Timers;
-		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 1, \&_hijackArtistsMenu);
+		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 15, \&_hijackArtistsMenu);
 
 		$prefs = Slim::Utils::Prefs::preferences('plugin.musicartistinfo');
 		$prefs->setChange(\&_hijackArtistsMenu, 'browseArtistPictures');
