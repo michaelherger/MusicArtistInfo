@@ -959,6 +959,9 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 		main::DEBUGLOG && $log->debug("Failed the hijacking... will try again in $retry seconds.");
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + $retry, \&_hijackArtistsMenu);
 	}
+	else {
+		Slim::Web::XMLBrowser::wipeCaches() if Slim::Utils::Versions->compareVersions($::VERSION, '7.9.0') >= 0;
+	}
 } }
 
 1;
