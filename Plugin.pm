@@ -32,6 +32,7 @@ sub initPlugin {
 		runImporter => 1,
 		lookupArtistPictures => 1,
 		lookupCoverArt => 1,
+		lookupAlbumArtistPicturesOnly => 1,
 	});
 	
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);

@@ -21,6 +21,11 @@
 			<input type="checkbox" [% IF prefs.pref_lookupArtistPictures %]checked [% END %] class="stdedit" name="pref_lookupArtistPictures" id="pref_lookupArtistPictures" value="1" />
 			<label for="pref_lookupArtistPictures" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE" | string %]</label>
 		[% END; END %]
+		
+		[% IF !limited; WRAPPER settingGroup title="" desc="" %]
+			<input type="checkbox" [% IF prefs.pref_lookupAlbumArtistPicturesOnly %]checked [% END %] class="stdedit" name="pref_lookupAlbumArtistPicturesOnly" id="pref_lookupAlbumArtistPicturesOnly" value="1" />
+			<label for="pref_lookupAlbumArtistPicturesOnly" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY" | string %]</label>
+		[% END; END %]
 
 		[% WRAPPER settingGroup title="SETUP_ARTFOLDER" desc="SETUP_ARTFOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="artfolder" id="pref_artfolder" value="[% artfolder %]" size="40">

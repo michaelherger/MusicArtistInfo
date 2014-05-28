@@ -134,6 +134,10 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.
 	EN	Downloading and pre-caching of artist pictures can be quite time-consuming, but will speed up browsing by artist considerably.
+	
+PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
+	DE	Bilder nur für die Haupt-Interpreten herunterladen, nicht aber für weitere Künstler wie Komponisten, Dirigenten etc.
+	EN	Only download pictures for main artists, but not all contributors (composers, conductors etc.)
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	DE	Fehlende Plattenhüllen aus Online-Quellen herunterladen und zwischenspeichern 

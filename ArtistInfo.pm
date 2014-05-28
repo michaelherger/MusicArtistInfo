@@ -62,8 +62,9 @@ sub init {
 			func  => \&_artworkUrl,
 		);
 		
-		# dirty re-direct of the Artists menu...
+		# dirty re-direct of the Artists menu - delay, as some items might not have registered yet
 		require Slim::Utils::Timers;
+		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 2, \&_hijackArtistsMenu);
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 15, \&_hijackArtistsMenu);
 
 		$prefs = Slim::Utils::Prefs::preferences('plugin.musicartistinfo');
