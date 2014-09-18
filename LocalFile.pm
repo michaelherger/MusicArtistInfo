@@ -173,7 +173,7 @@ sub _proxiedUrl {
 	my $pathHash = md5_hex($path);
 	$cache->set( $pathHash, $path, 3600 );
 	
-	return "/mai/localfile/$pathHash/$file";
+	return "/mai/localfile/$pathHash/" . URI::Escape::uri_escape_utf8($file);
 }
 
 sub _readdir {
@@ -195,6 +195,8 @@ sub _proxyHandler {
 	my $path = $cache->get($pathHash);
 	$file = URI::Escape::uri_unescape($file || '');
 	$path = catdir($path, $file);
+	
+	main::INFOLOG && $log->info("Getting file: $path");
 	
 	if ( !-f $path ) {
 		$response->code(RC_NOT_FOUND);
