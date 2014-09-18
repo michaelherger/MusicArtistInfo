@@ -71,6 +71,10 @@ PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 	DE	Bilder aus Musikordner
 	EN	Local artwork
 
+PLUGIN_MUSICARTISTINFO_LOCAL_FILES
+	DE	Weitere Dateien aus Musikordner
+	EN	Files from music folder
+
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
 	EN	Find album cover online
