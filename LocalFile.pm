@@ -171,7 +171,7 @@ sub _proxiedUrl {
 	my ($path, $file) = @_;
 
 	my $pathHash = md5_hex($path);
-	$cache->set( $pathHash, $path, 86400 );
+	$cache->set( $pathHash, $path, 3600 );
 	
 	return "/mai/localfile/$pathHash/$file";
 }
@@ -193,6 +193,7 @@ sub _proxyHandler {
 
 	my ($pathHash, $file) = $request->uri->path =~ $URL_PARSER_RE;
 	my $path = $cache->get($pathHash);
+	$file = URI::Escape::uri_unescape($file || '');
 	$path = catdir($path, $file);
 	
 	if ( !-f $path ) {
