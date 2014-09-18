@@ -28,13 +28,22 @@ use Slim::Utils::Prefs;
 
 use Slim::Web::Pages;
 
+use constant CLICOMMAND => 'musicartistinfo';
+
 my $log   = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
 
-my $URL_PARSER_RE      = qr{mai/localfile/([a-f\d]+)/(.*)$};
+my $URL_PARSER_RE = qr{mai/localfile/([a-f\d]+)/(.*)$};
 
 sub init { 
+#                                                                    |requires Client
+#                                                                    |  |is a Query
+#                                                                    |  |  |has Tags
+#                                                                    |  |  |  |Function to call
+#                                                                    C  Q  T  F
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'localfiles'], [0, 1, 1, \&getLocalFileWeblinksCLI]);
+
 	Slim::Menu::AlbumInfo->registerInfoProvider( morefileinfo => (
 		func => \&albumInfoHandler,
 		after => 'moreartwork',
@@ -73,6 +82,9 @@ sub folderInfoHandler {
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta, $tags ) = @_;
 
+	return unless $client;
+	return if $client->controllerUA && $client->controllerUA !~ /iPeng/i;
+	
 	# only deal with local media
 	$url = $track->url if !$url && $track;
 	return unless $url && $url =~ /^file:\/\//i;
@@ -82,30 +94,94 @@ sub trackInfoHandler {
 	if (! -d $path) {
 		$path = dirname( $path );
 	}
-	
-	opendir(DIR, $path) || return;
-	my @files = grep { $_ !~ /^\._/o } grep /\.(?:pdf|txt|html?)$/io, readdir(DIR);
-	closedir(DIR);
 
-	return unless scalar @files;
-	
-	my $items = [ map {
-		my $pathHash = md5_hex($path);
-		$cache->set( $pathHash, $path, 86400 );
+	my $files = _readdir($path);
 
-		{
-			# XXX - how can we hide this from the players?
-			type  => 'text',
-			name  => $_,
-			weblink => "/mai/localfile/$pathHash/$_",
+	return unless scalar @$files;
+	
+	# XMLBrowser for Jive can't handle weblinks - need custom handling there to show files in the browser.
+	if ($client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
+		return {
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_FILES'),
+			itemActions => {
+				items => {
+					command  => [ CLICOMMAND, 'localfiles' ],
+					fixedParams => {
+						folder => $path
+					},
+				},
+			},
 		}
-	} @files ];
+	}
+	
+	my $items = [ map {	{
+		# XXX - how can we hide this from the players?
+		type  => 'text',
+		name  => $_,
+		weblink => _proxiedUrl($path, $_),
+	} } @$files ];
 	
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_FILES'),
 		type => 'outline',
 		items => $items,
 	};	
+}
+
+sub getLocalFileWeblinksCLI {
+	my $request = shift;
+	
+	my $client = $request->client;
+
+	if ($request->isNotQuery([[CLICOMMAND], ['localfiles']])) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+	
+	$request->setStatusProcessing();
+
+	my $path = $request->getParam('folder');
+	my $files = _readdir($path);
+
+	my $i = 0;
+
+	if (!scalar @$files) {
+		$request->addResult('window', {
+			textArea => cstring($client, 'EMPTY'),
+		});
+		$i++;
+	}
+	else {
+		my $web_root = 'http://' . Slim::Utils::IPDetect::IP() . ':' . preferences('server')->get('httpport');
+		
+		foreach (@$files) {
+			$request->addResultLoop('item_loop', $i, 'text', $_ );
+			$request->addResultLoop('item_loop', $i, 'weblink', $web_root . _proxiedUrl($path, $_));
+			$i++;
+		}
+	}
+
+	$request->addResult('count', $i);
+	$request->addResult('offset', 0);
+	
+	$request->setStatusDone();
+}
+
+sub _proxiedUrl {
+	my ($path, $file) = @_;
+
+	my $pathHash = md5_hex($path);
+	$cache->set( $pathHash, $path, 86400 );
+	
+	return "/mai/localfile/$pathHash/$file";
+}
+
+sub _readdir {
+	opendir(DIR, $_[0]) || return [];
+	my @files = grep { $_ !~ /^\._/o } grep /\.(?:pdf|txt|html?)$/io, readdir(DIR);
+	closedir(DIR);
+	
+	return \@files;
 }
 
 sub _proxyHandler {
