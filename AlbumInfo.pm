@@ -126,12 +126,8 @@ sub getAlbumReview {
 					$content = $review->{author} . '\n\n' if $review->{author};
 					$content .= $review->{reviewText};
 				}
-				
-				# TODO - textarea not supported in button mode!
-				push @$items, {
-					name => $content,
-					type => 'textarea',
-				};
+
+				$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 			}
 			
 			$cb->($items);

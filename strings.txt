@@ -162,3 +162,7 @@ PLUGIN_MUSICARTISTINFO_MIN_SIZE_X
 PLUGIN_MUSICARTISTINFO_MIN_SIZE
 	DE	Mindestgrösse (Kantenlänge)
 	EN	Minimum picture size
+
+PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
+	DE	Tut mir Leid, dieser Dateityp wird auf diesem Gerät nicht unterstützt.
+	EN	I'm sorry, this file type is not supported on your device.

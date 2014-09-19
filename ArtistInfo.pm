@@ -224,10 +224,7 @@ sub getBiography {
 					$content .= $bio->{bioText};
 				}
 				
-				push @$items, {
-					name => $content,
-					type => 'textarea',
-				};
+				$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 			}
 			
 			$cb->($items);
@@ -563,7 +560,7 @@ sub getArtistNews {
 
 	Plugins::MusicArtistInfo::TEN->getArtistNews(
 		sub {
-			_gotWebLinks($cb, $params, shift);
+			_gotWebLinks($client, $cb, $params, shift);
 		},
 		$args,
 	);
@@ -574,7 +571,7 @@ sub getArtistBlogs {
 
 	Plugins::MusicArtistInfo::TEN->getArtistBlogs(
 		sub {
-			_gotWebLinks($cb, $params, shift);
+			_gotWebLinks($client, $cb, $params, shift);
 		},
 		$args,
 	);
@@ -585,7 +582,7 @@ sub getArtistVideos {
 
 	Plugins::MusicArtistInfo::TEN->getArtistVideos(
 		sub {
-			_gotWebLinks($cb, $params, shift);
+			_gotWebLinks($client, $cb, $params, shift);
 		},
 		$args,
 	);
@@ -596,14 +593,14 @@ sub getArtistURLs {
 
 	Plugins::MusicArtistInfo::TEN->getArtistURLs(
 		sub {
-			_gotWebLinks($cb, $params, shift);
+			_gotWebLinks($client, $cb, $params, shift);
 		},
 		$args,
 	);
 }
 
 sub _gotWebLinks {
-	my ($cb, $params, $result) = @_; 
+	my ($client, $cb, $params, $result) = @_; 
 
 	my $items = [];
 	$result ||= {};
@@ -643,10 +640,7 @@ sub _gotWebLinks {
 				
 				$_->{summary} .= '\n\n' . $_->{url} if $_->{url};
 				
-				$item->{items} = [{
-					name => $_->{summary},
-					type => 'textarea',
-				}] ;
+				$item->{items} = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $_->{summary});
 			}
 			$item;
 		} @{$result->{items}} ];

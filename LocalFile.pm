@@ -85,10 +85,6 @@ sub trackInfoHandler {
 
 	return unless $client;
 	
-	warn $client->controllerUA || 'nada';
-	
-	return if $client->controllerUA && $client->controllerUA !~ $SUPPORTED_UA_RE;
-	
 	# only deal with local media
 	$url = $track->url if !$url && $track;
 	return unless $url && $url =~ /^file:\/\//i;
@@ -119,10 +115,13 @@ sub trackInfoHandler {
 	}
 	
 	my $items = [ map {	{
-		# XXX - how can we hide this from the players?
-		type  => 'text',
+		type  => 'link',
 		name  => $_,
 		weblink => _proxiedUrl($path, $_),
+		url   => \&getFileContent,
+		passthrough => [{
+			path => catdir($path, $_)
+		}]
 	} } @$files ];
 	
 	return {
@@ -186,6 +185,33 @@ sub _readdir {
 	closedir(DIR);
 	
 	return \@files;
+}
+
+sub getFileContent {
+	my ($client, $cb, $params, $args) = @_;
+	
+	my $path = $args->{path} || '';
+	my $type = Slim::Music::Info::typeFromPath($path);
+
+	my $content = cstring($client, 'PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT');
+	
+	if ( $type eq 'htm' ) {
+		require HTML::FormatText;
+		$content = HTML::FormatText->format_file(
+			$path,
+			leftmargin => 0,
+		);
+	}
+	elsif ( $type eq 'txt' ) {
+		require File::Slurp;
+		$content = File::Slurp::read_file($path);
+	}
+	
+	$content = Slim::Utils::Unicode::utf8decode($content);
+	
+	$cb->({
+		items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content)
+	});
 }
 
 sub _proxyHandler {

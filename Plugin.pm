@@ -282,6 +282,48 @@ sub getSmallArtworkAlbums {
 	});
 }
 
+my $canWrap;
+sub textAreaItem {
+	my ($class, $client, $isButton, $content) = @_;
+	
+	my @items;
+	
+	# ip3k doesn't support textarea - try to wrap
+	if ($isButton) {
+		if (!defined $canWrap) {
+			eval { require Text::Wrap; };
+			$canWrap = $@ ? 0 : 1;
+		}
+		
+		$content =~ s/\\n/\n/g;
+		
+		if ($canWrap) {
+			$Text::Wrap::columns = ($client && $client->isa("Slim::Player::Boom")) ? 20 : 35;
+			@items = split(/\n/, Text::Wrap::wrap('', '', $content));
+		}
+		else {
+			@items = split(/\n/, $content);
+		}
+
+		@items = map {
+			{
+				type => 'text',
+				name => $_,
+			}
+		} grep { 
+			$_ !~ /\[IMAGE\]/ 
+		} grep /.+/, @items;
+	}
+	else {
+		push @items, {
+			name => $content,
+			type => 'textarea',
+		};
+	}
+	
+	return \@items;
+}
+
 sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 	my ($url, $spec) = @_;
 	
