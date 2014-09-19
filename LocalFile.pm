@@ -15,6 +15,7 @@ use HTTP::Status qw(
 	RC_OK
 	RC_NOT_MODIFIED
 );
+use Path::Class ();
 
 use Slim::Menu::AlbumInfo;
 use Slim::Menu::FolderInfo;
@@ -95,7 +96,7 @@ sub trackInfoHandler {
 		$path = dirname( $path );
 	}
 
-	my $files = _readdir($path);
+	my $files = _findTextFiles($path);
 
 	return unless scalar @$files;
 	
@@ -116,11 +117,11 @@ sub trackInfoHandler {
 	
 	my $items = [ map {	{
 		type  => 'link',
-		name  => $_,
-		weblink => _proxiedUrl($path, $_),
+		name  => $_->{file},
+		weblink => _proxiedUrl($_->{path}, $_->{file}),
 		url   => \&getFileContent,
 		passthrough => [{
-			path => catdir($path, $_)
+			path => catdir($_->{path}, $_->{file})
 		}]
 	} } @$files ];
 	
@@ -144,7 +145,7 @@ sub getLocalFileWeblinksCLI {
 	$request->setStatusProcessing();
 
 	my $path = $request->getParam('folder');
-	my $files = _readdir($path);
+	my $files = _findTextFiles($path);
 
 	my $i = 0;
 
@@ -158,8 +159,8 @@ sub getLocalFileWeblinksCLI {
 		my $web_root = 'http://' . Slim::Utils::IPDetect::IP() . ':' . preferences('server')->get('httpport');
 		
 		foreach (@$files) {
-			$request->addResultLoop('item_loop', $i, 'text', $_ );
-			$request->addResultLoop('item_loop', $i, 'weblink', $web_root . _proxiedUrl($path, $_));
+			$request->addResultLoop('item_loop', $i, 'text', $_->{file} );
+			$request->addResultLoop('item_loop', $i, 'weblink', $web_root . _proxiedUrl($_->{path}, $_->{file}));
 			$i++;
 		}
 	}
@@ -179,10 +180,36 @@ sub _proxiedUrl {
 	return "/mai/localfile/$pathHash/" . URI::Escape::uri_escape_utf8($file);
 }
 
-sub _readdir {
-	opendir(DIR, $_[0]) || return [];
-	my @files = grep { $_ !~ /^\._/o } grep /\.(?:pdf|txt|html?)$/io, readdir(DIR);
-	closedir(DIR);
+# search folder for supported text files, and parent folders for a biography.* file
+sub _findTextFiles {
+	my $previous = shift;
+	my $pathObj  = Path::Class::dir($previous);
+	
+	my $i = 0;
+	my $mask = '';
+	my @files;
+	
+	while ( $i == 0 || $previous ne $pathObj->parent->stringify ) {
+		opendir(DIR, $previous) || return [];
+		
+		push @files, map {
+			$i = 999 if /(?:bio|biogra*)\./i;    # don't walk up the tree if we've found a biography
+			{
+				file => $_,
+				path => $previous,
+			}
+		} grep { 
+			$_ !~ /^\._/o 
+		} grep /$mask\.(?:pdf|txt|html?)$/i, readdir(DIR);
+		
+		closedir(DIR);
+
+		$pathObj = $pathObj->parent;
+		$previous = $pathObj->stringify;
+		
+		last if ++$i > 3;	# don't walk up too far - most likely an artist folder is not far from the artist's album folder
+		$mask = '(?:bio|biogra*)';
+	}
 	
 	return \@files;
 }
