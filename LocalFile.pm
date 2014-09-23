@@ -36,7 +36,6 @@ my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
 
 my $URL_PARSER_RE = qr{mai/localfile/([a-f\d]+)/(.*)$};
-my $SUPPORTED_UA_RE = qr/iPeng/i;
 
 sub init { 
 #                                                                    |requires Client
@@ -101,7 +100,7 @@ sub trackInfoHandler {
 	return unless scalar @$files;
 	
 	# XMLBrowser for Jive can't handle weblinks - need custom handling there to show files in the browser.
-	if ($client->controllerUA && $client->controllerUA =~ $SUPPORTED_UA_RE)  {
+	if ( Plugins::MusicArtistInfo::Plugin->canWeblink($client) )  {
 		return {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_FILES'),
 			itemActions => {

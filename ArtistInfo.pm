@@ -126,7 +126,7 @@ sub getArtistMenu {
 
 		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
 		# don't show blog/news summaries on iPeng, but link instead. And show videos!
-		if ($client && $client->controllerUA && $client->controllerUA =~ /iPeng/i)  {
+		if ( Plugins::MusicArtistInfo::Plugin->canWeblink($client) )  {
 			push @$items, {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
 				itemActions => {
