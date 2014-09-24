@@ -126,6 +126,8 @@ sub trackInfoHandler { if (!main::SCANNER) {
 
 sub _proxiedUrl {
 	my $url = shift;
+	
+	$url = Slim::Utils::Misc::fileURLFromPath($url);
 
 	require Slim::Web::ImageProxy;
 
@@ -191,25 +193,31 @@ sub getArtistPhoto {
 	}
 	
 	if (!$img && $artist_id && $artist_id ne $artist) {
-		my $tracks = Slim::Schema->search("Track", {
-			primary_artist => $artist_id,
-		},{
-			group_by => 'me.album',
-		});
+		my $sql = qq(
+			SELECT url 
+			FROM tracks 
+			JOIN contributor_track ON contributor_track.track = tracks.id
+			WHERE contributor_track.contributor = ?
+			GROUP BY album
+		);
 		
-		while (my $track = $tracks->next) {
-			my $path = Slim::Utils::Misc::pathFromFileURL($track->url);
+		my $sth = Slim::Schema->dbh->prepare_cached($sql);
+		$sth->execute($artist_id);
+		
+		while (my $track = $sth->fetchrow_hashref) {
+			my $path = Slim::Utils::Misc::pathFromFileURL($track->{url});
 			$path = dirname($path) if !-d $path;
 			
 			# look for pictures called $artist or literal artist.jpg in the album folder
-			$img = _imageInFolder($path, $artist, 'artist');
+			$img = _imageInFolder($path, $artist, 'artist', 'composer');
 			last if $img;
 		}
+		
+		$sth->finish;
 	}
 
 	if ($img) {
-		main::DEBUGLOG && $log->debug("Found local artwork $img");
-		$img = Slim::Utils::Misc::fileURLFromPath($img);
+		main::DEBUGLOG && $log->is_debug && $log->debug("Found local artwork $img");
 		$cache->set($cachekey, $img);
 	}
 	

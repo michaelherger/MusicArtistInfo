@@ -357,7 +357,7 @@ sub getArtistPhotos {
 		
 		$results->{'local'} = {
 			photos => $local ? [{ 
-				url => $local,
+				url => Slim::Utils::Misc::fileURLFromPath($local),
 				author => cstring($client, 'SETUP_AUDIODIR'),
 			}] : [],
 		};
@@ -377,7 +377,7 @@ sub getArtistPhotoCLI {
 	return unless $artist;
 	
 	# try local artwork first
-	if ( CAN_IMAGEPROXY && (my $img = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+	if ( CAN_IMAGEPROXY && (Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 		artist    => $artist,
 		artist_id => $artist_id,
 		rawUrl    => 1,
@@ -865,7 +865,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		rawUrl    => 1,
 	}) ) {
 		main::DEBUGLOG && $log->debug("Found local artwork: $local");
-		return $local;
+		return Slim::Utils::Misc::fileURLFromPath($local);
 	}
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
