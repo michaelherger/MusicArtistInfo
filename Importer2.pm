@@ -5,6 +5,7 @@ use Digest::MD5;
 use File::Spec::Functions qw(catdir);
 use File::Slurp;
 use LWP::UserAgent;
+use URI::Escape;
 
 use Slim::Music::Import;
 use Slim::Utils::ArtworkCache;
@@ -165,13 +166,14 @@ sub _precacheArtistImage {
 			$file = catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
 		}
 
-		if (my $image = $cache->get("mai_$url")) {
+		my $cacheKey = URI::Escape::uri_escape_utf8("mai_$url");
+		if (my $image = $cache->get($cacheKey)) {
 			File::Slurp::write_file($file, $image);
 		}
 		else {
 			my $response = $ua->get( $url, ':content_file' => $file );
 			if ($response && $response->is_success) {
-				$cache->set("mai_$url", scalar File::Slurp::read_file($file, binmode => ':raw'), 86400) unless $imageFolder;
+				$cache->set($cacheKey, scalar File::Slurp::read_file($file, binmode => ':raw'), 86400) unless $imageFolder;
 			}
 			else {
 				$log->warn("Image download failed for $url: " . $response->message);
