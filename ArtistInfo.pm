@@ -388,11 +388,13 @@ sub getArtistPhotoCLI {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::LFM->getArtistPhoto($request->client(), sub {
+	my $client = $request->client();
+
+	Plugins::MusicArtistInfo::LFM->getArtistPhoto($client, sub {
 		my $photo = shift || {};
 
-		if ($photo->{error}) {
-			$log->warn($photo->{error});
+		if ($photo->{error} || !$photo->{url}) {
+			$log->warn($photo->{error} || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 			$request->addResult('error', $photo->{error})
 		}
 		else {
