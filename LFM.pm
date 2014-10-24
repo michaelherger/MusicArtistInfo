@@ -93,6 +93,9 @@ sub getArtistPhotos {
 					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
 					$cache->set($key, $result, 86400 * 30);
 				}
+				else {
+					$cache->set($key, '', 3600 * 5);
+				}
 			}
 		}
 
