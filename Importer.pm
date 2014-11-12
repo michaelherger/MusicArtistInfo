@@ -264,7 +264,7 @@ sub filename {
 	$album ||= '';
 	$album = ' - ' . Slim::Utils::Misc::cleanupFilename(
 		Slim::Utils::Unicode::encode_locale(
-			Slim::Utils::Text::ignorePunct($artist)
+			Slim::Utils::Text::ignorePunct($album)
 		)
 	) if $album;
 
