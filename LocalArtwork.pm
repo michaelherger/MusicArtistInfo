@@ -4,6 +4,7 @@ use strict;
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir);
 use Digest::MD5 qw(md5_hex);
+use Path::Class;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Strings qw(string cstring);
@@ -176,10 +177,15 @@ sub getArtistPhoto {
 	
 	my $img;
 	my $imageFolder = $prefs->get('artistImageFolder');
+
+	my @candidates = (
+		$artist, 
+		Slim::Utils::Text::ignorePunct($artist)
+	);
+	push @candidates, Slim::Utils::Unicode::utf8toLatin1Transliterate($candidates[-1]);
 	
 	if ($imageFolder) {
-		my $artist2 = Slim::Utils::Text::ignorePunct($artist);
-		$img = _imageInFolder($imageFolder, $artist2, $artist);
+		$img = _imageInFolder($imageFolder, @candidates);
 
 		# don't look up generic artists like "no artist" or "various artists" etc.
 		if (!$img) {
@@ -192,6 +198,10 @@ sub getArtistPhoto {
 		}
 	}
 	
+	# when checking music folders, check for artist.jpg etc., too
+	push @candidates, 'artist', 'composer';
+	
+	# check album folders for artist artwork, too
 	if (!$img && $artist_id && $artist_id ne $artist) {
 		my $sql = qq(
 			SELECT url 
@@ -204,12 +214,23 @@ sub getArtistPhoto {
 		my $sth = Slim::Schema->dbh->prepare_cached($sql);
 		$sth->execute($artist_id);
 		
+		my %seen;
 		while (my $track = $sth->fetchrow_hashref) {
 			my $path = Slim::Utils::Misc::pathFromFileURL($track->{url});
 			$path = dirname($path) if !-d $path;
 			
+			my $parent = Path::Class::dir($path)->parent;
+			
+			# check parent folder, assuming many have a music/artist/album hierarchy
+			if ( $parent && !$seen{$parent} ) {
+				$img = _imageInFolder($parent, @candidates);
+				last if $img;
+				
+				$seen{$parent}++;
+			}
+			
 			# look for pictures called $artist or literal artist.jpg in the album folder
-			$img = _imageInFolder($path, $artist, 'artist', 'composer');
+			$img = _imageInFolder($path, @candidates);
 			last if $img;
 		}
 		
