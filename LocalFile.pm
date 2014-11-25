@@ -192,14 +192,14 @@ sub _findTextFiles {
 		opendir(DIR, $previous) || return [];
 		
 		push @files, map {
-			$i = 999 if /(?:bio|biogra*)\./i;    # don't walk up the tree if we've found a biography
+			$i = 999 if /(?:artist|bio|biogra*)\./i;    # don't walk up the tree if we've found a biography
 			{
 				file => $_,
 				path => $previous,
 			}
 		} grep { 
 			$_ !~ /^\._/o 
-		} grep /$mask\.(?:pdf|txt|html?)$/i, readdir(DIR);
+		} grep /$mask\.(?:pdf|txt|html|nfo?)$/i, readdir(DIR);
 		
 		closedir(DIR);
 
@@ -207,7 +207,7 @@ sub _findTextFiles {
 		$previous = $pathObj->stringify;
 		
 		last if ++$i > 3;	# don't walk up too far - most likely an artist folder is not far from the artist's album folder
-		$mask = '(?:bio|biogra*)';
+		$mask = '(?:artist|bio|biogra*)';
 	}
 	
 	return \@files;
@@ -217,18 +217,18 @@ sub getFileContent {
 	my ($client, $cb, $params, $args) = @_;
 	
 	my $path = $args->{path} || '';
-	my $type = Slim::Music::Info::typeFromPath($path);
+	my $type = __PACKAGE__->mimeType($path);
 
 	my $content = cstring($client, 'PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT');
 	
-	if ( $type eq 'htm' ) {
+	if ( $type =~ /html/ ) {
 		require HTML::FormatText;
 		$content = HTML::FormatText->format_file(
 			$path,
 			leftmargin => 0,
 		);
 	}
-	elsif ( $type eq 'txt' ) {
+	elsif ( $type =~ /text/ ) {
 		require File::Slurp;
 		$content = File::Slurp::read_file($path);
 	}
