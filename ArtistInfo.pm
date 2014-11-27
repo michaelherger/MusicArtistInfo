@@ -202,6 +202,11 @@ sub getArtistMenu {
 sub getBiography {
 	my ($client, $cb, $params, $args) = @_;
 
+	if ( my $biography = Plugins::MusicArtistInfo::LocalFile->getBiography($client, $params, $args) ) {
+		$cb->($biography);
+		return;
+	}
+
 	Plugins::MusicArtistInfo::AllMusic->getBiography($client,
 		sub {
 			my $bio = shift;

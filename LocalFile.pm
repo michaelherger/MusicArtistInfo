@@ -65,6 +65,58 @@ sub init {
 	);
 }
 
+sub getBiography {
+	my ( $class, $client, $params, $args ) = @_;
+	
+	return unless $args->{artist};
+	
+	my $artist = Slim::Utils::Unicode::utf8decode_locale($args->{artist});
+	$artist = Slim::Utils::Text::ignoreCaseArticles($artist, 1);
+	
+	# get all tracks where this artist is main contributor
+	# we'll use the file paths as starting points to find biography etc. files
+	my $dbh = Slim::Schema->dbh;
+	my $sth = $dbh->prepare_cached(qq(
+		SELECT tracks.url
+		FROM contributors
+		JOIN contributor_track ON contributor_track.contributor = contributors.id AND contributor_track.role IN (1,5)
+		JOIN tracks ON tracks.id = contributor_track.track
+		WHERE contributors.namesearch = ?
+	));
+	
+	$sth->execute($artist);
+	
+	my %seen;
+	my %files;
+	while ( my ($url) = $sth->fetchrow_array ) {
+		my $dir = dirname(Slim::Utils::Misc::pathFromFileURL($url));
+		
+		next if $seen{$dir}++;
+	
+		foreach ( @{_findTextFiles($dir)} ) {
+			$files{catdir($_->{path}, $_->{file})}++
+		}
+	}
+	
+	# our order of priority for biography text files...
+	my $biofile;
+	foreach my $file ('artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt') {
+		($biofile) = grep /$file$/i, keys %files;
+		last if $biofile; 
+	}
+	
+	if ($biofile) {
+		my $bio = getFileContent($client, undef, undef, { path => $biofile });
+
+		# .nfo files are structured XML. They would return a menu, not the biography only.
+		($bio) = grep { lc($_->{name}) eq 'biography' } @$bio if $biofile =~ /\.nfo$/i && scalar @$bio > 1;
+		
+		return $bio;
+	}
+	
+	return;
+}
+
 sub albumInfoHandler {
 	my ( $client, $url, $album ) = @_;
 	
@@ -193,7 +245,7 @@ sub _findTextFiles {
 		
 		push @files, map {
 			# don't walk up the tree if we've found a biography
-			$i = 999 if /(?:artist|bio|biogra*)\./i;
+			$i = 999 if /(?:artist|bio|biogra.*)\./i;
 			
 			{
 				file => $_,
@@ -212,7 +264,7 @@ sub _findTextFiles {
 		last if ++$i > 3;
 		
 		# we don't show all files in parent folders, only a reasonable selection
-		$mask = '(?:artist|album|bio|biogra*)';
+		$mask = '(?:artist|album|bio|biogra.*)';
 	}
 	
 	@files = sort { lc($a->{file}) cmp lc($b->{file}) } @files;
@@ -252,9 +304,14 @@ sub getFileContent {
 		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 	}
 	
-	$cb->({
-		items => $items
-	});
+	if ($cb) {
+		$cb->({
+			items => $items
+		});
+	}
+	else {
+		return $items;
+	}
 }
 
 sub _proxyHandler {
