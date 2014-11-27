@@ -199,7 +199,7 @@ sub _findTextFiles {
 			}
 		} grep { 
 			$_ !~ /^\._/o 
-		} grep /$mask\.(?:pdf|txt|html|nfo?)$/i, readdir(DIR);
+		} grep /$mask\.(?:pdf|txt|html|nfo)$/i, readdir(DIR);
 		
 		closedir(DIR);
 
@@ -263,6 +263,11 @@ sub _proxyHandler {
 		$httpClient->send_response($response);
 		Slim::Web::HTTP::closeHTTPSocket($httpClient);
 		return;
+	}
+	
+	if ( $path =~ /\.nfo$/ ) {
+		require Plugins::MusicArtistInfo::XMLParser;
+		return Plugins::MusicArtistInfo::XMLParser->renderNFO($httpClient, $response, $path);
 	}
 
 	$response->code(RC_OK);

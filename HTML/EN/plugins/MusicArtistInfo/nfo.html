@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<title>[%- title -%]</title>
+	<link rel="shortcut icon" href="[% webroot %]favicon.ico" type="image/x-icon"/>
+	<link rel="icon" href="[% webroot %]favicon.ico" type="image/x-icon"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width">
+	<style>
+		body {
+			font-family: HelveticaNeue,sans-serif;
+		} 
+		.title {
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	[%
+		FOREACH item=items;
+			IF item.type == 'image';
+				"<p><img src=\"$item.url\"></p>";
+			ELSIF item.type == 'textarea';
+				"<p class=\"title\">$item.title</p>";
+				"<p>$item.value</p>";
+			ELSIF item.type == 'preformatted' %]
+				<pre>[% item.value | html %]</pre>
+			[% ELSE;
+				"<p><span class=\"title\">$item.title:</span> $item.value</p>";
+			END;
+		END;
+	%]
+</body>
+</html>
