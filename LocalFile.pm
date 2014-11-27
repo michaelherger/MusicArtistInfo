@@ -192,7 +192,9 @@ sub _findTextFiles {
 		opendir(DIR, $previous) || return [];
 		
 		push @files, map {
-			$i = 999 if /(?:artist|bio|biogra*)\./i;    # don't walk up the tree if we've found a biography
+			# don't walk up the tree if we've found a biography
+			$i = 999 if /(?:artist|bio|biogra*)\./i;
+			
 			{
 				file => $_,
 				path => $previous,
@@ -206,9 +208,14 @@ sub _findTextFiles {
 		$pathObj = $pathObj->parent;
 		$previous = $pathObj->stringify;
 		
-		last if ++$i > 3;	# don't walk up too far - most likely an artist folder is not far from the artist's album folder
-		$mask = '(?:artist|bio|biogra*)';
+		# don't walk up too far - most likely an artist folder is not far from the artist's album folder
+		last if ++$i > 3;
+		
+		# we don't show all files in parent folders, only a reasonable selection
+		$mask = '(?:artist|album|bio|biogra*)';
 	}
+	
+	@files = sort { lc($a->{file}) cmp lc($b->{file}) } @files;
 	
 	return \@files;
 }
@@ -221,7 +228,14 @@ sub getFileContent {
 
 	my $content = cstring($client, 'PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT');
 	
-	if ( $type =~ /html/ ) {
+	my $items;
+	
+	if ( $path =~ /\.nfo$/ ) {
+		require Plugins::MusicArtistInfo::XMLParser;
+		$items = Plugins::MusicArtistInfo::XMLParser->renderNFOAsOPML($client, $path, $params);
+		$content = '';
+	}
+	elsif ( $type =~ /html/ ) {
 		require HTML::FormatText;
 		$content = HTML::FormatText->format_file(
 			$path,
@@ -233,10 +247,13 @@ sub getFileContent {
 		$content = File::Slurp::read_file($path);
 	}
 	
-	$content = Slim::Utils::Unicode::utf8decode($content);
+	if ($content) {
+		$content = Slim::Utils::Unicode::utf8decode($content);
+		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+	}
 	
 	$cb->({
-		items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content)
+		items => $items
 	});
 }
 

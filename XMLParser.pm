@@ -54,7 +54,8 @@ sub parseNFO {
 				my $v = $xml->{$x};
 				if ( ref $v ) {
 					next if ref $v ne 'ARRAY';
-					$v = join(', ', map { Slim::Utils::Unicode::utf8encode($_) } @$v);
+					my %seen;
+					$v = join(', ', map { Slim::Utils::Unicode::utf8encode($_) } grep { !$seen{$_}++ } @$v);
 				}
 				else {
 					$v = Slim::Utils::Unicode::utf8encode($xml->{$x});
@@ -92,6 +93,49 @@ sub renderNFO {
 	$httpClient->send_response($response);
 	Slim::Web::HTTP::closeHTTPSocket($httpClient);
 	return;
+}
+
+sub renderNFOAsOPML {
+	my ($class, $client, $path, $params) = @_;
+	
+	my $data = $class->parseNFO($path);
+	
+	my $items = [];
+	foreach my $item ( @{$data->{items} || []} ) {
+		$item->{type} ||= '';
+		
+		if ($item->{type} eq 'image' && !$params->{isButton}) {
+			push @$items, {
+				type  => 'text',
+				name  => $item->{url},
+				#image => $item->{url},
+				jive  => {
+					showBigArtwork => 1,
+					actions => {
+						do => {
+							cmd => [ 'artwork', $item->{url} ]
+						},
+					},
+				}
+			};
+		}
+		elsif ($item->{type} =~ /textarea|preformatted/) {
+			$item->{value} = Slim::Utils::Unicode::utf8decode($item->{value} || '');
+			push @$items, {
+				type => 'outline',
+				name => $item->{title},
+				items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $item->{value}),
+			};
+		}
+		else {
+			push @$items, {
+				type => 'text',
+				name => $item->{title} . $client->string('COLON') . ' ' . Slim::Utils::Unicode::utf8decode($item->{value}),
+			}
+		}
+	}
+	
+	return $items;
 }
 
 1;
