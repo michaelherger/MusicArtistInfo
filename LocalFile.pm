@@ -65,6 +65,23 @@ sub init {
 	);
 }
 
+sub getAlbumReview {
+	my ( $class, $client, $params, $args ) = @_;
+	
+	return unless $args->{album_id};
+
+	my $dbh = Slim::Schema->dbh;
+	my $sth = $dbh->prepare_cached(qq(
+		SELECT tracks.url
+		FROM tracks
+		WHERE tracks.album = ?
+	));
+	
+	$sth->execute($args->{album_id});
+	
+	return _getFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt']);
+}
+
 sub getBiography {
 	my ( $class, $client, $params, $args ) = @_;
 	
@@ -112,6 +129,42 @@ sub getBiography {
 		($bio) = grep { lc($_->{name}) eq 'biography' } @$bio if $biofile =~ /\.nfo$/i && scalar @$bio > 1;
 		
 		return $bio;
+	}
+	
+	return;
+}
+
+sub _getFileForTrack {
+	my ( $client, $sth, $key, $candidates ) = @_;
+
+	my %seen;
+	my %files;
+	while ( my ($url) = $sth->fetchrow_array ) {
+		my $dir = dirname(Slim::Utils::Misc::pathFromFileURL($url));
+
+		next if $seen{$dir}++;
+	
+		foreach ( @{_findTextFiles($dir)} ) {
+			$files{catdir($_->{path}, $_->{file})}++
+		}
+	}
+
+	return unless keys %files;
+	
+	# our order of priority for candidate files...
+	my $file;
+	foreach my $candidate ( @$candidates ) {
+		($file) = grep /$candidate$/i, keys %files;
+		last if $file; 
+	}
+
+	if ($file) {
+		my $content = getFileContent($client, undef, undef, { path => $file });
+
+		# .nfo files are structured XML. They would return a menu, not the biography/review only.
+		($content) = grep { lc($_->{name}) eq $key } @$content if $file =~ /\.nfo$/i && scalar @$content > 1;
+		
+		return $content;
 	}
 	
 	return;
@@ -264,7 +317,7 @@ sub _findTextFiles {
 		last if ++$i > 3;
 		
 		# we don't show all files in parent folders, only a reasonable selection
-		$mask = '(?:artist|album|bio|biogra.*)';
+		$mask = '(?:artist|album|review|albumreview|bio|biogra.*)';
 	}
 	
 	@files = sort { lc($a->{file}) cmp lc($b->{file}) } @files;

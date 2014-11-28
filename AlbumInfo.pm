@@ -57,6 +57,7 @@ sub getAlbumMenu {
 	$args->{album}  ||= $args2->{album};
 	$args->{artist} ||= $args2->{artist};
 	$args->{album}  = _cleanupAlbumName($args->{album});
+	$args->{album_id} = $args2->{id};
 	
 	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
 	
@@ -103,6 +104,11 @@ sub getAlbumMenu {
 
 sub getAlbumReview {
 	my ($client, $cb, $params, $args) = @_;
+
+	if ( my $review = Plugins::MusicArtistInfo::LocalFile->getAlbumReview($client, $params, $args) ) {
+		$cb->($review);
+		return;
+	}
 
 	Plugins::MusicArtistInfo::AllMusic->getAlbumReview($client,
 		sub {
@@ -377,22 +383,25 @@ sub getAlbumReviewCLI {
 sub _objInfoHandler {
 	my ( $client, $url, $obj, $remoteMeta ) = @_;
 
-	my ($album, $artist);
+	my ($album, $artist, $id);
 	
 	if ( $obj && blessed $obj ) {
 		if ($obj->isa('Slim::Schema::Track')) {
 			$album  = $obj->albumname || $remoteMeta->{album};
 			$artist = $obj->artistName || $remoteMeta->{artist};
+			$id     = $obj->albumid;
 		}
 		elsif ($obj->isa('Slim::Schema::Album')) {
 			$album  = $obj->name || $remoteMeta->{name};
 			$artist = $obj->contributor->name || $remoteMeta->{artist};
+			$id     = $obj->id || $remoteMeta->{id};
 		}
 		else {
 			#warn Data::Dump::dump($obj);
 		}
 	}
 
+	# XXX - should we get here? Sounds wrong: this $album is a hashref?!?
 	$album = _getAlbumFromSongURL($client, $url) if !$album && $url;
 
 	return unless $album;
@@ -401,6 +410,7 @@ sub _objInfoHandler {
 		album => {
 			album  => $album,
 			artist => $artist,
+			id     => $id,
 		}
 	};
 
@@ -426,6 +436,7 @@ sub _getAlbumFromAlbumId {
 			return {
 				artist => $album->contributor->name,
 				album  => _cleanupAlbumName($album->title),
+				id     => $album->id,
 			};
 		}
 	}
@@ -444,9 +455,10 @@ sub _getAlbumFromSongURL {
 	if ( $url ) {
 		my $track = Slim::Schema->objectForUrl($url);
 
-		my ($artist, $album);
+		my ($artist, $album, $id);
 		$artist = $track->artist->name if (defined $track->artist);
 		$album  = $track->album->title if (defined $track->album);
+		$id     = $track->albumid      if (defined $track->album);
 
 		# We didn't get an artist - maybe it is some music service?
 		if ( !($album && $artist) && $track->remote() ) {
@@ -468,6 +480,7 @@ sub _getAlbumFromSongURL {
 			return {
 				artist => $artist,
 				album  => _cleanupAlbumName($album),
+				id     => $id,
 			};
 		}
 	}
