@@ -79,7 +79,7 @@ sub getAlbumReview {
 	
 	$sth->execute($args->{album_id});
 	
-	return _getFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt']);
+	return _getInfoFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt']);
 }
 
 sub getBiography {
@@ -102,39 +102,11 @@ sub getBiography {
 	));
 	
 	$sth->execute($artist);
-	
-	my %seen;
-	my %files;
-	while ( my ($url) = $sth->fetchrow_array ) {
-		my $dir = dirname(Slim::Utils::Misc::pathFromFileURL($url));
-		
-		next if $seen{$dir}++;
-	
-		foreach ( @{_findTextFiles($dir)} ) {
-			$files{catdir($_->{path}, $_->{file})}++
-		}
-	}
-	
-	# our order of priority for biography text files...
-	my $biofile;
-	foreach my $file ('artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt') {
-		($biofile) = grep /$file$/i, keys %files;
-		last if $biofile; 
-	}
-	
-	if ($biofile) {
-		my $bio = getFileContent($client, undef, undef, { path => $biofile });
 
-		# .nfo files are structured XML. They would return a menu, not the biography only.
-		($bio) = grep { lc($_->{name}) eq 'biography' } @$bio if $biofile =~ /\.nfo$/i && scalar @$bio > 1;
-		
-		return $bio;
-	}
-	
-	return;
+	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt']);
 }
 
-sub _getFileForTrack {
+sub _getInfoFileForTrack {
 	my ( $client, $sth, $key, $candidates ) = @_;
 
 	my %seen;
