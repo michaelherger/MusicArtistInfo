@@ -86,6 +86,8 @@ sub getArtistMenu {
 			|| _getArtistFromArtistId($params->{'artist_id'}) 
 			|| _getArtistFromAlbumId($params->{'album_id'}) 
 			|| _getArtistFromSongURL($client) unless $args->{url} || $args->{id};
+			
+	$args->{artist_id} ||= $params->{artist_id};
 	
 	main::DEBUGLOG && $log->debug("Getting artist menu for " . $args->{artist});
 	
@@ -719,17 +721,17 @@ sub getArtistWeblinksCLI {
 
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url, $track->remote || $track->artistid );
 }
 
 sub artistInfoHandler {
 	my ( $client, $url, $artist, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $artist->name || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $artist->name || $remoteMeta->{artist}, $url, $artist->id );
 }
 
 sub albumInfoHandler {
 	my ( $client, $url, $album, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url );
+	return _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url, $album->contributorid );
 }
 
 sub searchHandler {
@@ -738,14 +740,15 @@ sub searchHandler {
 }
 
 sub _objInfoHandler {
-	my ( $client, $artist, $url ) = @_;
+	my ( $client, $artist, $url, $artist_id ) = @_;
 
-	$artist = _getArtistFromSongURL($client, $url) if !$artist && $url;
+	($artist_id, $artist) = _getArtistFromSongURL($client, $url) if !$artist && $url;
 
 	return unless $artist;
 
 	my $args = {
-		artist => $artist
+		artist => $artist,
+		artist_id => $artist_id,
 	};
 
 	my $items = getArtistMenu($client, undef, $args);
@@ -773,9 +776,8 @@ sub _getArtistFromSongURL {
 	if ( $url ) {
 		my $track = Slim::Schema->objectForUrl($url);
 
-		my $artist;
-
-		$artist = $track->artist->name if $track->artist;
+		my $artist = $track->artistName;
+		my $id     = $track->remote() ? undef : $track->artistid;
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from current track: '$artist'");
 
 		# We didn't get an artist - maybe it is some music service?
@@ -788,19 +790,7 @@ sub _getArtistFromSongURL {
 			main::DEBUGLOG && $artist && $log->debug("Got artist name from current remote track: '$artist'");
 		}
 
-		# We still didn't get an artist - try to extract one from the title.
-#		unless ($artist && ($artist ne string('NO_ARTIST'))) {
-#			$log->debug("Biography (get artist's name): artist's name is either empty or 'No artist'");
-#			$artist = Slim::Music::Info::getCurrentTitle('', $url);
-#			$log->debug("Biography (get artist's name): give the track's title a try (for streams): '$artist'");
-#
-#			$artist =~ /([^\-]+?) -/;
-#			if ($1) {
-#				$artist = $1;
-#				$log->debug("Biography (get artist's name): tried to match 'artist - song': '$artist'");
-#			}
-#		}
-		return $artist;
+		return wantarray ? ($artist, $id) : $artist;
 	}
 }
 

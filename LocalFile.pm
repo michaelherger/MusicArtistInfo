@@ -85,23 +85,39 @@ sub getAlbumReview {
 sub getBiography {
 	my ( $class, $client, $params, $args ) = @_;
 	
-	return unless $args->{artist};
+	return unless $args->{artist} || $args->{artist_id};
+
+	my ($sql, $var);
 	
-	my $artist = Slim::Utils::Unicode::utf8decode_locale($args->{artist});
-	$artist = Slim::Utils::Text::ignoreCaseArticles($artist, 1);
+	if ($args->{artist_id}) {
+		$sql = qq(
+			SELECT tracks.url
+			FROM contributor_track
+			JOIN tracks ON tracks.id = contributor_track.track
+			WHERE contributor_track.contributor = ? AND contributor_track.role IN (1,5)
+		);
+		
+		$var = $args->{artist_id};
+	}	
+	else {
+		$sql = qq(
+			SELECT tracks.url
+			FROM contributors
+			JOIN contributor_track ON contributor_track.contributor = contributors.id AND contributor_track.role IN (1,5)
+			JOIN tracks ON tracks.id = contributor_track.track
+			WHERE contributors.namesearch = ?
+		);
+
+		$var = Slim::Utils::Unicode::utf8decode_locale($args->{artist});
+		$var = Slim::Utils::Text::ignoreCaseArticles($var, 1);
+	}
 	
 	# get all tracks where this artist is main contributor
 	# we'll use the file paths as starting points to find biography etc. files
 	my $dbh = Slim::Schema->dbh;
-	my $sth = $dbh->prepare_cached(qq(
-		SELECT tracks.url
-		FROM contributors
-		JOIN contributor_track ON contributor_track.contributor = contributors.id AND contributor_track.role IN (1,5)
-		JOIN tracks ON tracks.id = contributor_track.track
-		WHERE contributors.namesearch = ?
-	));
+	my $sth = $dbh->prepare_cached($sql);
 	
-	$sth->execute($artist);
+	$sth->execute($var);
 
 	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt']);
 }
@@ -131,6 +147,8 @@ sub _getInfoFileForTrack {
 	}
 
 	if ($file) {
+		main::DEBUGLOG && $log->debug("Found $key on local file system: $file");
+		
 		my $content = getFileContent($client, undef, undef, { path => $file });
 
 		# .nfo files are structured XML. They would return a menu, not the biography/review only.
