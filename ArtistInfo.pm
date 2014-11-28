@@ -6,7 +6,6 @@ use Slim::Menu::ArtistInfo;
 use Slim::Menu::AlbumInfo;
 use Slim::Menu::TrackInfo;
 use Slim::Menu::GlobalSearch;
-use Slim::Utils::Cache;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
@@ -18,7 +17,6 @@ use constant CLICOMMAND => 'musicartistinfo';
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
 my $log   = logger('plugin.musicartistinfo');
-my $cache = Slim::Utils::ArtworkCache->new();
 my $prefs;
 
 sub init {

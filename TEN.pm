@@ -65,7 +65,7 @@ sub searchArtists {
 sub getArtistPhotos {
 	my ( $class, $cb, $args ) = @_;
 
-	my $key = 'ten_artist_photos_' . $args->{artist};
+	my $key = 'ten_artist_photos_' . URI::Escape::uri_escape_utf8($args->{artist});
 	my $cache = Slim::Utils::Cache->new;	
 	if ( my $cached = $cache->get($key) ) {
 		$cb->($cached);

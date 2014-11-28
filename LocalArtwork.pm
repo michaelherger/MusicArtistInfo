@@ -180,6 +180,7 @@ sub getArtistPhoto {
 
 	my @candidates = (
 		$artist, 
+		Slim::Utils::Unicode::utf8encode($artist),
 		Slim::Utils::Text::ignorePunct($artist)
 	);
 	push @candidates, Slim::Utils::Unicode::utf8toLatin1Transliterate($candidates[-1]);
