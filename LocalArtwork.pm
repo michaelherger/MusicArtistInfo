@@ -116,6 +116,8 @@ sub trackInfoHandler { if (!main::SCANNER) {
 			}
 		}
 	} @images ];
+
+	$items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$items ];
 	
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK'),
