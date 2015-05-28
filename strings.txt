@@ -84,7 +84,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	EN	Find albums with missing artwork
 	
 PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
-	DE	Alben mit kleinen Plattenhülle suchen
+	DE	Alben mit kleiner Plattenhülle suchen
 	EN	Find albums with small artwork
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
