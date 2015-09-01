@@ -19,6 +19,36 @@ sub init {
 	shift->aid(shift->_pluginDataFor('id2'));
 }
 
+sub getLargestPhotoFromList {
+	my ( $class, $photos, $minSize ) = @_;
+
+	$photos = [ $photos ] if $photos && ref $photos eq 'HASH';
+	
+	return unless $photos && ref $photos eq 'ARRAY';
+
+	my %photos = map {
+		$_->{size} => $_->{'#text'}
+	} grep {
+		$_->{size} && $_->{'#text'} && $_->{'#text'} !~ m{/arQ/};
+	} @$photos;
+	
+	my ($url, $size);
+	foreach $size ( qw(mega extralarge large medium small) ) {
+		if ($url = $photos{$size}) {
+			last;
+		};
+		
+		last if $minSize && $size eq $minSize;
+	}
+	
+	if (wantarray) {
+		$url =~ m{/(34|64|126|174|252|500|\d+x\d+)s?/}i;
+		return $url, ($1 || $size);
+	}
+	
+	return $url;
+}
+
 sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
 
@@ -37,8 +67,6 @@ sub getArtistPhotos {
 	}
 	
 	_call({
-		# XXX - artist.getimages has been deprecated by October 2013. getInfo will only return one image :-(
-#		method => 'artist.getimages',
 		method => 'artist.getInfo',
 		artist => $artist,
 		autocorrect => 1,
@@ -46,56 +74,20 @@ sub getArtistPhotos {
 		my $artistInfo = shift;
 		my $result = {};
 		
-#		if ( $artistInfo && $artistInfo->{images} && (my $images = $artistInfo->{images}->{image}) ) {
 		if ( $artistInfo && $artistInfo->{artist} && (my $images = $artistInfo->{artist}->{image}) ) {
-			$images = [ $images ] if ref $images eq 'HASH';
-			
-			if ( ref $images eq 'ARRAY' ) {
-#				my @images;
-#				foreach my $image (@$images) {
-#					my $img;
-#					
-#					if ($image->{sizes} && $image->{sizes}->{size}) {
-#						my $max = 0;
-#						
-#						foreach ( @{$image->{sizes}->{size}} ) {
-#							next if $_->{width} < 250;
-#							next if $_->{width} < $max;
-#							
-#							$max = $_->{width};
-#							
-#							$img = $_;
-#						}
-#					}
-#					
-#					next unless $img;
-#					
-#					push @images, {
-#						author => $image->{owner}->{name} . ' (Last.fm)',
-#						url    => $img->{'#text'},
-#						height => $img->{height},
-#						width  => $img->{width},
-#					};
-#				}
+			if ( my ($url, $size) = $class->getLargestPhotoFromList($images) ) {
 
-				my $url = $images->[-1]->{'#text'};
-				my ($size) = $url =~ m{/(34|64|126|174|252|500|\d+x\d+)s?/}i;
-
-				my @images = ({
+				$result->{photos} = [ {
 					author => 'Last.fm',
 					url    => $url,
 					width  => $size * 1 || undef
-				});
+				}];
 
-				if (@images) {
-					$result->{photos} = \@images;
-
-					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
-					$cache->set($key, $result, 86400 * 30);
-				}
-				else {
-					$cache->set($key, '', 3600 * 5);
-				}
+				# we keep an aggressive cache of artist pictures - they don't change often, but are often used
+				$cache->set($key, $result, 86400 * 30);
+			}
+			else {
+				$cache->set($key, '', 3600 * 5);
 			}
 		}
 
@@ -153,7 +145,7 @@ sub getAlbumCover {
 		
 		my $cover = {};
 
-		# XXX - can we be smarter than return the first image?		
+		# getAlbumCovers() would only return a single item
 		if ($covers && $covers->{images} && ref $covers->{images} eq 'ARRAY') {
 			$cover = $covers->{images}->[0];
 		}
@@ -171,23 +163,12 @@ sub getAlbumCovers {
 		my $result = {};
 		
 		if ( $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
-			$image = [ $image ] if ref $image eq 'HASH';
-
-			if ( ref $image eq 'ARRAY' ) {
-				$result->{images} = [ reverse grep {
-					$_
-				} map {
-					my ($size) = $_->{'#text'} =~ m{/(34|64|126|174|252|500|\d+x\d+)s?/}i;
-					
-					# ignore sizes smaller than 300px
-					{
-						author => 'Last.fm',
-						url    => $_->{'#text'},
-						width  => $size || $_->{size},
-					} if $_->{'#text'} && (!$size || $size*1 >= 300);
-				} @{$image} ];
-				
-				delete $result->{images} unless scalar @{$result->{images}};
+			if ( my ($url, $size) = $class->getLargestPhotoFromList($image, 'extralarge') ) {
+				$result->{images} = [{
+					author => 'Last.fm',
+					url    => $url,
+					width  => $size,
+				}];
 			}
 		}
 

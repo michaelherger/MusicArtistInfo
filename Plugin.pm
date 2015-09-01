@@ -61,7 +61,7 @@ sub initPlugin {
 
 		require Slim::Web::ImageProxy;
 		Slim::Web::ImageProxy->registerHandler(
-			match => qr/last\.fm/,
+			match => qr/la?st\.fm/,
 			func  => \&_lastfmImgProxy,
 		);
 
@@ -337,11 +337,14 @@ sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
 
 	my $size = Slim::Web::ImageProxy->getRightSize($spec, {
-		252 => 252,
+#		252 => 252,
 		500 => 500,
 	});
 
-	$url =~ s/serve\/(?:\d+|_)\//serve\/$size\// if $size;
+	if ($size) {
+		$url =~ s/serve\/(?:\d+|_)\//serve\/$size\//;
+		$url =~ s/(fm\/i\/u\/)/$1$size\//;
+	}
 	
 	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
 
