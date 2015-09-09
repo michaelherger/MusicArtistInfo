@@ -338,12 +338,12 @@ sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 
 	my $size = Slim::Web::ImageProxy->getRightSize($spec, {
 #		252 => 252,
-		500 => 500,
+		300 => '300x300',
 	});
 
 	if ($size) {
 		$url =~ s/serve\/(?:\d+|_)\//serve\/$size\//;
-		$url =~ s/(fm\/i\/u\/)/$1$size\//;
+		$url =~ s/(fm\/i\/u\/)([a-f0-9]{32,})/$1$size\/$2/;
 	}
 	
 	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
