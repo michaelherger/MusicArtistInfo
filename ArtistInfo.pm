@@ -918,8 +918,13 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 				$cb->($client, sub {
 					my $items = shift;
 	
-					$items->{items} = [ map { 
-						$_->{image} ||= 'imageproxy/mai/artist/' . ($_->{id} || 0) . '/image.png';
+					$items->{items} = [ map {
+						if (!$_->{image} && $_->{passthrough} && ref $_->{passthrough} && @{$_->{passthrough}} && $_->{passthrough}->[0]->{remote_library}) {
+							$_->{image} ||= 'imageproxy/mai/artist/' . URI::Escape::uri_escape_utf8($_->{name} || 0) . '/image.png';
+						}
+						else {
+							$_->{image} ||= 'imageproxy/mai/artist/' . ($_->{id} || 0) . '/image.png';
+						}
 						$_;
 					} @{$items->{items}} ];
 	
