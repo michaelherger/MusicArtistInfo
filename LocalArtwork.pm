@@ -226,7 +226,7 @@ sub getArtistPhoto {
 			
 			# check parent folder, assuming many have a music/artist/album hierarchy
 			if ( $parent && !$seen{$parent} ) {
-				$img = _imageInFolder($parent, @candidates);
+				$img = _imageInFolder($parent->stringify, @candidates);
 				last if $img;
 				
 				$seen{$parent}++;

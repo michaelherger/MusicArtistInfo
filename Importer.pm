@@ -96,6 +96,8 @@ sub _scanAlbumCovers {
 	}
 
 	$filenameTemplate = $serverprefs->get('coverArt') || 'ARTIST - ALBUM';
+	# we can't handle wildcards, as all artwork will be in the same folder
+	$filenameTemplate = 'ARTIST - ALBUM' if $filenameTemplate =~ /\*/;
 	$filenameTemplate =~ s/^%//;
 	
 	while ( _getAlbumCoverURL({
