@@ -101,23 +101,27 @@ sub getArtistMenu {
 		type => 'link',
 		url  => \&getRelatedArtists,
 		passthrough => $pt,
-	},{
-		name => cstring($client, 'BROWSE'),
-		type => 'link',
-		url  => sub {
-			my ($client, $cb, $params, $args) = @_;
-
-			$args->{search} = $args->{artist} || $args->{name};
-			my $searchMenu = Slim::Menu::GlobalSearch->menu( $client, $args ) || {};
-			$cb->($searchMenu->{items} || []);
-		},
-		passthrough => $pt,
 #	},{
 #		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_DISCOGRAPHY'),
 #		type => 'link',
 #		url  => \&getDiscography,
 #		passthrough => $pt,
 	} ];
+	
+	if ($client) {
+		push @$items, {
+			name => cstring($client, 'BROWSE'),
+			type => 'link',
+			url  => sub {
+				my ($client, $cb, $params, $args) = @_;
+	
+				$args->{search} = $args->{artist} || $args->{name};
+				my $searchMenu = Slim::Menu::GlobalSearch->menu( $client, $args ) || {};
+				$cb->($searchMenu->{items} || []);
+			},
+			passthrough => $pt,
+		};
+	}
 	
 	# we don't show pictures, videos and length text content on ip3k
 	if (!$params->{isButton}) {
