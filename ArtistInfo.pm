@@ -101,6 +101,17 @@ sub getArtistMenu {
 		type => 'link',
 		url  => \&getRelatedArtists,
 		passthrough => $pt,
+	},{
+		name => cstring($client, 'BROWSE'),
+		type => 'link',
+		url  => sub {
+			my ($client, $cb, $params, $args) = @_;
+
+			$args->{search} = $args->{artist} || $args->{name};
+			my $searchMenu = Slim::Menu::GlobalSearch->menu( $client, $args ) || {};
+			$cb->($searchMenu->{items} || []);
+		},
+		passthrough => $pt,
 #	},{
 #		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_DISCOGRAPHY'),
 #		type => 'link',

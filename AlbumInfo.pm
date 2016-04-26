@@ -304,6 +304,7 @@ sub getAlbumCredits {
 						$item->{passthrough} = [{ 
 							url => $_->{url},
 							id  => $_->{id},
+							name => $_->{name}
 						}];
 						$item->{type} = 'link';
 					}
