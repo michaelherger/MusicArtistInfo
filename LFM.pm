@@ -52,7 +52,7 @@ sub getLargestPhotoFromList {
 sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
 
-	my $artist = $args->{artist};
+	my $artist = $args->{artist} || $args->{name};
 	
 	if (!$artist) {
 		$cb->();

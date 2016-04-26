@@ -277,16 +277,16 @@ sub getArtistPhotos {
 	}, $args );
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
-		$results->{lfm} = shift;
+		$results->{lfm} = shift || { photos => [] };
 		$getArtistPhotoCb->($results);
 	}, $args );
 	
-	if (CAN_IMAGEPROXY) {
+	if (CAN_IMAGEPROXY && $args->{artist_id}) {
 		my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto($args);
 		
 		$results->{'local'} = {
 			photos => $local ? [{ 
-				url => Slim::Utils::Misc::fileURLFromPath($local),
+				url => $local,
 				author => cstring($client, 'SETUP_AUDIODIR'),
 			}] : [],
 		};
@@ -423,7 +423,8 @@ sub getRelatedArtists {
 								url  => \&getArtistMenu,
 								passthrough => [{
 									url => $_->{url},
-									id  => $_->{id}
+									id  => $_->{id},
+									name => $_->{name}
 								}]
 							 }
 						} @$v ],

@@ -78,26 +78,23 @@ sub getArtistPhotos {
 	my $getArtistPhotosCB = sub {
 		my $url = _getBioUrl(shift);
 		
+		$url =~ s|/biography.*||;
 		_get( $client, $cb, {
 			url     => $url,
 			parseCB => sub {
 				my $tree   = shift;
 				my $result = [];
 
-				foreach ( $tree->look_down('_tag', 'div', 'class', 'media-gallery-image thumbnail') ) {
-					my $img = eval { from_json( Encode::encode( 'utf8', $_->attr('data-gallery') ) ) };
+				foreach ( $tree->look_down('_tag', 'li', 'class', 'media-gallery-image') ) {
+					my $img = $_->look_down('_tag', 'img', 'class', 'lazy') || next;
+					my $url = $img->attr('data-original') || next;
+					
+					$url =~ s|^//|http://|;
 
-					if ($@) {
-						logError(@$);
-					}
-					elsif ($img) {
-						push @$result, {
-							author => $img->{author} . ' (AllMusic.com)',
-							url    => $img->{url},
-							height => $img->{height},
-							width  => $img->{width},
-						};
-					}
+					push @$result, {
+						author => 'AllMusic.com',
+						url    => $url,
+					};
 				}
 				
 				return {
@@ -203,7 +200,7 @@ sub getRelatedArtists {
 				
 				foreach ( 'similars', 'influencers', 'followers', 'associatedwith', 'collaboratorwith' ) {
 					my $related = $tree->look_down('_tag', 'section', 'class', "related $_") || next;
-					my $title = $related->look_down('_tag', 'h2') || next;
+					my $title = $related->look_down('_tag', 'h3') || next;
 					my $items = $related->look_down("_tag", "ul") || next;
 
 					push @$result, {
