@@ -11,6 +11,7 @@ use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::LFM;
+use Plugins::MusicArtistInfo::TEN;
 
 use constant CLICOMMAND => 'musicartistinfo';
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
@@ -24,6 +25,10 @@ sub init {
 #                                                                |  |  |has Tags
 #                                                                |  |  |  |Function to call
 #                                                                C  Q  T  F
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'videos'], [0, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'blogs'],  [0, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'news'],   [0, 1, 1, \&getArtistWeblinksCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'urls'],   [0, 1, 1, \&getArtistWeblinksCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'artistphoto'],
 	                                                            [0, 1, 1, \&getArtistPhotoCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'biography'],
@@ -64,6 +69,7 @@ sub init {
 		$prefs->setChange(\&_hijackArtistsMenu, 'browseArtistPictures');
 	}
 
+	Plugins::MusicArtistInfo::TEN->init($_[1]);
 	Plugins::MusicArtistInfo::LFM->init($_[1]);
 }
 
@@ -117,6 +123,70 @@ sub getArtistMenu {
 			url  => \&getArtistPhotos,
 			passthrough => $pt,
 		};
+
+		# XMLBrowser for Jive can't handle weblinks - need custom handling there to show videos, blogs etc.
+		# don't show blog/news summaries on iPeng etc., but link instead. And show videos!
+		if ( Plugins::MusicArtistInfo::Plugin->canWeblink($client) )  {
+			push @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'news' ],
+						fixedParams => $args,
+					},
+				},
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTBLOGS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'blogs' ],
+						fixedParams => $args,
+					},
+				},
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'videos' ],
+						fixedParams => $args,
+					},
+				},
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_URLS'),
+				itemActions => {
+					items => {
+						command  => [ CLICOMMAND, 'urls' ],
+						fixedParams => $args,
+					},
+				},
+			};
+		}
+		
+		else {
+			push @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTNEWS'),
+				type => 'link',
+				url  => \&getArtistNews,
+				passthrough => $pt,
+			},{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTBLOGS'),
+				type => 'link',
+				url  => \&getArtistBlogs,
+				passthrough => $pt,
+			};
+			
+			push @$items, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS'),
+				type => 'link',
+				url  => \&getArtistVideos,
+				passthrough => $pt,
+			}, {
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_URLS'),
+				type => 'link',
+				url  => \&getArtistURLs,
+				passthrough => $pt,
+			} if !$client || !$client->controllerUA;
+		}
 	}
 	
 	if ($cb) {
@@ -486,6 +556,161 @@ sub getDiscography {
 	);
 }
 =cut
+
+sub getArtistNews {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistNews(
+		sub {
+			_gotWebLinks($client, $cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub getArtistBlogs {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistBlogs(
+		sub {
+			_gotWebLinks($client, $cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub getArtistVideos {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistVideos(
+		sub {
+			_gotWebLinks($client, $cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub getArtistURLs {
+	my ($client, $cb, $params, $args) = @_;
+
+	Plugins::MusicArtistInfo::TEN->getArtistURLs(
+		sub {
+			_gotWebLinks($client, $cb, $params, shift);
+		},
+		$args,
+	);
+}
+
+sub _gotWebLinks {
+	my ($client, $cb, $params, $result) = @_; 
+
+	my $items = [];
+	$result ||= {};
+
+	if ($result->{error}) {
+		$items = [{
+			name => $result->{error},
+			type => 'text'
+		}]
+	}
+	elsif ($result->{items} && $params->{isWeb}) {
+		$items = [ map {
+			my $title = $_->{name} || $_->{title};
+			$title = $_->{date_found} . ' - ' . $title if $_->{date_found};
+			$title .= ' (' . $_->{site} . ')' if $_->{site};
+			
+			{
+				name  => $title,
+				image => $_->{image_url},
+				type  => 'redirect',
+				weblink => $_->{url},
+			}
+		} @{$result->{items}} ];
+	}
+	elsif ($result->{items}) {
+		$items = [ map {
+			my $title = $_->{name} || $_->{title};
+			$title = $_->{date_found} . ' - ' . $title if $_->{date_found};
+			my $item = {
+				name  => $title,
+			};
+			
+			$item->{image} = $_->{image_url} if $_->{image_url};
+			
+			if ($_->{summary}) {
+				$_->{summary} =~ s/<\/?span>//g;
+				
+				$_->{summary} .= '\n\n' . $_->{url} if $_->{url};
+				
+				$item->{items} = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $_->{summary});
+			}
+			$item;
+		} @{$result->{items}} ];
+	}
+
+	$cb->($items);
+}
+
+sub getArtistWeblinksCLI {
+	my $request = shift;
+
+	my ($artist, $artist_id) = _checkRequest($request, ['videos', 'blogs', 'news', 'urls']);
+
+	return unless $artist;
+
+	my $handler;
+	if ($request->isQuery([[CLICOMMAND], ['news']])) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistNews(@_) };
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['blogs']])) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistBlogs(@_) };
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['videos']])) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistVideos(@_) };
+	}
+	elsif ($request->isQuery([[CLICOMMAND], ['urls']])) {
+		$handler = sub { Plugins::MusicArtistInfo::TEN->getArtistURLs(@_) };
+	}
+	
+	$handler->(
+		sub {
+			my $items = shift || {};
+
+			my $i = 0;
+			my $hasImages;
+
+			if ($items->{error}) {
+				$request->addResult('window', {
+					textArea => $items->{error},
+				});
+				$i++;
+			}
+			elsif ($items->{items}) {
+				foreach (@{$items->{items}}) {
+					my $url = $_->{url};
+
+					$hasImages ||= $_->{image_url};
+					
+					$request->addResultLoop('item_loop', $i, 'text', ($_->{title} || $_->{name}) . "\n" . ($_->{site} ? $_->{site} . ' - ' : '') . $_->{date_found} );
+					$request->addResultLoop('item_loop', $i, 'icon', $_->{image_url}) if $_->{image_url};
+					$request->addResultLoop('item_loop', $i, 'weblink', $url);
+					
+					$i++;
+				}
+			}
+									
+			$request->addResult('window', {
+				windowStyle => 'icon_list'
+			}) if $hasImages;
+			$request->addResult('count', $i);
+			$request->addResult('offset', 0);
+			$request->setStatusDone();
+		},
+		{
+			artist => $artist
+		},
+	);
+}
 
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
