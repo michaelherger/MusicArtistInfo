@@ -112,13 +112,7 @@ sub getArtistMenu {
 		push @$items, {
 			name => cstring($client, 'BROWSE'),
 			type => 'link',
-			url  => sub {
-				my ($client, $cb, $params, $args) = @_;
-	
-				$args->{search} = $args->{artist} || $args->{name};
-				my $searchMenu = Slim::Menu::GlobalSearch->menu( $client, $args ) || {};
-				$cb->($searchMenu->{items} || []);
-			},
+			url  => \&_getSearchItem,
 			passthrough => $pt,
 		};
 	}
@@ -455,14 +449,32 @@ sub getArtistInfo {
 									url  => \&getArtistMenu,
 									passthrough => [{
 										url => $v,
+										name => $k
 									}]
 								}
 							}
 							else {
-								{
+								my $item = {
 									name => $_,
 									type => 'text'
+								};
+								
+								if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCase($_, 1) )) ) {
+									$item->{type} = 'link'; 
+									$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
+									$item->{passthrough} = [{
+										searchTags => ["genre_id:" . $genre->id]
+									}];
 								}
+								elsif ( $k =~ /also known as/i ) {
+									$item->{type} = 'link'; 
+									$item->{url}  = \&_getSearchItem;
+									$item->{passthrough} = [{
+										search => $_
+									}];
+								}
+
+								$item;
 							}
 						} @$v ],
 					}:{
@@ -908,6 +920,14 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 	return;
 } }
+
+sub _getSearchItem {
+	my ($client, $cb, $params, $args) = @_;
+	
+	$args->{search} ||= $args->{artist} || $args->{name};
+	my $searchMenu = Slim::Menu::GlobalSearch->menu( $client, $args ) || {};
+	$cb->($searchMenu->{items} || []);
+}
 
 # this is an ugly hack to manipulate the main artist menu to inject artist artwork
 my $retry = 0.5;

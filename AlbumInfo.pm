@@ -251,10 +251,20 @@ sub getAlbumInfo {
 						name  => $k,
 						type  => 'outline',
 						items => [ map {
-							{
+							my $item = {
 								name => $_,
 								type => 'text'
+							};
+
+							if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCase($_, 1) )) ) {
+								$item->{type} = 'link'; 
+								$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
+								$item->{passthrough} = [{
+									searchTags => ["genre_id:" . $genre->id]
+								}];
 							}
+							
+							$item;
 						} @$v ],
 					}:{
 						name => "$k$colon $v",
