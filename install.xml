@@ -8,7 +8,6 @@
 	<homepageURL>http://www.herger.net/MusicArtistInfo</homepageURL>
 	<optionsURL>plugins/MusicArtistInfo/settings.html</optionsURL>
 	<id>65f0c9e0-042f-11e3-8ffd-0800200c9a66</id>
-	<id1>50444d32-494c-4d4f-4149-324b4e3858444c</id1>
 	<id2>c6abc51e-847b-91ab-a0de-2ede33875e24</id2>
 	<module>Plugins::MusicArtistInfo::Plugin</module>
 	<importmodule>Plugins::MusicArtistInfo::Importer</importmodule>
@@ -18,5 +17,5 @@
 		<minVersion>7.6</minVersion>
 	</targetApplication>
 	<type>2</type>
-	<version>0.9.13</version>
+	<version>0.9.14</version>
 </extension>
