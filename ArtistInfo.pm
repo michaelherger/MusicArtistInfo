@@ -516,7 +516,34 @@ sub getDiscography {
 
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url, $track->remote || $track->artistid );
+
+	if ( !$track->remote && $track->contributors->count > 1 ) {
+		my $items = [];
+		my %seen;
+		
+		foreach my $role (Slim::Schema::Contributor->contributorRoles) {
+			my $contributors = $track->contributorsOfType($role);
+
+			while (my $contributor = $contributors->next) {
+				next if $seen{$contributor->id};
+				
+				my $item = _objInfoHandler( $client, $contributor->name, undef, $contributor->id );
+				$item->{name} = $contributor->name . ' (' . cstring($client, $role) . ')' if $item && ref $item;
+				push @$items, $item;
+
+				$seen{$contributor->id}++;
+			}
+		}
+			
+		return {
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
+			type => 'outline',
+			items => $items,
+		}; 
+	}
+	else {
+		return _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url, $track->remote || $track->artistid );
+	}
 }
 
 sub artistInfoHandler {
@@ -526,7 +553,34 @@ sub artistInfoHandler {
 
 sub albumInfoHandler {
 	my ( $client, $url, $album, $remoteMeta ) = @_;
-	return _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url, $album->contributorid );
+	
+	if ( $album->contributors->count > 1 ) {
+		my $items = [];
+		my %seen;
+		
+		foreach my $role (Slim::Schema::Contributor->contributorRoles) {
+			my @contributors = $album->artistsForRoles($role);
+
+			foreach my $contributor (@contributors) {
+				next if $seen{$contributor->id};
+				
+				my $item = _objInfoHandler( $client, $contributor->name, undef, $contributor->id );
+				$item->{name} = $contributor->name . ' (' . cstring($client, $role) . ')' if $item && ref $item;
+				push @$items, $item;
+
+				$seen{$contributor->id}++;
+			}
+		}
+			
+		return {
+			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
+			type => 'outline',
+			items => $items,
+		}; 
+	}
+	else {
+		return _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url, $album->contributorid );
+	}
 }
 
 sub searchHandler {
