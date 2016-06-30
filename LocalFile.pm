@@ -119,11 +119,11 @@ sub getBiography {
 	
 	$sth->execute($var);
 
-	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt']);
+	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
 }
 
 sub _getInfoFileForTrack {
-	my ( $client, $sth, $key, $candidates ) = @_;
+	my ( $client, $sth, $key, $candidates, $params ) = @_;
 
 	my %seen;
 	my %files;
@@ -149,7 +149,7 @@ sub _getInfoFileForTrack {
 	if ($file) {
 		main::DEBUGLOG && $log->debug("Found $key on local file system: $file");
 		
-		my $content = getFileContent($client, undef, undef, { path => $file });
+		my $content = getFileContent($client, undef, $params, { path => $file });
 
 		# .nfo files are structured XML. They would return a menu, not the biography/review only.
 		($content) = grep { lc($_->{name}) eq $key } @$content if $file =~ /\.nfo$/i && scalar @$content > 1;
@@ -320,6 +320,7 @@ sub getFileContent {
 	
 	my $path = $args->{path} || '';
 	my $type = __PACKAGE__->mimeType($path);
+	$params ||= {};
 
 	my $content = cstring($client, 'PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT');
 	
@@ -330,7 +331,7 @@ sub getFileContent {
 		$items = Plugins::MusicArtistInfo::XMLParser->renderNFOAsOPML($client, $path, $params);
 		$content = '';
 	}
-	elsif ( $type =~ /html/ ) {
+	elsif ( $type =~ /html/ && !$params->{isWeb} ) {
 		require HTML::FormatText;
 		$content = HTML::FormatText->format_file(
 			$path,
@@ -340,6 +341,7 @@ sub getFileContent {
 	elsif ( $type =~ /text/ ) {
 		require File::Slurp;
 		$content = File::Slurp::read_file($path);
+		$content = Slim::Utils::Unicode::utf8on($content) if $type =~ /html/;
 	}
 	
 	if ($content) {
