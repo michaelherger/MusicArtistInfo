@@ -341,10 +341,11 @@ sub getFileContent {
 	elsif ( $type =~ /text/ ) {
 		require File::Slurp;
 		$content = File::Slurp::read_file($path);
-		$content = Slim::Utils::Unicode::utf8on($content) if $type =~ /html/;
 	}
 	
 	if ($content) {
+		# we're going to assume that HTML nowadays is in utf8...
+		$content = Slim::Utils::Unicode::utf8on($content) if $type =~ /html/;
 		$content = Slim::Utils::Unicode::utf8decode($content);
 		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 	}
