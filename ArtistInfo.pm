@@ -389,7 +389,7 @@ sub getArtistInfo {
 									type => 'text'
 								};
 								
-								if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCase($_, 1) )) ) {
+								if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCaseArticles($_, 1, 1) )) ) {
 									$item->{type} = 'link'; 
 									$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
 									$item->{passthrough} = [{
