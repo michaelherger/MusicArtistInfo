@@ -11,6 +11,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::MusicArtistInfo::AlbumInfo;
 use Plugins::MusicArtistInfo::ArtistInfo;
+use Plugins::MusicArtistInfo::TrackInfo;
 use Plugins::MusicArtistInfo::LocalFile;
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
@@ -40,6 +41,7 @@ sub initPlugin {
 	
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
+	Plugins::MusicArtistInfo::TrackInfo->init($class);
 	Plugins::MusicArtistInfo::LocalFile->init($class);
 
 	# no need to actually initialize the importer, as it will only be executed in the external scanner anyway

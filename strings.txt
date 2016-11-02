@@ -59,6 +59,10 @@ PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	DE	Tut mir Leid, konnte keine relevanten Informationen finden.
 	EN	I'm sorry, didn't find any relevant information.
 
+PLUGIN_MUSICARTISTINFO_LYRICS
+	DE	Songtext
+	EN	Lyrics
+
 PLUGIN_MUSICARTISTINFO_URLS
 	DE	Webseiten
 	EN	Websites
