@@ -128,6 +128,13 @@ sub getLyrics {
 		my $items = [];
 		if ($lyrics) {
 			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
+			warn Data::Dump::dump($items);
+		}
+		else {
+			$items = [{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				type => 'textarea'
+			}];
 		}
 		
 		if ($cb) {

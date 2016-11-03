@@ -26,7 +26,7 @@ sub getLyricsDirect {
 		
 		my $lyrics;
 		
-		if ($items && ref $items) {
+		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
 			$lyrics = $items->{LyricSong} if $items->{LyricSong};
 			$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
 			$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
