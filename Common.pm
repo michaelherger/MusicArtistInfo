@@ -20,6 +20,9 @@ my $ua;
 sub cleanupAlbumName {
 	my $album = shift;
 	
+	# keep a backup copy, in case cleaning would wipe all of it
+	my $fullAlbum = $album;
+	
 	main::INFOLOG && $log->info("Cleaning up album name: '$album'");
 
 	# remove everything between () or []... But don't for PG's eponymous first four albums :-)
@@ -37,7 +40,7 @@ sub cleanupAlbumName {
 
 	main::INFOLOG && $log->info("Album name cleaned up:  '$album'");
 
-	return $album;
+	return $album || $fullAlbum;
 }
 
 sub imageInFolder {
@@ -80,7 +83,15 @@ sub call {
 		my $response = shift;
 		
 		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
-		my $result = eval { from_json( $response->content ) };
+		my $result = eval {
+			if ( $response->headers->content_type =~ /xml/ ) {
+				require XML::Simple;
+				XML::Simple::XMLin( $response->content );
+			} 
+			else {
+				from_json( $response->content ); 
+			}
+		};
 	
 		$result ||= {};
 		

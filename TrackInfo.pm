@@ -118,17 +118,16 @@ sub getLyrics {
 	$params ||= {};
 	$args   ||= {};
 	
-	my $title = _cleanupAlbumName($args->{title}) || $args->{title};
+	my $title = _cleanupAlbumName($args->{title});
 	
 	main::DEBUGLOG && $log->debug("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 	
-	Plugins::MusicArtistInfo::ChartLyrics->getLyricsDirect($args, sub {
+	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsDirect($args, sub {
 		my $lyrics = shift;
 		
 		my $items = [];
 		if ($lyrics) {
 			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
-			warn Data::Dump::dump($items);
 		}
 		else {
 			$items = [{
