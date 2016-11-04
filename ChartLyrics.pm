@@ -15,6 +15,7 @@ use Slim::Utils::Log;
 use constant BASE_URL => 'http://api.chartlyrics.com/apiv1.asmx/';
 use constant SEARCH_URL => BASE_URL . 'SearchLyric?artist=%s&song=%s';
 use constant SEARCH_DIRECT_URL => BASE_URL . 'SearchLyricDirect?artist=%s&song=%s';
+use constant GET_LYRICS_URL => BASE_URL . 'GetLyric?lyricId=%s&lyricCheckSum=%s';
 
 my $log = logger('plugin.musicartistinfo');
 
@@ -26,18 +27,12 @@ sub searchLyrics {
 		sub {
 			my $items = shift;
 			
-		if ($items && ref $items && $items->{SearchLyricResult} && ref $items->{SearchLyricResult}) {
-			my $artist = $args->{artist};
-			my $title  = $args->{title};
+			if ($items && ref $items && $items->{SearchLyricResult} && ref $items->{SearchLyricResult}) {
+				$cb->($items);
+				return;
+			}
 			
-			my ($match) = grep {
-				$artist =~ /\Q$_->{Artist}\E/i && $title =~ /\Q$_->{Song}\E/i;
-			} @{ $items->{SearchLyricResult }};
-			
-			warn Data::Dump::dump($items, $match, 'yo');
-		}
-			
-			# $cb->();
+			$cb->();
 		}
 	);
 	
@@ -50,20 +45,66 @@ sub searchLyricsDirect {
 	Plugins::MusicArtistInfo::Common->call( sprintf(SEARCH_DIRECT_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title})), sub {
 		my $items = shift;
 		
-		my $lyrics;
-		
 		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
-			$lyrics = $items->{LyricSong} if $items->{LyricSong};
-			$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
-			$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
-			$lyrics .= "\n\n" if $lyrics;
-			$lyrics .= $items->{Lyric} if $items->{Lyric};
+			$cb->($items);
+			return;
 		}
 		
-		$cb->($lyrics);
+		$cb->();
 	});
 	
 	return;
 }
+
+sub getLyrics {
+	my ( $class, $args, $cb ) = @_;
+	
+	Plugins::MusicArtistInfo::Common->call( sprintf(GET_LYRICS_URL, uri_escape_utf8($args->{id}), uri_escape_utf8($args->{checksum})), sub {
+		my $items = shift;
+		
+		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
+			$cb->($items);
+			return;
+		}
+		
+		$cb->();
+	});
+	
+	return;
+}
+
+sub searchLyricsInDirect {
+	my ( $class, $args, $cb ) = @_;
+
+	$class->searchLyrics( $args, sub {
+		my $items = shift;
+
+		if ($items) {
+			my $artist = $args->{artist};
+			my $title  = $args->{title};
+			
+			my ($match) = grep {
+				$artist =~ /\Q$_->{Artist}\E/i && $title =~ /\Q$_->{Song}\E/i;
+			} @{ $items->{SearchLyricResult }};
+			
+			if ( $match && ref $match && $match->{LyricId} && $match->{LyricChecksum} ) {
+				$class->getLyrics( {
+					id => $match->{LyricId},
+					checksum => $match->{LyricChecksum}
+				}, sub {
+					$cb->(@_);
+				} );
+			}
+			else {
+				$cb->();
+			}
+		}
+		
+		$cb->();
+	} );
+	
+	return;
+}
+
 
 1;

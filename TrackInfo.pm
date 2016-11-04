@@ -122,11 +122,17 @@ sub getLyrics {
 	
 	main::DEBUGLOG && $log->debug("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 	
-	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsDirect($args, sub {
-		my $lyrics = shift;
+	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
+		my $items = shift;
 		
-		my $items = [];
-		if ($lyrics) {
+		if ($items) {
+			my $lyrics;
+			$lyrics = $items->{LyricSong} if $items->{LyricSong};
+			$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
+			$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
+			$lyrics .= "\n\n" if $lyrics;
+			$lyrics .= $items->{Lyric} if $items->{Lyric};
+
 			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
 		}
 		else {
@@ -137,6 +143,7 @@ sub getLyrics {
 		}
 		
 		if ($cb) {
+warn Data::Dump::dump($items);
 			$cb->({
 				items => $items,
 			});
