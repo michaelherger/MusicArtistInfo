@@ -79,14 +79,14 @@ sub searchLyricsInDirect {
 	$class->searchLyrics( $args, sub {
 		my $items = shift;
 
-		if ($items) {
+		if ($items && $items->{SearchLyricResult} && ref $items->{SearchLyricResult} && ref $items->{SearchLyricResult} eq 'ARRAY' ) {
 			my $artist = $args->{artist};
 			my $title  = $args->{title};
 			
 			my ($match) = grep {
 				$artist =~ /\Q$_->{Artist}\E/i && $title =~ /\Q$_->{Song}\E/i;
-			} @{ $items->{SearchLyricResult }};
-			
+			} @{ $items->{SearchLyricResult} };
+
 			if ( $match && ref $match && $match->{LyricId} && $match->{LyricChecksum} ) {
 				$class->getLyrics( {
 					id => $match->{LyricId},
@@ -94,9 +94,7 @@ sub searchLyricsInDirect {
 				}, sub {
 					$cb->(@_);
 				} );
-			}
-			else {
-				$cb->();
+				return;
 			}
 		}
 		

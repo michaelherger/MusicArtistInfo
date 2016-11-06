@@ -22,7 +22,7 @@ sub init {
 #                                                                C  Q  T  F
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'lyrics'], [0, 1, 1, \&getSongLyricsCLI]);
 
-	Slim::Menu::TrackInfo->registerInfoProvider( moremusicinfo => (
+	Slim::Menu::TrackInfo->registerInfoProvider( moretrackinfo => (
 		func => \&_objInfoHandler,
 		after => 'moreartistinfo',
 	) );
@@ -83,33 +83,29 @@ sub getSongLyricsCLI {
 		return;
 	}
 	
-	getLyrics($client,
-		sub {
-			my $items = shift || {};
+	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
+		my $item = shift || {};
+		
+		if ( !$item || !ref $item ) {
+			$request->addResult('error', 'unknown');
+		}
+		elsif ( $item->{error} ) {
+			$request->addResult('error', $item->{error});
+		}
+		elsif ($item) {
+			my $lyrics = _renderLyrics($item);
 			
-			$items = $items->{items};
+			# CLI clients expect real line breaks, not literal \n
+			$lyrics =~ s/\\n/\n/g;
+			$request->addResult('lyrics', $lyrics) if $lyrics;
+			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;
+			$request->addResult('title', $args->{title}) if $args->{title};
+			$request->addResult('artist', $args->{artist}) if $args->{artist};
+			$request->addResult('lyricUrl', $item->{LyricUrl}) if $item->{LyricUrl};
+		}
 
-			if ( !$items || !ref $items || !scalar @$items ) {
-				$request->addResult('error', 'unknown');
-			}
-			elsif ( $items->[0]->{error} ) {
-				$request->addResult('error', $items->[0]->{error});
-			}
-			elsif ($items) {
-				my $item = shift @$items;
-				
-				# CLI clients expect real line breaks, not literal \n
-				$item->{name} =~ s/\\n/\n/g;
-				$request->addResult('lyrics', $item->{name});
-				$request->addResult('title', $args->{title}) if $args->{title};
-				$request->addResult('artist', $args->{artist}) if $args->{artist};
-			}
-
-			$request->setStatusDone();
-		},{
-			isWeb  => $request->getParam('html'),
-		}, $args
-	);
+		$request->setStatusDone();
+	});
 }
 
 sub getLyrics {
@@ -117,8 +113,6 @@ sub getLyrics {
 	
 	$params ||= {};
 	$args   ||= {};
-	
-	my $title = _cleanupAlbumName($args->{title});
 	
 	main::DEBUGLOG && $log->debug("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 	
@@ -132,6 +126,7 @@ sub getLyrics {
 			$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
 			$lyrics .= "\n\n" if $lyrics;
 			$lyrics .= $items->{Lyric} if $items->{Lyric};
+			$lyrics .= "\n\n" . cstring($client, 'URL') . cstring($client, 'COLON') . ' ' . $items->{LyricUrl} if $items->{LyricUrl};
 
 			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
 		}
@@ -143,12 +138,23 @@ sub getLyrics {
 		}
 		
 		if ($cb) {
-warn Data::Dump::dump($items);
 			$cb->({
 				items => $items,
 			});
 		}
 	});
+}
+
+sub _renderLyrics {
+	my $items = shift;
+	
+	my $lyrics = $items->{LyricSong} if $items->{LyricSong};
+	$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
+	$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
+	$lyrics .= "\n\n" if $lyrics;
+	$lyrics .= $items->{Lyric} if $items->{Lyric};
+
+	return $lyrics;
 }
 
 1;
