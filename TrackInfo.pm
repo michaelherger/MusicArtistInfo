@@ -39,6 +39,14 @@ sub _objInfoHandler {
 			$artist = $obj->artistName || $remoteMeta->{artist};
 		}
 	}
+	
+	if ( !($title && $artist) && $obj->remote ) {
+		my $request = Slim::Control::Request::executeRequest($client, ['status', 0, 10]);
+		my $remoteMeta = $request->getResult('remoteMeta');
+		
+		$title ||= $remoteMeta->{title};
+		$artist ||= $remoteMeta->{artist};
+	}
 
 	return unless $title && $artist;
 	
