@@ -84,7 +84,7 @@ sub searchLyricsInDirect {
 			my $title  = $args->{title};
 			
 			my ($match) = grep {
-				$artist =~ /\Q$_->{Artist}\E/i && $title =~ /\Q$_->{Song}\E/i;
+				($artist =~ /\Q$_->{Artist}\E/i || $_->{Artist} =~ /\Q$artist\E/i) && ($title =~ /\Q$_->{Song}\E/i || $_->{Song} =~ /\Q$title\E/i);
 			} @{ $items->{SearchLyricResult} };
 
 			if ( $match && ref $match && $match->{LyricId} && $match->{LyricChecksum} ) {
