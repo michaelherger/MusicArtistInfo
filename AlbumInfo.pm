@@ -411,6 +411,11 @@ sub _objInfoHandler {
 			#warn Data::Dump::dump($obj);
 		}
 	}
+	
+	if ( !($album && $artist) && $remoteMeta ) {
+		$album  ||= $remoteMeta->{album};
+		$artist ||= $remoteMeta->{artist};
+	}
 
 	# XXX - should we get here? Sounds wrong: this $album is a hashref?!?
 	$album = _getAlbumFromSongURL($client, $url) if !$album && $url;
