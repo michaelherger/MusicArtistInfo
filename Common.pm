@@ -80,10 +80,18 @@ sub call {
 	$params->{timeout} ||= 15;
 	
 	my $cb2 = sub {
-		my $response = shift;
-		
+		my ($response, $error) = @_;
+
 		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
-		my $result = eval {
+		
+		my $result;
+		
+		if ($error) {
+			$log->error(sprintf("Failed to call %s: %s", $response->url, $error));
+			$result = {};
+		}
+		
+		$result ||= eval {
 			if ( $response->headers->content_type =~ /xml/ ) {
 				require XML::Simple;
 				XML::Simple::XMLin( $response->content );
