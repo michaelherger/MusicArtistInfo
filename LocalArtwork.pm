@@ -154,6 +154,8 @@ sub artworkUrl {
 sub defaultArtistPhoto {
 	my ( $class ) = @_;
 
+	$checkFallbackArtistImg ||= 0;
+	
 	# check whether the user has a generic 'artist.jpg' image in his folder
 	if ( $checkFallbackArtistImg < time && (my $imageFolder = $prefs->get('artistImageFolder')) ) {
 		$fallbackArtistImg = _imageInFolder($imageFolder, 'artist');
