@@ -53,7 +53,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMCREDITS
 
 PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 	DE	Albumkritik
-	EN	Albumreview
+	EN	Album review
 
 PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	DE	Tut mir Leid, konnte keine relevanten Informationen finden.
