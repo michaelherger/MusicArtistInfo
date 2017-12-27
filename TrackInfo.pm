@@ -35,10 +35,14 @@ sub _objInfoHandler {
 	
 	if ( $obj && blessed $obj ) {
 		if ($obj->isa('Slim::Schema::Track')) {
-			$title  = $obj->title || $remoteMeta->{title};
-			$artist = $obj->artistName || $remoteMeta->{artist};
+			$title  = $obj->title;
+			$artist = $obj->artistName;
 		}
 	}
+	
+	$remoteMeta ||= {};
+	$title ||= $remoteMeta->{title};
+	$artist ||= $remoteMeta->{artist};
 	
 	if ( !($title && $artist) && $obj->remote ) {
 		my $request = Slim::Control::Request::executeRequest($client, ['status', 0, 10]);
