@@ -272,6 +272,8 @@ sub getSmallArtworkAlbums {
 				}]
 			};
 		}
+		
+		main::idleStreams();
 	}
 	
 	$items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$items ];
