@@ -67,7 +67,7 @@ sub init {
 
 sub getAlbumReview {
 	my ( $class, $client, $params, $args ) = @_;
-	
+
 	return unless $args->{album_id};
 
 	my $dbh = Slim::Schema->dbh;
@@ -76,19 +76,19 @@ sub getAlbumReview {
 		FROM tracks
 		WHERE tracks.album = ?
 	));
-	
+
 	$sth->execute($args->{album_id});
-	
+
 	return _getInfoFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt']);
 }
 
 sub getBiography {
 	my ( $class, $client, $params, $args ) = @_;
-	
+
 	return unless $args->{artist} || $args->{artist_id};
 
 	my ($sql, $var);
-	
+
 	if ($args->{artist_id}) {
 		$sql = qq(
 			SELECT tracks.url
@@ -96,9 +96,9 @@ sub getBiography {
 			JOIN tracks ON tracks.id = contributor_track.track
 			WHERE contributor_track.contributor = ? AND contributor_track.role IN (1,5)
 		);
-		
+
 		$var = $args->{artist_id};
-	}	
+	}
 	else {
 		$sql = qq(
 			SELECT tracks.url
@@ -111,12 +111,12 @@ sub getBiography {
 		$var = Slim::Utils::Unicode::utf8decode_locale($args->{artist});
 		$var = Slim::Utils::Text::ignoreCaseArticles($var, 1);
 	}
-	
+
 	# get all tracks where this artist is main contributor
 	# we'll use the file paths as starting points to find biography etc. files
 	my $dbh = Slim::Schema->dbh;
 	my $sth = $dbh->prepare_cached($sql);
-	
+
 	$sth->execute($var);
 
 	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
@@ -131,14 +131,14 @@ sub _getInfoFileForTrack {
 		my $dir = dirname(Slim::Utils::Misc::pathFromFileURL($url));
 
 		next if $seen{$dir}++;
-	
+
 		foreach ( @{_findTextFiles($dir)} ) {
 			$files{catdir($_->{path}, $_->{file})}++
 		}
 	}
 
 	return unless keys %files;
-	
+
 	# our order of priority for candidate files...
 	my $file;
 	foreach my $candidate ( @$candidates ) {
@@ -148,21 +148,21 @@ sub _getInfoFileForTrack {
 
 	if ($file) {
 		main::DEBUGLOG && $log->debug("Found $key on local file system: $file");
-		
+
 		my $content = getFileContent($client, undef, $params, { path => $file });
 
 		# .nfo files are structured XML. They would return a menu, not the biography/review only.
 		($content) = grep { lc($_->{name}) eq $key } @$content if $file =~ /\.nfo$/i && scalar @$content > 1;
-		
+
 		return $content;
 	}
-	
+
 	return;
 }
 
 sub albumInfoHandler {
 	my ( $client, $url, $album ) = @_;
-	
+
 	# try to grab the first album track to find it's folder location
 	return trackInfoHandler($client, undef, $album->tracks->first);
 }
@@ -179,13 +179,13 @@ sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta, $tags ) = @_;
 
 	return unless $client;
-	
+
 	# only deal with local media
 	$url = $track->url if !$url && $track;
 	return unless $url && $url =~ /^file:\/\//i;
-	
+
 	my $path = Slim::Utils::Misc::pathFromFileURL($url);
-	
+
 	if (! -d $path) {
 		$path = dirname( $path );
 	}
@@ -193,7 +193,7 @@ sub trackInfoHandler {
 	my $files = _findTextFiles($path);
 
 	return unless scalar @$files;
-	
+
 	# XMLBrowser for Jive can't handle weblinks - need custom handling there to show files in the browser.
 	if ( Plugins::MusicArtistInfo::Plugin->canWeblink($client) )  {
 		return {
@@ -208,17 +208,20 @@ sub trackInfoHandler {
 			},
 		}
 	}
-	
-	my $items = [ map {	{
-		type  => 'link',
-		name  => $_->{file},
-		weblink => _proxiedUrl($_->{path}, $_->{file}),
-		url   => \&getFileContent,
-		passthrough => [{
-			path => catdir($_->{path}, $_->{file})
-		}]
-	} } @$files ];
-	
+
+	my $items = [ map {
+		my $file = Slim::Utils::Unicode::utf8decode_locale($_->{file});
+		{
+			type  => 'link',
+			name  => $file,
+			weblink => _proxiedUrl($_->{path}, $file),
+			url   => \&getFileContent,
+			passthrough => [{
+				path => catdir($_->{path}, $file)
+			}]
+		};
+	} @$files ];
+
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_FILES'),
 		type => 'outline',
@@ -228,14 +231,14 @@ sub trackInfoHandler {
 
 sub getLocalFileWeblinksCLI {
 	my $request = shift;
-	
+
 	my $client = $request->client;
 
 	if ($request->isNotQuery([[CLICOMMAND], ['localfiles']])) {
 		$request->setStatusBadDispatch();
 		return;
 	}
-	
+
 	$request->setStatusProcessing();
 
 	my $path = $request->getParam('folder');
@@ -251,17 +254,18 @@ sub getLocalFileWeblinksCLI {
 	}
 	else {
 		my $web_root = 'http://' . Slim::Utils::IPDetect::IP() . ':' . preferences('server')->get('httpport');
-		
+
 		foreach (@$files) {
-			$request->addResultLoop('item_loop', $i, 'text', $_->{file} );
-			$request->addResultLoop('item_loop', $i, 'weblink', $web_root . _proxiedUrl($_->{path}, $_->{file}));
+			my $file = Slim::Utils::Unicode::utf8decode_locale($_->{file});
+			$request->addResultLoop('item_loop', $i, 'text', $file );
+			$request->addResultLoop('item_loop', $i, 'weblink', $web_root . _proxiedUrl($_->{path}, $file));
 			$i++;
 		}
 	}
 
 	$request->addResult('count', $i);
 	$request->addResult('offset', 0);
-	
+
 	$request->setStatusDone();
 }
 
@@ -270,7 +274,7 @@ sub _proxiedUrl {
 
 	my $pathHash = md5_hex($path);
 	$cache->set( $pathHash, $path, 3600 );
-	
+
 	return "/mai/localfile/$pathHash/" . URI::Escape::uri_escape_utf8($file);
 }
 
@@ -278,18 +282,18 @@ sub _proxiedUrl {
 sub _findTextFiles {
 	my $previous = shift;
 	my $pathObj  = Path::Class::dir($previous);
-	
+
 	my $i = 0;
 	my $mask = '';
 	my @files;
-	
+
 	while ( $i == 0 || $previous ne $pathObj->parent->stringify ) {
 		opendir(DIR, $previous) || return [];
-		
+
 		push @files, map {
 			# don't walk up the tree if we've found a biography
 			$i = 999 if /(?:artist|bio|biogra.*)\./i;
-			
+
 			{
 				file => $_,
 				path => $previous,
@@ -297,35 +301,35 @@ sub _findTextFiles {
 		} grep { 
 			$_ !~ /^\._/o 
 		} grep /$mask\.(?:pdf|txt|html|nfo)$/i, readdir(DIR);
-		
+
 		closedir(DIR);
 
 		$pathObj = $pathObj->parent;
 		$previous = $pathObj->stringify;
-		
+
 		# don't walk up too far - most likely an artist folder is not far from the artist's album folder
 		last if ++$i > 3;
-		
+
 		# we don't show all files in parent folders, only a reasonable selection
 		$mask = '(?:artist|album|review|albumreview|bio|biogra.*)';
 	}
-	
+
 	@files = sort { lc($a->{file}) cmp lc($b->{file}) } @files;
-	
+
 	return \@files;
 }
 
 sub getFileContent {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	my $path = $args->{path} || '';
 	my $type = __PACKAGE__->mimeType($path);
 	$params ||= {};
 
 	my $content = cstring($client, 'PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT');
-	
+
 	my $items;
-	
+
 	if ( $path =~ /\.nfo$/ ) {
 		require Plugins::MusicArtistInfo::XMLParser;
 		$items = Plugins::MusicArtistInfo::XMLParser->renderNFOAsOPML($client, $path, $params);
@@ -342,14 +346,14 @@ sub getFileContent {
 		require File::Slurp;
 		$content = File::Slurp::read_file($path);
 	}
-	
+
 	if ($content) {
 		# we're going to assume that HTML nowadays is in utf8...
 		$content = Slim::Utils::Unicode::utf8on($content) if $type =~ /html/;
 		$content = Slim::Utils::Unicode::utf8decode($content);
 		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 	}
-	
+
 	if ($cb) {
 		$cb->({
 			items => $items
@@ -362,18 +366,18 @@ sub getFileContent {
 
 sub _proxyHandler {
 	my ( $httpClient, $response ) = @_;
-	
+
 	return unless $httpClient->connected;
-	
+
 	my $request = $response->request;
 
 	my ($pathHash, $file) = $request->uri->path =~ $URL_PARSER_RE;
 	my $path = $cache->get($pathHash);
 	$file = URI::Escape::uri_unescape($file || '');
 	$path = catdir($path, $file);
-	
+
 	main::INFOLOG && $log->info("Getting file: $path");
-	
+
 	if ( !-f $path ) {
 		$response->code(RC_NOT_FOUND);
 		$response->content_type('text/html');
@@ -384,7 +388,7 @@ sub _proxyHandler {
 		Slim::Web::HTTP::closeHTTPSocket($httpClient);
 		return;
 	}
-	
+
 	if ( $path =~ /\.nfo$/ ) {
 		require Plugins::MusicArtistInfo::XMLParser;
 		return Plugins::MusicArtistInfo::XMLParser->renderNFO($httpClient, $response, $path);
