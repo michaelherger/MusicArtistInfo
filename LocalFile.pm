@@ -178,8 +178,6 @@ sub folderInfoHandler {
 sub trackInfoHandler {
 	my ( $client, $url, $track, $remoteMeta, $tags ) = @_;
 
-	return unless $client;
-
 	# only deal with local media
 	$url = $track->url if !$url && $track;
 	return unless $url && $url =~ /^file:\/\//i;
