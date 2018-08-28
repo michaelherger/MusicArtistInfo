@@ -200,7 +200,7 @@ sub trackInfoHandler {
 				items => {
 					command  => [ CLICOMMAND, 'localfiles' ],
 					fixedParams => {
-						folder => $path
+						folder => Slim::Utils::Unicode::utf8decode_locale($path)
 					},
 				},
 			},
@@ -214,9 +214,9 @@ sub trackInfoHandler {
 			name  => $file,
 			weblink => _proxiedUrl($_->{path}, $file),
 			url   => \&getFileContent,
-			passthrough => [{
-				path => catdir($_->{path}, $file)
-			}]
+			# passthrough => [{
+			# 	path => catdir($_->{path}, $file)
+			# }]
 		};
 	} @$files ];
 
@@ -240,7 +240,7 @@ sub getLocalFileWeblinksCLI {
 	$request->setStatusProcessing();
 
 	my $path = $request->getParam('folder');
-	my $files = _findTextFiles($path);
+	my $files = _findTextFiles(Slim::Utils::Unicode::utf8encode($path));
 
 	my $i = 0;
 
