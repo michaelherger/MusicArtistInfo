@@ -350,7 +350,7 @@ sub getAlbumReviewCLI {
 	
 	if ($artist && $album) {
 		$args = {
-			album  => $album,
+			album  => _cleanupAlbumName($album),
 			artist => $artist
 		};
 	}
