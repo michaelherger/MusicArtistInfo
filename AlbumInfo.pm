@@ -447,7 +447,7 @@ sub _getAlbumFromAlbumId {
 		my $album = Slim::Schema->resultset("Album")->find($albumId);
 
 		if ($album) {
-			main::INFOLOG && $log->info('Got Album/Artist from album ID: ' . $album->title . ' - ' . $album-contributor->name);
+			main::INFOLOG && $log->is_info && $log->info('Got Album/Artist from album ID: ' . $album->title . ' - ' . $album->contributor->name);
 			
 			return {
 				artist => $album->contributor->name,
