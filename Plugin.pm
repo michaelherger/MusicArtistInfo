@@ -17,7 +17,7 @@ use Plugins::MusicArtistInfo::LocalFile;
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant PLUGIN_TAG => 'musicartistinfo';
 
-my $WEBLINK_SUPPORTED_UA_RE = qr/iPeng|SqueezePad|OrangeSqueeze/i;
+my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze|FireFox|Chrome|Safari|)\b/i;
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
