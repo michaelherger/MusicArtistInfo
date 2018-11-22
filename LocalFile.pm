@@ -333,7 +333,7 @@ sub getFileContent {
 		$items = Plugins::MusicArtistInfo::XMLParser->renderNFOAsOPML($client, $path, $params);
 		$content = '';
 	}
-	elsif ( $type =~ /html/ && !$params->{isWeb} ) {
+	elsif ( $type =~ /html/ && !Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
 		require HTML::FormatText;
 		$content = HTML::FormatText->format_file(
 			$path,

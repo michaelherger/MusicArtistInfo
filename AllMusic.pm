@@ -282,6 +282,8 @@ sub searchArtists {
 			
 			my $results = $tree->look_down("_tag" => "ul", "class" => "search-results");
 
+			return $result unless $results;
+
 			foreach ($results->content_list) {
 				my $artist = $_->look_down('_tag', 'div', 'class', 'name') || next;
 				

@@ -17,7 +17,8 @@ use Plugins::MusicArtistInfo::LocalFile;
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant PLUGIN_TAG => 'musicartistinfo';
 
-my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze|FireFox|Chrome|Safari|)\b/i;
+my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze)\b/i;
+my $WEBBROWSER_UA_RE = qr/\b(?:FireFox|Chrome|Safari)\b/i;
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
@@ -290,7 +291,13 @@ sub getSmallArtworkAlbums {
 
 sub canWeblink {
 	my ($class, $client) = @_;
-	return $client && $client->controllerUA && $client->controllerUA =~ $WEBLINK_SUPPORTED_UA_RE;
+	return $client && $client->controllerUA && ($client->controllerUA =~ $WEBLINK_SUPPORTED_UA_RE || $client->controllerUA =~ $WEBBROWSER_UA_RE);
+}
+
+sub isWebBrowser {
+	my ($class, $client, $params) = @_;
+	return 1 if $params && $params->{isWeb};
+	return $client && $client->controllerUA && $client->controllerUA =~ $WEBBROWSER_UA_RE;
 }
 
 my $canWrap;

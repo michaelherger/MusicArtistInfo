@@ -159,7 +159,7 @@ sub getBiography {
 			}
 			elsif ($bio->{bio}) {
 				my $content = '';
-				if ( $params->{isWeb} ) {
+				if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
 					$content = '<h4>' . $bio->{author} . '</h4>' if $bio->{author};
 					$content .= $bio->{bio};
 				}
@@ -183,8 +183,10 @@ sub getBiographyCLI {
 	my ($artist, $artist_id) = _checkRequest($request, ['biography']);
 
 	return unless $artist;
+
+	my $client = $request->client();
 	
-	getBiography($request->client(), 
+	getBiography($client, 
 		sub {
 			my $items = shift || [];
 
@@ -205,7 +207,7 @@ sub getBiographyCLI {
 
 			$request->setStatusDone();
 		},{
-			isWeb  => $request->getParam('html'),
+			isWeb  => $request->getParam('html') || Plugins::MusicArtistInfo::Plugin->isWebBrowser($client),
 		},{
 			artist => $artist,
 		}
