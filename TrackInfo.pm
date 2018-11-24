@@ -90,7 +90,7 @@ sub getSongLyricsCLI {
 	}
 
 	if ( !($args && $args->{artist} && $args->{title}) ) {
-		$request->addResult('error', 'No track found');
+		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		$request->setStatusDone();
 		return;
 	}
@@ -99,7 +99,7 @@ sub getSongLyricsCLI {
 		my $item = shift || {};
 		
 		if ( !$item || !ref $item ) {
-			$request->addResult('error', 'unknown');
+			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		}
 		elsif ( $item->{error} ) {
 			$request->addResult('error', $item->{error});

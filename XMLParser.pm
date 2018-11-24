@@ -5,6 +5,7 @@ use File::Slurp;
 use XML::Simple;
 
 use Slim::Utils::Log;
+use Slim::Utils::Strings qw(cstring);
 
 my $types = {
 	review    => 'textarea',
@@ -130,7 +131,7 @@ sub renderNFOAsOPML {
 		else {
 			push @$items, {
 				type => 'text',
-				name => $item->{title} . $client->string('COLON') . ' ' . Slim::Utils::Unicode::utf8decode($item->{value}),
+				name => $item->{title} . cstring($client, 'COLON') . ' ' . Slim::Utils::Unicode::utf8decode($item->{value}),
 			}
 		}
 	}

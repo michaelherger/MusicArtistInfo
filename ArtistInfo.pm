@@ -191,7 +191,7 @@ sub getBiographyCLI {
 			my $items = shift || [];
 
 			if ( !$items || !scalar @$items ) {
-				$request->addResult('error', 'unknown');
+				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 			}
 			elsif ( $items->[0]->{error} ) {
 				$request->addResult('error', $items->[0]->{error});
@@ -230,7 +230,7 @@ sub _checkRequest {
 
 	return ($artist, $artist_id) if $artist;
 
-	$request->addResult('error', 'No artist found');
+	$request->addResult('error', cstring($request->client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 	$request->setStatusDone();
 	return;
 }

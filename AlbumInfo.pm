@@ -359,7 +359,7 @@ sub getAlbumReviewCLI {
 	}
 
 	if ( !($args && $args->{artist} && $args->{album}) ) {
-		$request->addResult('error', 'No album found');
+		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		$request->setStatusDone();
 		return;
 	}
@@ -369,7 +369,7 @@ sub getAlbumReviewCLI {
 			my $items = shift || [];
 
 			if ( !$items || !scalar @$items ) {
-				$request->addResult('error', 'unknown');
+				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 			}
 			elsif ( $items->[0]->{error} ) {
 				$request->addResult('error', $items->[0]->{error});
