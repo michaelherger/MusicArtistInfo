@@ -13,11 +13,6 @@ use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
 
 my $cache = Slim::Utils::Cache->new;
 my $log = logger('plugin.musicartistinfo');
-my $aid;
-
-sub init {
-	shift->aid(shift->_pluginDataFor('id2'));
-}
 
 sub getLargestPhotoFromList {
 	my ( $class, $photos, $minSize ) = @_;
@@ -203,22 +198,11 @@ sub _call {
 	my ( $args, $cb ) = @_;
 	
 	Plugins::MusicArtistInfo::Common->call(
-		BASE_URL . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)}, 'api_key=' . aid(), 'format=json' ), 
+		BASE_URL . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)}, Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ), 
 		$cb,
 		{ cache => 1 }
 	);
 }
 
-sub aid {
-	if ( $_[1] ) {
-		$aid = $_[1];
-		$aid =~ s/-//g;
-		$cache->set('lfm_aid', $aid, 'never');
-	}
-	
-	$aid ||= $cache->get('lfm_aid');
-
-	return $aid; 
-}
 
 1;

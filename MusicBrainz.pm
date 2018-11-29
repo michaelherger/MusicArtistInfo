@@ -225,8 +225,8 @@ sub _call {
 		$cb2, 
 		{
 			timeout => 15,
-#			cache   => 1,
-#			expires => 86400,
+			cache   => 1,
+			expires => 86400,
 		}
 	)->get($url . '?' . $params);
 }

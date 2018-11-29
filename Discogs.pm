@@ -8,7 +8,7 @@ use Slim::Utils::Log;
 use Plugins::MusicArtistInfo::Common;
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
-use constant BASE_URL => 'http://api.discogs.com/';
+use constant BASE_URL => 'https://api.discogs.com/';
 
 my $log   = logger('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new();
@@ -145,7 +145,6 @@ sub getAlbum {
 	});
 }
 
-=pod
 sub getDiscography {
 	my ( $class, $client, $cb, $args ) = @_;
 	
@@ -158,8 +157,6 @@ sub getDiscography {
 	
 	$class->getArtist($client, sub {
 		my $artistInfo = shift;
-		
-		warn Data::Dump::dump($artistInfo);
 		
 		if (!$artistInfo || !$artistInfo->{id}) {
 			$cb->();
@@ -181,12 +178,10 @@ sub getDiscography {
 						next if $_->{type} && lc($_->{type}) ne 'master';
 						next if $_->{role} && lc($_->{role}) ne 'main';
 
-warn Data::Dump::dump($_);						
 						push @releases, {
 							title  => $_->{title},
 							author => 'Discogs',
 							image  => Slim::Web::ImageProxy::proxiedImage($_->{thumb}),
-#							label  => $_->{label},
 							year   => $_->{year},
 							resource => $_->{resource_url},
 						};
@@ -205,46 +200,6 @@ warn Data::Dump::dump($_);
 		});
 		
 	}, $args);
-
-=pod
-	_call('database/search', {
-		type   => 'master',
-		artist => $artist,
-		per_page => 100,
-	}, sub {
-		my $items = shift;
-		my $result = {};
-		
-		if ( $items && (my $releases = $items->{results}) ) {
-			if ( ref $releases eq 'ARRAY' ) {
-				my @releases;
-				
-				foreach ( @$releases ) {
-					next if grep /unofficial|single|45 rpm|promo|\bPAL\b|12"|mini|7"|NTSC|\bEP\b/i, @{$_->{format}};
-					
-					push @releases, {
-						title  => $_->{title},
-						author => 'Discogs',
-						image  => Slim::Web::ImageProxy::proxiedImage($_->{thumb}),
-						label  => $_->{label},
-						year   => $_->{year},
-						resource => $_->{resource_url},
-					};
-				}
-				
-				# sort by year descending
-				$result->{releases} = [ sort { $b->{year} <=> $a->{year} }@releases ] if @releases;
-			}
-		}
-		
-		if ( !$result->{releases} ) {
-			$result->{error} ||= Slim::Utils::Strings::cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
-		}
-		
-		$cb->($result);
-	});
-=cut
-=pod
 }
 
 sub getArtist {
@@ -285,7 +240,6 @@ sub getArtist {
 		$cb->($artistInfo);
 	});
 }
-=cut
 
 sub _call {
 	my ( $resource, $args, $cb ) = @_;
@@ -296,6 +250,7 @@ sub _call {
 		{
 			cache   => 1,
 			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
+			headers => Plugins::MusicArtistInfo::Common->getHeaders('discogs')
 		}
 	);
 }

@@ -8,6 +8,8 @@ use URI::Escape qw(uri_escape uri_escape_utf8);
 use Slim::Utils::Log;
 
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
+use constant CAN_DISCOGS => 0;
+use constant CAN_LFM => 1;
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
@@ -42,6 +44,13 @@ sub cleanupAlbumName {
 
 	return $album || $fullAlbum;
 }
+
+my @HEADER_DATA = map {
+	# s/=*$|\s//sg;
+	MIME::Base64::decode_base64($_);
+} <Plugins::MusicArtistInfo::Common::DATA>;
+
+$HEADER_DATA[CAN_DISCOGS] = eval { from_json($HEADER_DATA[CAN_DISCOGS]) };
 
 sub imageInFolder {
 	my ($folder, @names) = @_;
@@ -78,6 +87,7 @@ sub call {
 	main::INFOLOG && $log->is_info && $log->info((main::SCANNER ? 'Sync' : 'Async') . ' API call: GET ' . _debug($url) );
 	
 	$params->{timeout} ||= 15;
+	my %headers = %{delete $params->{headers} || {}};
 	
 	my $cb2 = sub {
 		my ($response, $error) = @_;
@@ -87,7 +97,7 @@ sub call {
 		my $result;
 		
 		if ($error) {
-			$log->error(sprintf("Failed to call %s: %s", $response->url, $error));
+			$log->error(sprintf("Failed to call %s: %s", _debug($response->url), $error));
 			$result = {};
 		}
 		
@@ -130,7 +140,7 @@ sub call {
 			$cb2,
 			$cb2,
 			$params
-		)->get($url);
+		)->get($url, %headers);
 	}
 }
 
@@ -162,5 +172,12 @@ sub _debug {
 	return $msg;
 }
 
+sub getHeaders {
+	return $HEADER_DATA[{'discogs' => CAN_DISCOGS, 'lfm' => CAN_LFM}->{$_[1]}]
+}
 
 1;
+
+__DATA__
+eyJBdXRob3JpemF0aW9uIjoiRGlzY29ncyB0b2tlbj1nclB1Z2NNUGRlTXpiZnlNbm1XUHpyeVd6SEltUlhoc1p0ZXN4SHREIn0
+YXBpX2tleT1jNmFiYzUxZTg0N2I5MWFiYTBkZTJlZGUzMzg3NWUyNA

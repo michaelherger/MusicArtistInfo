@@ -10,6 +10,7 @@ use Slim::Utils::Log;
 use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::Common;
+use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::MusicBrainz;
 
@@ -37,8 +38,6 @@ sub init {
 		func => \&_objInfoHandler,
 		after => 'moreartistinfo',
 	) );
-	
-	Plugins::MusicArtistInfo::LFM->aid($_[1]);
 }
 
 sub getAlbumMenu {
@@ -204,7 +203,7 @@ sub getAlbumCovers {
 	};
 
 	# there's a rate limiting issue on discogs.com: don't use it without imageproxy, as this seems to work around the limitation...
-	if (0 && CAN_IMAGEPROXY) {
+	if (CAN_IMAGEPROXY) {
 		Plugins::MusicArtistInfo::Discogs->getAlbumCovers($client, sub {
 			$results->{discogs} = shift;
 			$getAlbumCoversCb->($results);
