@@ -27,6 +27,8 @@ sub init {
 #                                                                C  Q  T  F
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'artistphoto'],
 	                                                            [0, 1, 1, \&getArtistPhotoCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'artistphotos'],
+	                                                            [0, 1, 1, \&getArtistPhotosCLI]);
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'biography'],
 	                                                            [0, 1, 1, \&getBiographyCLI]);
 
@@ -237,28 +239,18 @@ sub _checkRequest {
 sub getArtistPhotos {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $results = {};
-
 	my $getArtistPhotoCb = sub {
-		my $photos = shift;
-
-		# only continue once we have results from all services.
-		return unless $photos->{lfm} && $photos->{allmusic} && $photos->{discogs} && $photos->{'local'};
+		my $request = shift;
 
 		my $items = [];
 
-		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} || $photos->{'local'}->{photos} ) {
-			my @photos;
-			push @photos, @{$photos->{'local'}->{photos}} if ref $photos->{'local'}->{photos} eq 'ARRAY';
-			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
-			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
-			push @photos, @{$photos->{discogs}->{photos}} if ref $photos->{discogs}->{photos} eq 'ARRAY';
-
+		my $photos = $request->getResult('item_loop');
+		if ($photos && ref $photos eq 'ARRAY') {
 			$items = [ map {
 				my $credit = cstring($client, 'BY') . ' ';
 				{
 					type  => 'text',
-					name  => $_->{author} ? ($credit . $_->{author}) : '',
+					name  => $_->{credits} ? ($credit . $_->{credits}) : '',
 					image => $_->{url},
 					jive  => {
 						showBigArtwork => 1,
@@ -269,17 +261,69 @@ sub getArtistPhotos {
 						},
 					}
 				}
-			} @photos ];
+			} @$photos ];
 		}
 
 		if ( !scalar @$items ) {
 			$items = [{
-				name => $photos->{lfm}->{error} || $photos->{allmusic}->{error} || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
 				type => 'text'
 			}];
 		}
 		
 		$cb->($items);
+	};
+
+	my $request = Slim::Control::Request::executeRequest( $client, ['musicartistinfo', 'artistphotos', 'artist:' . $args->{artist}] );
+
+	if ( $request->isStatusProcessing ) {			
+		$request->callbackFunction($getArtistPhotoCb);
+	} else {
+		$getArtistPhotoCb->($request);
+	}
+}
+
+sub getArtistPhotosCLI {
+	my $request = shift;
+
+	my ($artist, $artist_id) = _checkRequest($request, ['artistphotos']);
+
+	return unless $artist;
+	
+	my $client = $request->client();
+
+	my $results = {};
+
+	my $getArtistPhotoCb = sub {
+		my $photos = shift;
+
+		# only continue once we have results from all services.
+		return $request->setStatusProcessing() unless $photos->{lfm} && $photos->{allmusic} && $photos->{discogs} && $photos->{'local'};
+
+		my $i = 0;
+		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} || $photos->{discogs}->{photos} || $photos->{'local'}->{photos} ) {
+			my @photos;
+			push @photos, @{$photos->{'local'}->{photos}} if ref $photos->{'local'}->{photos} eq 'ARRAY';
+			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
+			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
+			push @photos, @{$photos->{discogs}->{photos}} if ref $photos->{discogs}->{photos} eq 'ARRAY';
+
+			foreach (@photos) {
+				$request->addResultLoop('item_loop', $i, 'url', $_->{url} || '');
+				$request->addResultLoop('item_loop', $i, 'credits', $_->{author}) if $_->{author};
+				$request->addResultLoop('item_loop', $i, 'artist_id', $artist_id) if $artist_id;
+				$i++;
+			}
+		}
+		
+		$request->addResult('count', $i);
+		$request->addResult('offset', 0);
+		$request->setStatusDone();
+	};
+
+	my $args = {
+		artist => $artist,
+		artist_id => $artist_id
 	};
 	
 	Plugins::MusicArtistInfo::AllMusic->getArtistPhotos($client, sub {
