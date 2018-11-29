@@ -435,8 +435,8 @@ sub getAlbumCovers {
 				my $result = {};
 
 				#main::DEBUGLOG && $log->is_debug && $tree->dump;
-				
-				if ( my $cover = $tree->look_down('_tag', 'img', 'itemprop', 'image') ) {
+
+				if ( my $cover = $tree->look_down('_tag', 'img', 'class', 'media-gallery-image') ) {
 					#main::DEBUGLOG && $log->is_debug && $cover->dump;
 					my $img = eval { from_json( $cover->attr('data-lightbox') ) };
 

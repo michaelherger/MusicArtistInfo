@@ -33,7 +33,8 @@ sub getLargestPhotoFromList {
 	} @$photos;
 	
 	my ($url, $size);
-	foreach $size ( qw(mega extralarge large medium small) ) {
+	foreach ( qw(mega extralarge large medium small) ) {
+		$size = $_;
 		if ($url = $photos{$size}) {
 			last;
 		};

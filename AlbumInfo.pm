@@ -11,6 +11,7 @@ use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::Common;
 use Plugins::MusicArtistInfo::LFM;
+use Plugins::MusicArtistInfo::MusicBrainz;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
 
@@ -36,10 +37,6 @@ sub init {
 		func => \&_objInfoHandler,
 		after => 'moreartistinfo',
 	) );
-	
-#	if (CAN_IMAGEPROXY) {
-#		require Plugins::MusicArtistInfo::Discogs;
-#	}
 	
 	Plugins::MusicArtistInfo::LFM->aid($_[1]);
 }
@@ -151,15 +148,16 @@ sub getAlbumCovers {
 		my $covers = shift;
 		
 		# only continue once we have results from all services.
-		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs};
+		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs} && $covers->{musicbrainz};
 		
 		my $items = [];
 		
-		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} ) {
+		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} || $covers->{musicbrainz}->{images} ) {
 			my @covers;
 			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{discogs}->{images}} if ref $covers->{discogs}->{images} eq 'ARRAY';
+			push @covers, @{$covers->{musicbrainz}->{images}} if ref $covers->{musicbrainz}->{images} eq 'ARRAY';
 
 			foreach my $cover (@covers) {
 				my $size = $cover->{width} || '';
@@ -221,6 +219,11 @@ sub getAlbumCovers {
 		$getAlbumCoversCb->($results);
 	}, $args);
 	
+	Plugins::MusicArtistInfo::MusicBrainz->getAlbumCovers($client, sub {
+		$results->{musicbrainz} = shift;
+		$getAlbumCoversCb->($results);
+	}, $args);
+		
 	Plugins::MusicArtistInfo::LFM->getAlbumCovers($client, sub {
 		$results->{lfm} = shift;
 		$getAlbumCoversCb->($results);
