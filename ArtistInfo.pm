@@ -243,7 +243,7 @@ sub getArtistPhotos {
 		my $photos = shift;
 
 		# only continue once we have results from all services.
-		return unless $photos->{lfm} && $photos->{allmusic} && $photos->{'local'};
+		return unless $photos->{lfm} && $photos->{allmusic} && $photos->{discogs} && $photos->{'local'};
 
 		my $items = [];
 
@@ -252,6 +252,7 @@ sub getArtistPhotos {
 			push @photos, @{$photos->{'local'}->{photos}} if ref $photos->{'local'}->{photos} eq 'ARRAY';
 			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
 			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
+			push @photos, @{$photos->{discogs}->{photos}} if ref $photos->{discogs}->{photos} eq 'ARRAY';
 
 			$items = [ map {
 				my $credit = cstring($client, 'BY') . ' ';
@@ -288,6 +289,11 @@ sub getArtistPhotos {
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
 		$results->{lfm} = shift || { photos => [] };
+		$getArtistPhotoCb->($results);
+	}, $args );
+
+	Plugins::MusicArtistInfo::Discogs->getArtistPhotos($client, sub {
+		$results->{discogs} = shift || { photos => [] };
 		$getArtistPhotoCb->($results);
 	}, $args );
 	

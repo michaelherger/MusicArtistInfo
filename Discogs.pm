@@ -148,13 +148,6 @@ sub getAlbum {
 sub getDiscography {
 	my ( $class, $client, $cb, $args ) = @_;
 	
-	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
-	
-	if (!$artist) {
-		$cb->();
-		return;
-	}
-	
 	$class->getArtist($client, sub {
 		my $artistInfo = shift;
 		
@@ -197,6 +190,40 @@ sub getDiscography {
 			}
 			
 			$cb->($result);
+		});
+		
+	}, $args);
+}
+
+sub getArtistPhotos {
+	my ( $class, $client, $cb, $args ) = @_;
+	
+	$class->getArtist($client, sub {
+		my $artistInfo = shift;
+		
+		if (!$artistInfo || !$artistInfo->{id}) {
+			$cb->();
+			return;
+		}
+		
+		_call('artists/' . $artistInfo->{id}, {}, sub {
+			my $items = shift;
+			my $result = [];
+
+			if ( $items && (my $images = $items->{images}) ) {
+				if ( ref $images eq 'ARRAY' ) {
+					$result = [ map {
+						{
+							author => 'Discogs',
+							url    => Slim::Web::ImageProxy::proxiedImage($_->{uri}),
+						};
+					} @$images ]
+				}
+			}
+			
+			$cb->({
+				photos => $result
+			});
 		});
 		
 	}, $args);
