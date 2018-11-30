@@ -272,7 +272,7 @@ sub _call {
 	my ( $resource, $args, $cb ) = @_;
 	
 	Plugins::MusicArtistInfo::Common->call(
-		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)} ), 
+		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args) ), 
 		$cb,
 		{
 			cache   => 1,

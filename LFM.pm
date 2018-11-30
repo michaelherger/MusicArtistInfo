@@ -198,9 +198,12 @@ sub _call {
 	my ( $args, $cb ) = @_;
 	
 	Plugins::MusicArtistInfo::Common->call(
-		BASE_URL . '?' . join( '&', @{Plugins::MusicArtistInfo::Common->getQueryString($args)}, Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ), 
+		BASE_URL . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ), 
 		$cb,
-		{ cache => 1 }
+		{ 
+			cache => 1,
+			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
+		}
 	);
 }
 

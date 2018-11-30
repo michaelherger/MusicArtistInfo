@@ -181,54 +181,15 @@ sub getAlbum {
 sub _call {
 	my ( $resource, $args, $cb ) = @_;
 	
-	$args ||= {};
-	
-	my @query;
-	while (my ($k, $v) = each %$args) {
-		next if $k =~ /^_/;		# ignore keys starting with an underscore
-		
-		if (ref $v eq 'ARRAY') {
-			foreach (@$v) {
-				push @query, $k . '=' . uri_escape_utf8($_);
-			}
-		}
-		else {
-			push @query, $k . '=' . uri_escape_utf8($v);
-		}
-	}
-
-	my $params = join('&', sort { $a cmp $b } @query, 'fmt=json');
-	my $url = $resource =~ /^https?:/ ? $resource : (BASE_URL . $resource);
-
-	main::INFOLOG && $log->is_info && $log->info("Async API call: GET $url?$params");
-	
-	my $cb2 = sub {
-		my $response = shift;
-		
-		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
-		my $result = eval { from_json( $response->content ) };
-	
-		$result ||= {};
-		
-		if ($@) {
-			 $log->error($@);
-			 $result->{error} = $@;
-		}
-
-		main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($result);
-			
-		$cb->($result);
-	};
-	
-	Slim::Networking::SimpleAsyncHTTP->new( 
-		$cb2, 
-		$cb2, 
+	Plugins::MusicArtistInfo::Common->call(
+		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), 'fmt=json' ), 
+		$cb,
 		{
-			timeout => 15,
 			cache   => 1,
-			expires => 86400,
+			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
+			timeout => 15,
 		}
-	)->get($url . '?' . $params);
+	);
 }
 
 1;

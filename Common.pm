@@ -163,7 +163,7 @@ sub getQueryString {
 		}
 	}
 	
-	return \@query;
+	return sort @query;
 }
 
 sub _debug {
