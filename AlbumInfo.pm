@@ -215,11 +215,25 @@ sub getAlbumCoversCLI {
 	my $args;
 	my $artist = $request->getParam('artist');
 	my $album  = $request->getParam('album');
-	my $mbid   = $request->getParam('mbid');
-	
-	my $client = $request->client();
 
-	if (!($artist && $album) && !$mbid) {
+	if (my $mbid   = $request->getParam('mbid')) {
+		$args = {
+			mbid => $mbid
+		};
+	}
+	elsif ($artist && $album) {
+		$args = {
+			album  => _cleanupAlbumName($album),
+			artist => $artist
+		};
+	}
+	else {
+		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
+	}
+
+	# delete $args->{id};
+
+	if ( !$args || (!($args->{artist} && $args->{album}) && !$args->{mbid}) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		$request->setStatusDone();
 		return;
@@ -263,16 +277,10 @@ sub getAlbumCoversCLI {
 		$request->setStatusDone();
 	};
 
-	my $args = {
-		artist => $artist,
-		album => $album,
-		mbid => $mbid
-	};
-
 	# there's a rate limiting issue on discogs.com: don't use it without imageproxy, as this seems to work around the limitation...
 	if (CAN_IMAGEPROXY) {
 		Plugins::MusicArtistInfo::Discogs->getAlbumCovers($client, sub {
-			$results->{discogs} = shift;
+			$results->{discogs} = shift || {};
 			$getAlbumCoversCb->($results);
 		}, $args);
 	}
@@ -281,17 +289,17 @@ sub getAlbumCoversCLI {
 	}
 
 	Plugins::MusicArtistInfo::AllMusic->getAlbumCovers($client, sub {
-		$results->{allmusic} = shift;
+		$results->{allmusic} = shift || {};
 		$getAlbumCoversCb->($results);
 	}, $args);
 	
 	Plugins::MusicArtistInfo::MusicBrainz->getAlbumCovers($client, sub {
-		$results->{musicbrainz} = shift;
+		$results->{musicbrainz} = shift || {};
 		$getAlbumCoversCb->($results);
 	}, $args);
 		
 	Plugins::MusicArtistInfo::LFM->getAlbumCovers($client, sub {
-		$results->{lfm} = shift;
+		$results->{lfm} = shift || {};
 		$getAlbumCoversCb->($results);
 	}, $args);
 }

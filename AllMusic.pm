@@ -740,7 +740,7 @@ sub _get {
 			client  => $client,
 			cache   => 1,
 			expires => 86400,		# set expiration, as allmusic doesn't provide it
-			timeout => 30,
+			timeout => 15,
 		},
 	)->get($url);
 }
