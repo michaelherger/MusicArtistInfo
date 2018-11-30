@@ -28,6 +28,7 @@ sub init {
 #                                                                     |  |  |  |Function to call
 #                                                                     C  Q  T  F
 	Slim::Control::Request::addDispatch([CLICOMMAND, 'albumreview'], [0, 1, 1, \&getAlbumReviewCLI]);
+	Slim::Control::Request::addDispatch([CLICOMMAND, 'albumcovers'], [0, 1, 1, \&getAlbumCoversCLI]);
 
 	Slim::Menu::AlbumInfo->registerInfoProvider( moremusicinfo => (
 		func => \&_objInfoHandler,
@@ -141,31 +142,16 @@ sub getAlbumReview {
 sub getAlbumCovers {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $results = {};
-
 	my $getAlbumCoversCb = sub {
-		my $covers = shift;
-		
-		# only continue once we have results from all services.
-		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs} && $covers->{musicbrainz};
-		
+		my $request = shift;
+
 		my $items = [];
 		
-		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} || $covers->{musicbrainz}->{images} ) {
-			my @covers;
-			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
-			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';
-			push @covers, @{$covers->{discogs}->{images}} if ref $covers->{discogs}->{images} eq 'ARRAY';
-			push @covers, @{$covers->{musicbrainz}->{images}} if ref $covers->{musicbrainz}->{images} eq 'ARRAY';
-
-			foreach my $cover (@covers) {
-				my $size = $cover->{width} || '';
-				if ( $cover->{height} ) {
-					$size .= ($size ? 'x' : '') . $cover->{height};
-				}
-				
-				my ($type) = $cover->{url} =~ /\.(gif|png|jpe?g)(?:\?.+|)$/i;
-				$type = uc($type || '');
+		my $covers = $request->getResult('item_loop');
+		if ($covers && ref $covers eq 'ARRAY') {
+			foreach my $cover (@$covers) {
+				my $size = $cover->{size} || '';
+				my $type = $cover->{type} || '';
 				
 				if ($size) {
 					$size .= 'px' if $size =~ /\d+$/;
@@ -178,7 +164,7 @@ sub getAlbumCovers {
 				
 				push @$items, {
 					type  => 'text',
-					name  => $cover->{author} . $size,
+					name  => $cover->{credits} . $size,
 					image => $cover->{url},
 					jive  => {
 						showBigArtwork => 1,
@@ -200,6 +186,87 @@ sub getAlbumCovers {
 		}
 		
 		$cb->($items);
+	};
+
+	my $request = Slim::Control::Request::executeRequest( $client, [
+		'musicartistinfo', 'albumcovers', 'artist:' . $args->{artist}, 'album:' . $args->{album}
+	] );
+
+	if ( $request->isStatusProcessing ) {			
+		$request->callbackFunction($getAlbumCoversCb);
+	} else {
+		$getAlbumCoversCb->($request);
+	}
+}
+
+sub getAlbumCoversCLI {
+	my $request = shift;
+
+	# check this is the correct query.
+	if ($request->isNotQuery([[CLICOMMAND], ['albumcovers']])) {
+		$request->setStatusBadDispatch();
+		return;
+	}
+	
+	$request->setStatusProcessing();
+
+	my $client = $request->client();
+
+	my $args;
+	my $artist = $request->getParam('artist');
+	my $album  = $request->getParam('album');
+	my $mbid   = $request->getParam('mbid');
+	
+	my $client = $request->client();
+
+	if (!($artist && $album) && !$mbid) {
+		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
+		$request->setStatusDone();
+		return;
+	}
+
+	my $results = {};
+
+	my $getAlbumCoversCb = sub {
+		my $covers = shift;
+		
+		# only continue once we have results from all services.
+		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs} && $covers->{musicbrainz};
+		
+		my $i = 0;
+		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} || $covers->{musicbrainz}->{images} ) {
+			my @covers;
+			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
+			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';
+			push @covers, @{$covers->{discogs}->{images}} if ref $covers->{discogs}->{images} eq 'ARRAY';
+			push @covers, @{$covers->{musicbrainz}->{images}} if ref $covers->{musicbrainz}->{images} eq 'ARRAY';
+
+			foreach my $cover (@covers) {
+				my $size = $cover->{width} || '';
+				if ( $cover->{height} ) {
+					$size .= ($size ? 'x' : '') . $cover->{height};
+				}
+				
+				my ($type) = $cover->{url} =~ /\.(gif|png|jpe?g)(?:\?.+|)$/i;
+				$type = uc($type || '');
+				
+				$request->addResultLoop('item_loop', $i, 'url', $cover->{url} || '');
+				$request->addResultLoop('item_loop', $i, 'credits', $cover->{author}) if $cover->{author};
+				$request->addResultLoop('item_loop', $i, 'size', $size) if $size;
+				$request->addResultLoop('item_loop', $i, 'type', $type) if $type;
+				$i++;
+			}
+		}
+				
+		$request->addResult('count', $i);
+		$request->addResult('offset', 0);
+		$request->setStatusDone();
+	};
+
+	my $args = {
+		artist => $artist,
+		album => $album,
+		mbid => $mbid
 	};
 
 	# there's a rate limiting issue on discogs.com: don't use it without imageproxy, as this seems to work around the limitation...
