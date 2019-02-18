@@ -31,38 +31,41 @@ sub init {
 sub _objInfoHandler {
 	my ( $client, $url, $obj, $remoteMeta ) = @_;
 
-	my ($title, $artist);
-	
+	my ($title, $artist, $id);
+
 	if ( $obj && blessed $obj ) {
 		if ($obj->isa('Slim::Schema::Track')) {
+			$id     = $obj->id;
 			$title  = $obj->title;
 			$artist = $obj->artistName;
 		}
 	}
-	
+
 	$remoteMeta ||= {};
 	$title ||= $remoteMeta->{title};
 	$artist ||= $remoteMeta->{artist};
-	
+
 	if ( !($title && $artist) && $obj->remote ) {
 		my $request = Slim::Control::Request::executeRequest($client, ['status', 0, 10]);
 		my $remoteMeta = $request->getResult('remoteMeta');
-		
+
 		$title ||= $remoteMeta->{title};
 		$artist ||= $remoteMeta->{artist};
 	}
 
-	return unless $title && $artist;
-	
+	return unless $id || ($title && $artist);
+
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LYRICS'),
 		type => 'link',
 		url => \&getLyrics,
 		passthrough => [ {
+			id     => $id,
 			title  => $title,
 			artist => $artist,
+			url    => $url,
 		} ],
-	};	
+	};
 }
 
 sub getSongLyricsCLI {
@@ -73,7 +76,7 @@ sub getSongLyricsCLI {
 		$request->setStatusBadDispatch();
 		return;
 	}
-	
+
 	$request->setStatusProcessing();
 
 	my $client = $request->client();
@@ -81,7 +84,18 @@ sub getSongLyricsCLI {
 	my $args;
 	my $artist = $request->getParam('artist');
 	my $title  = $request->getParam('title');
-	
+	my $id     = $request->getParam('track_id');
+	my $url    = $request->getParam('url');
+
+	if (my $lyrics = _getLocalLyrics($id, $url)) {
+		$lyrics =~ s/\\n/\n/g;
+		$request->addResult('lyrics', $lyrics);
+		$request->addResult('title', $args->{title}) if $title;
+		$request->addResult('artist', $args->{artist}) if $artist;
+		$request->setStatusDone();
+		return;
+	}
+
 	if ($artist && $title) {
 		$args = {
 			title  => $title,
@@ -94,10 +108,10 @@ sub getSongLyricsCLI {
 		$request->setStatusDone();
 		return;
 	}
-	
+
 	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
 		my $item = shift || {};
-		
+
 		if ( !$item || !ref $item ) {
 			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		}
@@ -106,7 +120,7 @@ sub getSongLyricsCLI {
 		}
 		elsif ($item) {
 			my $lyrics = _renderLyrics($item);
-			
+
 			# CLI clients expect real line breaks, not literal \n
 			$lyrics =~ s/\\n/\n/g;
 			$request->addResult('lyrics', $lyrics) if $lyrics;
@@ -122,15 +136,31 @@ sub getSongLyricsCLI {
 
 sub getLyrics {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	$params ||= {};
 	$args   ||= {};
-	
+
 	main::DEBUGLOG && $log->debug("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
-	
+
+	if (my $lyrics = _getLocalLyrics($args->{id}, $args->{url})) {
+		my $responseText = '';
+		$responseText = $args->{title} if $args->{title};
+		$responseText .= ' - ' . $args->{artist} if $args->{artist};
+		$responseText .= "\n\n";
+		$responseText .= $lyrics;
+
+		if ($cb) {
+			$cb->({
+				items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $responseText),
+			});
+		}
+
+		return;
+	}
+
 	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
 		my $items = shift;
-		
+
 		if ($items) {
 			my $lyrics;
 			$lyrics = $items->{LyricSong} if $items->{LyricSong};
@@ -148,7 +178,7 @@ sub getLyrics {
 				type => 'textarea'
 			}];
 		}
-		
+
 		if ($cb) {
 			$cb->({
 				items => $items,
@@ -157,9 +187,31 @@ sub getLyrics {
 	});
 }
 
+sub _getLocalLyrics {
+	my ($id, $url) = @_;
+
+	my $track;
+	if (defined $id){
+		$track = Slim::Schema->find('Track', $id);
+	} 
+	elsif ($url) {
+		$track = Slim::Schema->objectForUrl($url);
+	}
+
+	if ($track) {
+		return $track->lyrics;
+	}
+
+	if ($url) {
+# implement .lrc parser for local file companions
+	}
+
+	return;
+}
+
 sub _renderLyrics {
 	my $items = shift;
-	
+
 	my $lyrics = $items->{LyricSong} if $items->{LyricSong};
 	$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
 	$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
