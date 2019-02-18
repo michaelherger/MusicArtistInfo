@@ -5,8 +5,10 @@ use strict;
 use Slim::Menu::TrackInfo;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
+use Slim::Utils::Misc;
 
 use Plugins::MusicArtistInfo::ChartLyrics;
+use Plugins::MusicArtistInfo::LRCParser;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
 
@@ -198,12 +200,18 @@ sub _getLocalLyrics {
 		$track = Slim::Schema->objectForUrl($url);
 	}
 
-	if ($track) {
-		return $track->lyrics;
+	if ($track && (my $lyrics = $track->lyrics)) {
+		return $lyrics;
 	}
 
+	$url ||= $track->url if $track;
+
+	# try "Song.mp3.lrc" and "Song.lrc"
 	if ($url) {
-# implement .lrc parser for local file companions
+		my $filePath = Slim::Utils::Misc::pathFromFileURL($url);
+		my $filePath2 = $filePath . '.lrc';
+		$filePath =~ s/\.\w{2,4}$/.lrc/;
+		return Plugins::MusicArtistInfo::LRCParser->parseLRC($filePath) || Plugins::MusicArtistInfo::LRCParser->parseLRC($filePath2);
 	}
 
 	return;
