@@ -186,7 +186,8 @@ sub getLyrics {
 
 			my $encodedLyrics = $lyrics;
 			utf8::encode($encodedLyrics);
-			write_file(catfile($lyricsFolder, $candidates->[0] . '.txt'), $encodedLyrics);
+			my $lyricsFile = catfile($lyricsFolder, $candidates->[0] . '.txt');
+			write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
 		}
 
 		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
@@ -263,7 +264,7 @@ sub _getLocalLyrics {
 	$url ||= $track->url if $track;
 
 	# try "Song.mp3.lrc" and "Song.lrc"
-	if ($url) {
+	if ($url && $url =~ /^file:/) {
 		my $filePath = Slim::Utils::Misc::pathFromFileURL($url);
 		my $filePath2 = $filePath . '.lrc';
 		$filePath =~ s/\.\w{2,4}$/.lrc/;
