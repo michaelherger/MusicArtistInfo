@@ -119,8 +119,11 @@ sub call {
 				require XML::Simple;
 				XML::Simple::XMLin( $response->content );
 			} 
-			else {
+			elsif ( $response->headers->content_type =~ /json/ ) {
 				from_json( $response->content ); 
+			}
+			else {
+				$response->content;
 			}
 		};
 	

@@ -11,6 +11,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
+use Plugins::MusicArtistInfo::AZLyrics;
 use Plugins::MusicArtistInfo::ChartLyrics;
 use Plugins::MusicArtistInfo::LRCParser;
 
@@ -146,56 +147,78 @@ sub getLyrics {
 
 	$params ||= {};
 	$args   ||= {};
+	$cb     ||= sub {};
 
-	main::DEBUGLOG && $log->debug("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
+	main::INFOLOG && $log->is_info && $log->info("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 
 	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($args->{id}, $args->{url})) {
 		my $responseText = '';
-		$responseText = $args->{title} if $args->{title};
-		$responseText .= ' - ' . $args->{artist} if $args->{artist};
-		$responseText .= "\n\n";
+
+		if ($lyrics !~ /\Q$args->{artist}\E/i) {
+			$responseText = $args->{title} if $args->{title};
+			$responseText .= ' - ' . $args->{artist} if $args->{artist};
+		}
+
+		$responseText .= "\n\n" if $responseText;
 		$responseText .= $lyrics;
 
-		if ($cb) {
-			$cb->({
-				items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $responseText),
-			});
-		}
+		$cb->({
+			items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $responseText),
+		});
 
 		return;
 	}
 
-	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
+	my $renderLyrics = sub {
 		my $items = shift;
 
-		if ($items) {
-			my $lyrics;
-			$lyrics = $items->{LyricSong} if $items->{LyricSong};
-			$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
-			$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
-			$lyrics .= "\n\n" if $lyrics;
-			$lyrics .= $items->{Lyric} if $items->{Lyric};
-			$lyrics .= "\n\n" . cstring($client, 'URL') . cstring($client, 'COLON') . ' ' . $items->{LyricUrl} if $items->{LyricUrl};
+		my $lyrics;
+		$lyrics = $items->{LyricSong} if $items->{LyricSong};
+		$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
+		$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
+		$lyrics .= "\n\n" if $lyrics;
+		$lyrics .= $items->{Lyric} if $items->{Lyric};
+		$lyrics .= "\n\n" . cstring($client, 'URL') . cstring($client, 'COLON') . ' ' . $items->{LyricUrl} if $items->{LyricUrl};
 
-			if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
-				mkdir $lyricsFolder unless -d $lyricsFolder;
-				my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
+		if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
+			mkdir $lyricsFolder unless -d $lyricsFolder;
+			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
 
-				write_file(catfile($lyricsFolder, $candidates->[0] . '.txt'), $lyrics);
-			}
+			my $encodedLyrics = $lyrics;
+			utf8::encode($encodedLyrics);
+			write_file(catfile($lyricsFolder, $candidates->[0] . '.txt'), $encodedLyrics);
+		}
 
-			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
+		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
+
+		$cb->({
+			items => $items
+		});
+	};
+
+	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
+		my $results = shift;
+
+		if ($results) {
+			$renderLyrics->($results);
 		}
 		else {
-			$items = [{
-				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
-				type => 'textarea'
-			}];
-		}
+			main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
 
-		if ($cb) {
-			$cb->({
-				items => $items,
+			Plugins::MusicArtistInfo::AZLyrics->getLyrics($args, sub {
+				my $azResults = shift;
+
+				if ($azResults) {
+					$renderLyrics->($azResults);
+				}
+				else {
+					$cb->({
+						items => [{
+							name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+							type => 'textarea'
+						}]
+					});
+				}
 			});
 		}
 	});
@@ -212,7 +235,9 @@ sub _getCachedLyrics {
 			main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get lyrics from $lyricsFilename");
 
 			if (-f $lyricsFilename) {
-				return read_file($lyricsFilename);
+				my $lyrics = read_file($lyricsFilename);
+				utf8::decode($lyrics);
+				return $lyrics;
 			}
 		}
 	}

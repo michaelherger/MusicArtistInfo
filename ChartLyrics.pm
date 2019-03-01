@@ -2,15 +2,9 @@ package Plugins::MusicArtistInfo::ChartLyrics;
 
 use strict;
 use XML::Simple;
-
-use Encode;
-#use FindBin qw($Bin);
-#use lib catdir($Bin, 'Plugins', 'MusicArtistInfo', 'lib');
 use URI::Escape qw(uri_escape_utf8);
 
-use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Log;
-#use Slim::Utils::Strings qw(string cstring);
 
 use constant BASE_URL => 'http://api.chartlyrics.com/apiv1.asmx/';
 use constant SEARCH_URL => BASE_URL . 'SearchLyric?artist=%s&song=%s';
