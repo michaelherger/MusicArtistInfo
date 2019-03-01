@@ -1,14 +1,14 @@
 PLUGIN_MUSICARTISTINFO
 	DE	Musik- und Interpreten-Information
 	EN	Music and Artist Information
-	
+
 PLUGIN_MUSICARTISTINFO_DESC
 	EN	Read album reviews, artist biographies, related artists, see artist pictures and much more.
-	
+
 PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	DE	Interpreten-Information
 	EN	Artist information
-	
+
 PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 	DE	Biographie
 	EN	Biography
@@ -66,7 +66,7 @@ PLUGIN_MUSICARTISTINFO_LYRICS
 PLUGIN_MUSICARTISTINFO_URLS
 	DE	Webseiten
 	EN	Websites
-	
+
 PLUGIN_MUSICARTISTINFO_OFFICIAL_SITE
 	DE	Offizielle Webseite
 	EN	Official website
@@ -82,11 +82,11 @@ PLUGIN_MUSICARTISTINFO_LOCAL_FILES
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
 	EN	Find album cover online
-	
+
 PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	DE	Alben ohne Plattenhülle suchen
 	EN	Find albums with missing artwork
-	
+
 PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 	DE	Alben mit kleiner Plattenhülle suchen
 	EN	Find albums with small artwork
@@ -102,15 +102,15 @@ PLUGIN_MUSICARTISTINFO_ALBUMCOVER_PROGRESS
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	DE	Interpreten-Photos
 	EN	Artists photos
-	
+
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
 	EN	Show pictures (can slow down browsing)
-	
+
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
 	DE	Ordner für Interpreten-Photos
 	EN	Folder with artist photos
-	
+
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Interpreten-Photos angeben, so werden darin gespeicherte Photos verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.jpg (png, gif, z.B. 'Peter Gabriel.jpg'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for artist photos, this will be used as an additional source for pictures. Use filenames like %ARTIST.jpg (png, gif, eg. 'Peter Gabriel.jpg'). If a file is found in this folder, then no online-source will be used.
@@ -123,6 +123,15 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	DE	Bilder nicht anzeigen
 	EN	Don't show pictures
 
+PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER
+	DE	Ordner für Songtexte
+	EN	Folder for lyrics
+
+PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC
+	DE	Falls Sie einen Ordner für Songtexte angeben, so werden heruntergeladene Texte da zwischgespeichert.
+	EN	If you define a folder for lyrics, then downloaded lyrics will be cached for later use.
+
+
 PLUGIN_MUSICARTISTINFO_IMPORTER
 	DE	Importer Einstellungen
 	EN	Importer settings
@@ -130,31 +139,31 @@ PLUGIN_MUSICARTISTINFO_IMPORTER
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	DE	Sie können beim Durchsuchen der Musiksammlung nach Interpreten-Bildern und fehlenden Plattenhüllen suchen lassen. Diese können als artist.jpg (oder .png/.gif) im Ordner mit einem Album des Interpreten abgelegt sein, oder in den unten definierten Bilder-Ordnern. Zusätzlich kann online nach Bildern gesucht werden.
 	EN	When scanning your music library we can look for artist pictures and find missing cover arts online. These can be stored in an artist's album folder as artist.jpg (or .png/.gif) or in one of the image folders defined below. Additionally it is possible to run a search of artist pictures in online sources.
-	
+
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
 	DE	Beim Durchsuchen der Musiksammlung Bilder online suchen
 	EN	Find artwork online during library scan
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
-	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern 
+	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern
 	EN	Download and pre-cache artist pictures from online sources
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.
 	EN	Downloading and pre-caching of artist pictures can be quite time-consuming, but will speed up browsing by artist considerably.
-	
+
 PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	DE	Bilder nur für die Haupt-Interpreten herunterladen, nicht aber für weitere Künstler wie Komponisten, Dirigenten etc.
 	EN	Only download pictures for main artists, but not all contributors (composers, conductors etc.)
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
-	DE	Fehlende Plattenhüllen aus Online-Quellen herunterladen und zwischenspeichern 
+	DE	Fehlende Plattenhüllen aus Online-Quellen herunterladen und zwischenspeichern
 	EN	Download missing cover art from online sources
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern. Die Daten werden jedoch wenn möglich lokal gespeichert und beim nächsten Scan wieder verwendet.
 	EN	Downloading missing cover art can be quite time-consuming. Found artwork will be stored locally (if possible), to be re-used in future rescans.
-	
+
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
 	EN	I'm sorry, but in order to profit from all the advanced features of this plugin (eg. artist pictures when browsing artists) you'll need to run Logitech Media Server 7.8 or later.

@@ -79,6 +79,19 @@ sub imageInFolder {
 	return $img;
 }
 
+sub getLocalnameVariants {
+	my ($name) = @_;
+
+	my @candidates = (
+		$name, 
+		Slim::Utils::Unicode::utf8encode($name),
+		Slim::Utils::Text::ignorePunct($name)
+	);
+	push @candidates, Slim::Utils::Unicode::utf8toLatin1Transliterate($candidates[-1]);
+
+	return \@candidates;
+}
+
 sub call {
 	my ($class, $url, $cb, $params) = @_;
 

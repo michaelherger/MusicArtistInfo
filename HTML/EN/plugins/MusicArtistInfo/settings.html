@@ -35,6 +35,10 @@
 		[% IF !limited; WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_artistImageFolder" id="pref_artistImageFolder" value="[% prefs.pref_artistImageFolder %]" size="40">
 		[% END; END %]
+
+		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC" %]
+			<input type="text" class="stdedit selectFolder" name="pref_lyricsFolder" id="pref_lyricsFolder" value="[% prefs.pref_lyricsFolder %]" size="40">
+		[% END %]
 		
 	[% END %]
 

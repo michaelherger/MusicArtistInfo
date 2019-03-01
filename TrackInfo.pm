@@ -2,10 +2,14 @@ package Plugins::MusicArtistInfo::TrackInfo;
 
 use strict;
 
+use File::Slurp qw(read_file write_file);
+use File::Spec::Functions qw(catfile);
+
 use Slim::Menu::TrackInfo;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 use Slim::Utils::Misc;
+use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::ChartLyrics;
 use Plugins::MusicArtistInfo::LRCParser;
@@ -15,6 +19,7 @@ use Plugins::MusicArtistInfo::LRCParser;
 use constant CLICOMMAND => 'musicartistinfo';
 
 my $log = logger('plugin.musicartistinfo');
+my $prefs = preferences('plugin.musicartistinfo');
 
 sub init {
 #                                                                |requires Client
@@ -144,7 +149,7 @@ sub getLyrics {
 
 	main::DEBUGLOG && $log->debug("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 
-	if (my $lyrics = _getLocalLyrics($args->{id}, $args->{url})) {
+	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($args->{id}, $args->{url})) {
 		my $responseText = '';
 		$responseText = $args->{title} if $args->{title};
 		$responseText .= ' - ' . $args->{artist} if $args->{artist};
@@ -172,6 +177,13 @@ sub getLyrics {
 			$lyrics .= $items->{Lyric} if $items->{Lyric};
 			$lyrics .= "\n\n" . cstring($client, 'URL') . cstring($client, 'COLON') . ' ' . $items->{LyricUrl} if $items->{LyricUrl};
 
+			if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
+				mkdir $lyricsFolder unless -d $lyricsFolder;
+				my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
+
+				write_file(catfile($lyricsFolder, $candidates->[0] . '.txt'), $lyrics);
+			}
+
 			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
 		}
 		else {
@@ -187,6 +199,25 @@ sub getLyrics {
 			});
 		}
 	});
+}
+
+sub _getCachedLyrics {
+	my ($args) = @_;
+
+	if ( $args->{title} && $args->{artist} && (my $lyricsFolder = $prefs->get('lyricsFolder')) ) {
+		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
+
+		foreach my $candidate (@$candidates) {
+			my $lyricsFilename = catfile($lyricsFolder, "$candidate.txt");
+			main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get lyrics from $lyricsFilename");
+
+			if (-f $lyricsFilename) {
+				return read_file($lyricsFilename);
+			}
+		}
+	}
+
+	return;
 }
 
 sub _getLocalLyrics {

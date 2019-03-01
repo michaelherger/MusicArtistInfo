@@ -19,42 +19,42 @@ my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
 my ($defaultArtistImg, $fallbackArtistImg, $checkFallbackArtistImg);
 
-sub init { 
+sub init {
 	if (!main::SCANNER) {
 		require Slim::Menu::AlbumInfo;
 		require Slim::Menu::FolderInfo;
 		require Slim::Menu::TrackInfo;
 		require Slim::Web::ImageProxy;
-	
+
 		Slim::Menu::AlbumInfo->registerInfoProvider( moreartwork => (
 			func => \&albumInfoHandler,
 			after => 'moremusicinfo',
 		) );
-	
+
 		Slim::Menu::FolderInfo->registerInfoProvider( moreartwork => (
 			func => \&folderInfoHandler,
 		) );
-	
+
 		Slim::Menu::TrackInfo->registerInfoProvider( moreartwork => (
 			func => \&trackInfoHandler,
 			after => 'moremusicinfo',
 		) );
-	
+
 		Slim::Web::ImageProxy->registerHandler(
 			match => qr/mai\/localartwork\/[a-f\d]+/,
 			func  => \&artworkUrl,
 		);
 
 		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png');
-		
+
 		_initDefaultArtistImg();
 		$prefs->setChange(\&_initDefaultArtistImg, 'artistImageFolder');
-	} 
+	}
 }
 
 sub _initDefaultArtistImg {
 	return unless $defaultArtistImg;
-	
+
 	if ( my $imageFolder = $prefs->get('artistImageFolder') ) {
 		my $img = catdir($imageFolder, 'artist.png');
 		if ( !-f $img ) {
@@ -66,7 +66,7 @@ sub _initDefaultArtistImg {
 
 sub albumInfoHandler {
 	my ( $client, $url, $album ) = @_;
-	
+
 	# try to grab the first album track to find it's folder location
 	return trackInfoHandler($client, undef, $album->tracks->first);
 }
@@ -85,19 +85,19 @@ sub trackInfoHandler { if (!main::SCANNER) {
 	# only deal with local media
 	$url = $track->url if !$url && $track;
 	return unless $url && $url =~ /^file:\/\//i;
-	
+
 	my $path = Slim::Utils::Misc::pathFromFileURL($url);
-	
+
 	if (! -d $path) {
 		$path = dirname( $path );
 	}
-	
+
 	opendir(DIR, $path) || return;
 	my @images = grep { $_ !~ /^\._/ } grep /\.(?:jpe?g|png|gif)$/i, readdir(DIR);
 	closedir(DIR);
 
 	return unless scalar @images;
-	
+
 	my $items = [ map {
 		my $imageUrl = Slim::Utils::Misc::fileURLFromPath( catdir($path, $_) );
 		my $imageId  = _proxiedUrl($imageUrl);
@@ -118,18 +118,18 @@ sub trackInfoHandler { if (!main::SCANNER) {
 	} @images ];
 
 	$items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$items ];
-	
+
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK'),
 		# we don't want slideshow mode on controllers, but web UI only
 		type => ($client && $client->controllerUA || '') =~ /squeezeplay/i ? 'outline' : 'slideshow',
 		items => $items,
-	};	
+	};
 } }
 
 sub _proxiedUrl {
 	my $url = shift;
-	
+
 	$url = Slim::Utils::Misc::fileURLFromPath($url);
 
 	require Slim::Web::ImageProxy;
@@ -141,9 +141,9 @@ sub _proxiedUrl {
 
 sub artworkUrl {
 	my ($url, $spec) = @_;
-	
+
 	main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
-	
+
 	my $fileUrl = $cache->get($url);
 
 	main::DEBUGLOG && $log->debug("Artwork file path is '$fileUrl'");
@@ -155,90 +155,85 @@ sub defaultArtistPhoto {
 	my ( $class ) = @_;
 
 	$checkFallbackArtistImg ||= 0;
-	
+
 	# check whether the user has a generic 'artist.jpg' image in his folder
 	if ( $checkFallbackArtistImg < time && (my $imageFolder = $prefs->get('artistImageFolder')) ) {
 		$fallbackArtistImg = _imageInFolder($imageFolder, 'artist');
 		# only check every minute...
 		$checkFallbackArtistImg = time + 60;
 	}
-	
+
 	return $fallbackArtistImg || $defaultArtistImg;
 }
 
 sub getArtistPhoto {
 	my ( $class, $args ) = @_;
-	
+
 	my $artist    = $args->{artist} || 'no artist';
 	my $artist_id = $args->{artist_id};
-	
+
 	my $cachekey = 'mai_artist_photo_' . Slim::Utils::Text::ignoreCaseArticles($artist, 1);
 	if ( !$args->{force} && (my $local = $cache->get($cachekey)) ) {
 		if (-f $local) {
 			return $args->{rawUrl} ? $local : _proxiedUrl($local);
 		}
 	}
-	
+
 	my $img;
 	my $imageFolder = $prefs->get('artistImageFolder');
 
-	my @candidates = (
-		$artist, 
-		Slim::Utils::Unicode::utf8encode($artist),
-		Slim::Utils::Text::ignorePunct($artist)
-	);
-	push @candidates, Slim::Utils::Unicode::utf8toLatin1Transliterate($candidates[-1]);
-	
+	my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($artist);
+
 	if ($imageFolder) {
-		$img = _imageInFolder($imageFolder, @candidates);
+		$img = _imageInFolder($imageFolder, @$candidates);
 
 		# don't look up generic artists like "no artist" or "various artists" etc.
 		if (!$img) {
 			my $vaString = Slim::Music::Info::variousArtistString();
 			my $noArtistString = Slim::Utils::Strings::string('NO_ARTIST');
-			
+
 			if ( $artist =~ /^(?:no artist|Various Artist|Various$|va$|\Q$vaString\E|\Q$noArtistString\E)/i ) {
 				$img = $class->defaultArtistPhoto();
 			}
 		}
 	}
-	
+
 	# when checking music folders, check for artist.jpg etc., too
-	push @candidates, 'artist', 'composer';
-	
+	push @$candidates, 'artist', 'composer';
+
 	# check album folders for artist artwork, too
 	if (!$img && $artist_id && $artist_id ne $artist) {
 		my $sql = qq(
-			SELECT url 
-			FROM tracks 
+			SELECT url
+			FROM tracks
 			JOIN contributor_track ON contributor_track.track = tracks.id
 			WHERE contributor_track.contributor = ?
 			GROUP BY album
 		);
-		
+
 		my $sth = Slim::Schema->dbh->prepare_cached($sql);
 		$sth->execute($artist_id);
-		
+
 		my %seen;
 		while (my $track = $sth->fetchrow_hashref) {
 			my $path = Slim::Utils::Misc::pathFromFileURL($track->{url});
 			$path = dirname($path) if !-d $path;
-			
+
 			my $parent = Path::Class::dir($path)->parent;
-			
+
 			# check parent folder, assuming many have a music/artist/album hierarchy
 			if ( $parent && !$seen{$parent} ) {
-				$img = _imageInFolder($parent->stringify, @candidates);
+				$img = _imageInFolder($parent->stringify, @$candidates);
 				last if $img;
-				
+
 				$seen{$parent}++;
 			}
-			
+
 			# look for pictures called $artist or literal artist.jpg in the album folder
-			$img = _imageInFolder($path, @candidates);
+			$img = _imageInFolder($path, @$candidates);
 			last if $img;
 		}
-		
+
 		$sth->finish;
 	}
 
@@ -247,7 +242,7 @@ sub getArtistPhoto {
 		$img = Slim::Utils::Unicode::utf8encode($img);
 		$cache->set($cachekey, $img);
 	}
-	
+
 	return ($args->{rawUrl} || !$img) ? $img : _proxiedUrl($img);
 }
 
