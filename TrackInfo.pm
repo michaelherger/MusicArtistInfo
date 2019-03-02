@@ -3,7 +3,7 @@ package Plugins::MusicArtistInfo::TrackInfo;
 use strict;
 
 use File::Slurp qw(read_file write_file);
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions qw(catfile catdir);
 
 use Slim::Menu::TrackInfo;
 use Slim::Utils::Strings qw(string cstring);
@@ -236,35 +236,44 @@ sub _cacheLyrics {
 
 	return unless $lyrics;
 
-	if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
-		mkdir $lyricsFolder unless -d $lyricsFolder;
+	if (my $lyricsFile = _getLyricsCacheFile($args, 'create')) {
+		my $encodedLyrics = $lyrics;
+		utf8::encode($encodedLyrics);
 
-		if (-w $lyricsFolder) {
-			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
-
-			my $encodedLyrics = $lyrics;
-			utf8::encode($encodedLyrics);
-			my $lyricsFile = catfile($lyricsFolder, $candidates->[0] . '.txt');
-			write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
-		}
+		write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
 	}
 }
 
 sub _getCachedLyrics {
 	my ($args) = @_;
 
+	if (my $lyricsFile = _getLyricsCacheFile($args)) {
+		main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get lyrics from $lyricsFile");
+
+		if (-f $lyricsFile) {
+			my $lyrics = read_file($lyricsFile);
+			utf8::decode($lyrics);
+			return $lyrics;
+		}
+	}
+
+	return;
+}
+
+sub _getLyricsCacheFile {
+	my ($args, $create) = @_;
+
 	if ( $args->{title} && $args->{artist} && (my $lyricsFolder = $prefs->get('lyricsFolder')) ) {
-		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
+		mkdir $lyricsFolder if $create && ! -d $lyricsFolder;
 
-		foreach my $candidate (@$candidates) {
-			my $lyricsFilename = catfile($lyricsFolder, "$candidate.txt");
-			main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get lyrics from $lyricsFilename");
+		if (-w $lyricsFolder) {
+			my $artistDir = catdir($lyricsFolder, @{Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist})}[0]);
+			mkdir $artistDir if $create && ! -d $artistDir;
 
-			if (-f $lyricsFilename) {
-				my $lyrics = read_file($lyricsFilename);
-				utf8::decode($lyrics);
-				return $lyrics;
-			}
+			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{title});
+			my $lyricsFile = catfile($artistDir, $candidates->[0] . '.txt');
+
+			return $lyricsFile;
 		}
 	}
 
