@@ -121,7 +121,7 @@ sub getSongLyricsCLI {
 		return;
 	}
 
-	my $renderLyrics = sub {
+	_fetchLyrics($args, sub {
 		my $item = shift;
 
 		my $lyrics = _renderLyrics($item);
@@ -135,36 +135,19 @@ sub getSongLyricsCLI {
 		$request->addResult('lyricUrl', $item->{LyricUrl}) if $item->{LyricUrl};
 
 		_cacheLyrics($args, $lyrics);
-	};
 
-	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
-		my $item = shift || {};
-
-		if ($item && !$item->{error}) {
-			$renderLyrics->($item);
-			$request->setStatusDone();
+		$request->setStatusDone();
+	}, sub {
+		my $item = shift;
+		if ( !$item || !ref $item ) {
+			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		}
-		else {
-			main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
-
-			Plugins::MusicArtistInfo::AZLyrics->getLyrics($args, sub {
-				my $azResults = shift;
-
-				if ( !$azResults || !ref $azResults ) {
-					$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
-				}
-				elsif ( $azResults->{error} ) {
-					$request->addResult('error', $azResults->{error});
-				}
-				elsif ($azResults) {
-					$renderLyrics->($azResults);
-				}
-
-				$request->setStatusDone();
-			});
+		elsif ( $item->{error} ) {
+			$request->addResult('error', $item->{error});
 		}
 
-	});
+		$request->setStatusDone();
+	})
 }
 
 sub getLyrics {
@@ -194,7 +177,7 @@ sub getLyrics {
 		return;
 	}
 
-	my $renderLyrics = sub {
+	_fetchLyrics($args, sub {
 		my $items = shift;
 
 		my $lyrics;
@@ -212,30 +195,36 @@ sub getLyrics {
 		$cb->({
 			items => $items
 		});
-	};
+	}, sub {
+		$cb->({
+			items => [{
+				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				type => 'textarea'
+			}]
+		});
+	});
+}
+
+sub _fetchLyrics {
+	my ($args, $cb, $ecb) = @_;
 
 	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
 		my $results = shift;
 
-		if ($results) {
-			$renderLyrics->($results);
+		if ($results && keys %$results && !$results->{error}) {
+			$cb->($results);
 		}
 		else {
 			main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
 
 			Plugins::MusicArtistInfo::AZLyrics->getLyrics($args, sub {
-				my $azResults = shift;
+				$results = shift;
 
-				if ($azResults) {
-					$renderLyrics->($azResults);
+				if ($results && keys %$results && !$results->{error}) {
+					$cb->($results);
 				}
 				else {
-					$cb->({
-						items => [{
-							name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
-							type => 'textarea'
-						}]
-					});
+					$ecb->($results);
 				}
 			});
 		}
