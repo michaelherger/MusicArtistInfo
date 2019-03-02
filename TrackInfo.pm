@@ -249,12 +249,15 @@ sub _cacheLyrics {
 
 	if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
 		mkdir $lyricsFolder unless -d $lyricsFolder;
-		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
 
-		my $encodedLyrics = $lyrics;
-		utf8::encode($encodedLyrics);
-		my $lyricsFile = catfile($lyricsFolder, $candidates->[0] . '.txt');
-		write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
+		if (-w $lyricsFolder) {
+			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
+
+			my $encodedLyrics = $lyrics;
+			utf8::encode($encodedLyrics);
+			my $lyricsFile = catfile($lyricsFolder, $candidates->[0] . '.txt');
+			write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
+		}
 	}
 }
 
