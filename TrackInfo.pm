@@ -94,8 +94,12 @@ sub getSongLyricsCLI {
 	my $title  = $request->getParam('title');
 	my $id     = $request->getParam('track_id');
 	my $url    = $request->getParam('url');
+	my $args   = {
+		artist => $artist,
+		title  => $title
+	};
 
-	if (my $lyrics = _getLocalLyrics($id, $url)) {
+	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($id, $url)) {
 		$lyrics =~ s/\\n/\n/g;
 		$request->addResult('lyrics', $lyrics);
 		$request->addResult('title', $args->{title}) if $title;
@@ -117,28 +121,49 @@ sub getSongLyricsCLI {
 		return;
 	}
 
+	my $renderLyrics = sub {
+		my $item = shift;
+
+		my $lyrics = _renderLyrics($item);
+
+		# CLI clients expect real line breaks, not literal \n
+		$lyrics =~ s/\\n/\n/g;
+		$request->addResult('lyrics', $lyrics) if $lyrics;
+		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;
+		$request->addResult('title', $args->{title}) if $args->{title};
+		$request->addResult('artist', $args->{artist}) if $args->{artist};
+		$request->addResult('lyricUrl', $item->{LyricUrl}) if $item->{LyricUrl};
+
+		_cacheLyrics($args, $lyrics);
+	};
+
 	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
 		my $item = shift || {};
 
-		if ( !$item || !ref $item ) {
-			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
+		if ($item && !$item->{error}) {
+			$renderLyrics->($item);
+			$request->setStatusDone();
 		}
-		elsif ( $item->{error} ) {
-			$request->addResult('error', $item->{error});
-		}
-		elsif ($item) {
-			my $lyrics = _renderLyrics($item);
+		else {
+			main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
 
-			# CLI clients expect real line breaks, not literal \n
-			$lyrics =~ s/\\n/\n/g;
-			$request->addResult('lyrics', $lyrics) if $lyrics;
-			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;
-			$request->addResult('title', $args->{title}) if $args->{title};
-			$request->addResult('artist', $args->{artist}) if $args->{artist};
-			$request->addResult('lyricUrl', $item->{LyricUrl}) if $item->{LyricUrl};
+			Plugins::MusicArtistInfo::AZLyrics->getLyrics($args, sub {
+				my $azResults = shift;
+
+				if ( !$azResults || !ref $azResults ) {
+					$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
+				}
+				elsif ( $azResults->{error} ) {
+					$request->addResult('error', $azResults->{error});
+				}
+				elsif ($azResults) {
+					$renderLyrics->($azResults);
+				}
+
+				$request->setStatusDone();
+			});
 		}
 
-		$request->setStatusDone();
 	});
 }
 
@@ -180,15 +205,7 @@ sub getLyrics {
 		$lyrics .= $items->{Lyric} if $items->{Lyric};
 		$lyrics .= "\n\n" . cstring($client, 'URL') . cstring($client, 'COLON') . ' ' . $items->{LyricUrl} if $items->{LyricUrl};
 
-		if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
-			mkdir $lyricsFolder unless -d $lyricsFolder;
-			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
-
-			my $encodedLyrics = $lyrics;
-			utf8::encode($encodedLyrics);
-			my $lyricsFile = catfile($lyricsFolder, $candidates->[0] . '.txt');
-			write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
-		}
+		_cacheLyrics($args, $lyrics);
 
 		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
 
@@ -225,6 +242,22 @@ sub getLyrics {
 	});
 }
 
+sub _cacheLyrics {
+	my ($args, $lyrics) = @_;
+
+	return unless $lyrics;
+
+	if (my $lyricsFolder = $prefs->get('lyricsFolder')) {
+		mkdir $lyricsFolder unless -d $lyricsFolder;
+		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist} . ' - ' . $args->{title});
+
+		my $encodedLyrics = $lyrics;
+		utf8::encode($encodedLyrics);
+		my $lyricsFile = catfile($lyricsFolder, $candidates->[0] . '.txt');
+		write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
+	}
+}
+
 sub _getCachedLyrics {
 	my ($args) = @_;
 
@@ -252,7 +285,7 @@ sub _getLocalLyrics {
 	my $track;
 	if (defined $id){
 		$track = Slim::Schema->find('Track', $id);
-	} 
+	}
 	elsif ($url) {
 		$track = Slim::Schema->objectForUrl($url);
 	}
