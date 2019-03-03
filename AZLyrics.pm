@@ -14,7 +14,9 @@ use constant GET_LYRICS_URL => BASE_URL . '%s/%s.html';
 sub getLyrics {
 	my ( $class, $args, $cb ) = @_;
 
-	my $artist = _cleanupName($args->{artist});
+	my $artist = $args->{artist};
+	$artist =~ s/^the //i;
+	$artist = _cleanupName($artist);
 	my $title  = _cleanupName($args->{title});
 	my $url    = sprintf(GET_LYRICS_URL, $artist, $title);
 
