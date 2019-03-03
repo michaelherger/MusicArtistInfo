@@ -17,6 +17,7 @@ sub getLyrics {
 	my $artist = $args->{artist};
 	$artist =~ s/^the //i;
 	$artist = _cleanupName($artist);
+	$artist = 'thethe' if $artist eq 'the';
 	my $title  = _cleanupName($args->{title});
 	my $url    = sprintf(GET_LYRICS_URL, $artist, $title);
 
