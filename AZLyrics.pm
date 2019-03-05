@@ -51,6 +51,8 @@ sub getLyrics {
 			LyricUrl => $url,
 			Lyric => $lyrics
 		} : undef);
+	}, {
+		ignoreError => [404]
 	});
 
 	return;
