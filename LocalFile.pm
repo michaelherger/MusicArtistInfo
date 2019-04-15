@@ -214,9 +214,9 @@ sub trackInfoHandler {
 			name  => $file,
 			weblink => _proxiedUrl($_->{path}, $file),
 			url   => \&getFileContent,
-			# passthrough => [{
-			# 	path => catdir($_->{path}, $file)
-			# }]
+			passthrough => [{
+				path => catdir($_->{path}, $file)
+			}]
 		};
 	} @$files ];
 
@@ -285,12 +285,14 @@ sub _findTextFiles {
 	my $mask = '';
 	my @files;
 
+	my $TEXTFILES = '(?:artist|album|review|albumreview|bio|biogra.*|credits|notes)';
+
 	while ( $i == 0 || $previous ne $pathObj->parent->stringify ) {
 		opendir(DIR, $previous) || return [];
 
 		push @files, map {
-			# don't walk up the tree if we've found a biography
-			$i = 999 if /(?:artist|bio|biogra.*)\./i;
+			# don't walk up the tree if we've found a biography or other
+			$i = 999 if /$TEXTFILES\./i;
 
 			{
 				file => $_,
@@ -298,7 +300,7 @@ sub _findTextFiles {
 			}
 		} grep { 
 			$_ !~ /^\._/o 
-		} grep /$mask\.(?:pdf|txt|html|nfo)$/i, readdir(DIR);
+		} grep /$mask\.(?:pdf|txt|html|nfo|md)$/i, readdir(DIR);
 
 		closedir(DIR);
 
@@ -309,7 +311,7 @@ sub _findTextFiles {
 		last if ++$i > 3;
 
 		# we don't show all files in parent folders, only a reasonable selection
-		$mask = '(?:artist|album|review|albumreview|bio|biogra.*)';
+		$mask = $TEXTFILES;
 	}
 
 	@files = sort { lc($a->{file}) cmp lc($b->{file}) } @files;
@@ -328,10 +330,14 @@ sub getFileContent {
 
 	my $items;
 
-	if ( $path =~ /\.nfo$/ ) {
-		require Plugins::MusicArtistInfo::XMLParser;
-		$items = Plugins::MusicArtistInfo::XMLParser->renderNFOAsOPML($client, $path, $params);
+	if ( $path =~ /\.nfo$/i ) {
+		require Plugins::MusicArtistInfo::Parser::NFO;
+		$items = Plugins::MusicArtistInfo::Parser::NFO->renderAsOPML($client, $path, $params);
 		$content = '';
+	}
+	elsif ( $path =~ /\.md$/i ) {
+		require Plugins::MusicArtistInfo::Parser::Markdown;
+		$content = Plugins::MusicArtistInfo::Parser::Markdown->parse($path);
 	}
 	elsif ( $type =~ /html/ && !Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
 		require HTML::FormatText;
@@ -387,9 +393,13 @@ sub _proxyHandler {
 		return;
 	}
 
-	if ( $path =~ /\.nfo$/ ) {
-		require Plugins::MusicArtistInfo::XMLParser;
-		return Plugins::MusicArtistInfo::XMLParser->renderNFO($httpClient, $response, $path);
+	if ( $path =~ /\.nfo$/i ) {
+		require Plugins::MusicArtistInfo::Parser::NFO;
+		return Plugins::MusicArtistInfo::Parser::NFO->renderAsHTML($httpClient, $response, $path);
+	}
+	elsif ( $path =~ /\.md$/i ) {
+		require Plugins::MusicArtistInfo::Parser::Markdown;
+		return Plugins::MusicArtistInfo::Parser::Markdown->renderAsHTML($httpClient, $response, $path);
 	}
 
 	$response->code(RC_OK);

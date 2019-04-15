@@ -1,4 +1,4 @@
-package Plugins::MusicArtistInfo::XMLParser;
+package Plugins::MusicArtistInfo::Parser::NFO;
 
 use strict;
 use File::Slurp;
@@ -15,7 +15,7 @@ my $types = {
 
 my $log = logger('plugin.musicartistinfo');
 
-sub parseNFO {
+sub parse {
 	my ($class, $path) = @_;
 
 	my $content = File::Slurp::read_file($path);
@@ -77,10 +77,10 @@ sub parseNFO {
 	};
 }
 
-sub renderNFO {
+sub renderAsHTML {
 	my ($class, $httpClient, $response, $path) = @_;
 
-	my $data = $class->parseNFO($path);
+	my $data = $class->parse($path);
 
 	$response->content_type('text/html');
 	$response->header('Connection' => 'close');
@@ -96,10 +96,10 @@ sub renderNFO {
 	return;
 }
 
-sub renderNFOAsOPML {
+sub renderAsOPML {
 	my ($class, $client, $path, $params) = @_;
 	
-	my $data = $class->parseNFO($path);
+	my $data = $class->parse($path);
 	
 	my $items = [];
 	foreach my $item ( @{$data->{items} || []} ) {

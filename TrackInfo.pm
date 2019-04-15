@@ -13,7 +13,7 @@ use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::AZLyrics;
 use Plugins::MusicArtistInfo::ChartLyrics;
-use Plugins::MusicArtistInfo::LRCParser;
+use Plugins::MusicArtistInfo::Parser::LRC;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
 
@@ -302,7 +302,8 @@ sub _getLocalLyrics {
 		my $filePath = Slim::Utils::Misc::pathFromFileURL($url);
 		my $filePath2 = $filePath . '.lrc';
 		$filePath =~ s/\.\w{2,4}$/.lrc/;
-		return Plugins::MusicArtistInfo::LRCParser->parseLRC($filePath) || Plugins::MusicArtistInfo::LRCParser->parseLRC($filePath2);
+		return Plugins::MusicArtistInfo::Parser::LRC->parse($filePath) 
+		    || Plugins::MusicArtistInfo::Parser::LRC->parse($filePath2);
 	}
 
 	return;

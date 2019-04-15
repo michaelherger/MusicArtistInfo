@@ -1,4 +1,4 @@
-package Plugins::MusicArtistInfo::LRCParser;
+package Plugins::MusicArtistInfo::Parser::LRC;
 
 use strict;
 
@@ -10,7 +10,7 @@ use Slim::Utils::Log;
 
 my $log = logger('plugin.musicartistinfo');
 
-sub parseLRC {
+sub parse {
 	my ($class, $path) = @_;
 
 	return unless -r $path;
