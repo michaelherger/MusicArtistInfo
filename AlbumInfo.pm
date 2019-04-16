@@ -43,21 +43,21 @@ sub init {
 
 sub getAlbumMenu {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	$params ||= {};
 	$args   ||= {};
-	
-	my $args2 = $params->{'album'} 
-			|| _getAlbumFromAlbumId($params->{album_id}) 
-			|| _getAlbumFromSongURL($client) unless $args->{url} || $args->{id};
-			
+
+	my $args2 = $params->{'album'}
+			|| _getAlbumFromAlbumId($params->{album_id})
+			|| _getAlbumFromSongURL($client) unless $args->{url} || $args->{album_id};
+
 	$args->{album}  ||= $args2->{album};
 	$args->{artist} ||= $args2->{artist};
 	$args->{album}  = _cleanupAlbumName($args->{album});
-	$args->{album_id} = $args2->{id};
-	
+	$args->{album_id} = $args2->{album_id};
+
 	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
-	
+
 	my $pt = [$args];
 
 	my $items = [ {
@@ -71,7 +71,7 @@ sub getAlbumMenu {
 		url  => \&getAlbumCredits,
 		passthrough => $pt,
 	} ];
-	
+
 	if ( !$params->{isButton} ) {
 		unshift @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMREVIEW'),
@@ -79,7 +79,7 @@ sub getAlbumMenu {
 			url  => \&getAlbumReview,
 			passthrough => $pt,
 		};
-		
+
 		push @$items, {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUM_COVER'),
 			# we don't want slideshow mode on controllers, but web UI only
@@ -88,7 +88,7 @@ sub getAlbumMenu {
 			passthrough => $pt,
 		};
 	}
-	
+
 	if ($cb) {
 		$cb->({
 			items => $items,
@@ -111,7 +111,7 @@ sub getAlbumReview {
 		sub {
 			my $review = shift;
 			my $items = [];
-			
+
 			if ($review->{error}) {
 				$items = [{
 					name => $review->{error},
@@ -132,7 +132,7 @@ sub getAlbumReview {
 
 				$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 			}
-			
+
 			$cb->($items);
 		},
 		$args,
@@ -146,13 +146,13 @@ sub getAlbumCovers {
 		my $request = shift;
 
 		my $items = [];
-		
+
 		my $covers = $request->getResult('item_loop');
 		if ($covers && ref $covers eq 'ARRAY') {
 			foreach my $cover (@$covers) {
 				my $size = $cover->{size} || '';
 				my $type = $cover->{type} || '';
-				
+
 				if ($size) {
 					$size .= 'px' if $size =~ /\d+$/;
 					$size .= ", $type" if $type;
@@ -161,7 +161,7 @@ sub getAlbumCovers {
 				elsif ($type) {
 					$size = " ($type)";
 				}
-				
+
 				push @$items, {
 					type  => 'text',
 					name  => $cover->{credits} . $size,
@@ -177,14 +177,14 @@ sub getAlbumCovers {
 				};
 			}
 		}
-		
+
 		if ( !scalar @$items ) {
 			$items = [{
 				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error} || $covers->{discogs}->{error}  || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
 				type => 'text'
 			}];
 		}
-		
+
 		$cb->($items);
 	};
 
@@ -192,7 +192,7 @@ sub getAlbumCovers {
 		'musicartistinfo', 'albumcovers', 'artist:' . $args->{artist}, 'album:' . $args->{album}
 	] );
 
-	if ( $request->isStatusProcessing ) {			
+	if ( $request->isStatusProcessing ) {
 		$request->callbackFunction($getAlbumCoversCb);
 	} else {
 		$getAlbumCoversCb->($request);
@@ -207,7 +207,7 @@ sub getAlbumCoversCLI {
 		$request->setStatusBadDispatch();
 		return;
 	}
-	
+
 	$request->setStatusProcessing();
 
 	my $client = $request->client();
@@ -231,8 +231,6 @@ sub getAlbumCoversCLI {
 		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
 	}
 
-	# delete $args->{id};
-
 	if ( !$args || (!($args->{artist} && $args->{album}) && !$args->{mbid}) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		$request->setStatusDone();
@@ -243,10 +241,10 @@ sub getAlbumCoversCLI {
 
 	my $getAlbumCoversCb = sub {
 		my $covers = shift;
-		
+
 		# only continue once we have results from all services.
 		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs} && $covers->{musicbrainz};
-		
+
 		my $i = 0;
 		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} || $covers->{musicbrainz}->{images} ) {
 			my @covers;
@@ -260,10 +258,10 @@ sub getAlbumCoversCLI {
 				if ( $cover->{height} ) {
 					$size .= ($size ? 'x' : '') . $cover->{height};
 				}
-				
+
 				my ($type) = $cover->{url} =~ /\.(gif|png|jpe?g)(?:\?.+|)$/i;
 				$type = uc($type || '');
-				
+
 				$request->addResultLoop('item_loop', $i, 'url', $cover->{url} || '');
 				$request->addResultLoop('item_loop', $i, 'credits', $cover->{author}) if $cover->{author};
 				$request->addResultLoop('item_loop', $i, 'size', $size) if $size;
@@ -271,7 +269,7 @@ sub getAlbumCoversCLI {
 				$i++;
 			}
 		}
-				
+
 		$request->addResult('count', $i);
 		$request->addResult('offset', 0);
 		$request->setStatusDone();
@@ -292,12 +290,12 @@ sub getAlbumCoversCLI {
 		$results->{allmusic} = shift || {};
 		$getAlbumCoversCb->($results);
 	}, $args);
-	
+
 	Plugins::MusicArtistInfo::MusicBrainz->getAlbumCovers($client, sub {
 		$results->{musicbrainz} = shift || {};
 		$getAlbumCoversCb->($results);
 	}, $args);
-		
+
 	Plugins::MusicArtistInfo::LFM->getAlbumCovers($client, sub {
 		$results->{lfm} = shift || {};
 		$getAlbumCoversCb->($results);
@@ -306,7 +304,7 @@ sub getAlbumCoversCLI {
 
 sub getAlbumInfo {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	Plugins::MusicArtistInfo::AllMusic->getAlbumDetails($client,
 		sub {
 			my $details = shift;
@@ -320,10 +318,10 @@ sub getAlbumInfo {
 			}
 			elsif ( $details->{items} ) {
 				my $colon = cstring($client, 'COLON');
-				
+
 				$items = [ map {
 					my ($k, $v) = each %{$_};
-					
+
 					ref $v eq 'ARRAY' ? {
 						name  => $k,
 						type  => 'outline',
@@ -334,13 +332,13 @@ sub getAlbumInfo {
 							};
 
 							if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCaseArticles($_, 1, 1) )) ) {
-								$item->{type} = 'link'; 
+								$item->{type} = 'link';
 								$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
 								$item->{passthrough} = [{
 									searchTags => ["genre_id:" . $genre->id]
 								}];
 							}
-							
+
 							$item;
 						} @$v ],
 					}:{
@@ -348,10 +346,10 @@ sub getAlbumInfo {
 						type => 'text'
 					}
 				} @{$details->{items}} ];
-				
+
 				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 			}
-									
+
 			$cb->($items);
 		},
 		$args,
@@ -364,9 +362,9 @@ sub getAlbumCredits {
 	Plugins::MusicArtistInfo::AllMusic->getAlbumCredits($client,
 		sub {
 			my $credits = shift || {};
-			
+
 			my $items = [];
-			
+
 			if ($credits->{error}) {
 				$items = [{
 					name => $credits->{error},
@@ -376,7 +374,7 @@ sub getAlbumCredits {
 			elsif ( $credits->{items} ) {
 				$items = [ map {
 					my $name = $_->{name};
-					
+
 					if ($_->{credit}) {
 						$name .= cstring($client, 'COLON') . ' ' . $_->{credit};
 					}
@@ -385,23 +383,23 @@ sub getAlbumCredits {
 						name => $name,
 						type => 'text',
 					};
-					
+
 					if ($_->{url} || $_->{id}) {
 						$item->{url} = \&Plugins::MusicArtistInfo::ArtistInfo::getArtistMenu;
-						$item->{passthrough} = [{ 
+						$item->{passthrough} = [{
 							url => $_->{url},
 							id  => $_->{id},
 							name => $_->{name}
 						}];
 						$item->{type} = 'link';
 					}
-					
+
 					$item;
 				} @{$credits->{items}} ] if $credits->{items};
-				
+
 				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 			}
-			
+
 			$cb->($items);
 		},
 		$args,
@@ -416,7 +414,7 @@ sub getAlbumReviewCLI {
 		$request->setStatusBadDispatch();
 		return;
 	}
-	
+
 	$request->setStatusProcessing();
 
 	my $client = $request->client();
@@ -424,7 +422,7 @@ sub getAlbumReviewCLI {
 	my $args;
 	my $artist = $request->getParam('artist');
 	my $album  = $request->getParam('album');
-	
+
 	if ($artist && $album) {
 		$args = {
 			album  => _cleanupAlbumName($album),
@@ -440,7 +438,7 @@ sub getAlbumReviewCLI {
 		$request->setStatusDone();
 		return;
 	}
-	
+
 	getAlbumReview($client,
 		sub {
 			my $items = shift || [];
@@ -471,24 +469,24 @@ sub getAlbumReviewCLI {
 sub _objInfoHandler {
 	my ( $client, $url, $obj, $remoteMeta ) = @_;
 
-	my ($album, $artist, $id);
-	
+	my ($album, $artist, $album_id);
+
 	if ( $obj && blessed $obj ) {
 		if ($obj->isa('Slim::Schema::Track')) {
 			$album  = $obj->albumname || $remoteMeta->{album};
 			$artist = $obj->artistName || $remoteMeta->{artist};
-			$id     = $obj->albumid;
+			$album_id = $obj->albumid;
 		}
 		elsif ($obj->isa('Slim::Schema::Album')) {
 			$album  = $obj->name || $remoteMeta->{name};
 			$artist = $obj->contributor->name || $remoteMeta->{artist};
-			$id     = $obj->id || $remoteMeta->{id};
+			$album_id = $obj->id || $remoteMeta->{id};
 		}
 		else {
 			#warn Data::Dump::dump($obj);
 		}
 	}
-	
+
 	if ( !($album && $artist) && $remoteMeta ) {
 		$album  ||= $remoteMeta->{album};
 		$artist ||= $remoteMeta->{artist};
@@ -503,18 +501,18 @@ sub _objInfoHandler {
 		album => {
 			album  => $album,
 			artist => $artist,
-			id     => $id,
+			album_id => $album_id,
 		}
 	};
 
 	my $items = getAlbumMenu($client, undef, $args);
-	
+
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMINFO'),
 		type => 'outline',
 		items => $items,
 		passthrough => [ $args ],
-	};	
+	};
 }
 
 sub _getAlbumFromAlbumId {
@@ -525,11 +523,11 @@ sub _getAlbumFromAlbumId {
 
 		if ($album) {
 			main::INFOLOG && $log->is_info && $log->info('Got Album/Artist from album ID: ' . $album->title . ' - ' . $album->contributor->name);
-			
+
 			return {
 				artist => $album->contributor->name,
 				album  => _cleanupAlbumName($album->title),
-				id     => $album->id,
+				album_id => $album->id,
 			};
 		}
 	}
@@ -538,7 +536,7 @@ sub _getAlbumFromAlbumId {
 sub _getAlbumFromSongURL {
 	my $client = shift;
 	my $url = shift;
-	
+
 	return unless $client;
 
 	if ( !defined $url && (my $song = Slim::Player::Playlist::song($client)) ) {
@@ -548,10 +546,10 @@ sub _getAlbumFromSongURL {
 	if ( $url ) {
 		my $track = Slim::Schema->objectForUrl($url);
 
-		my ($artist, $album, $id);
+		my ($artist, $album, $album_id);
 		$artist = $track->artist->name if (defined $track->artist);
 		$album  = $track->album->title if (defined $track->album);
-		$id     = $track->albumid      if (defined $track->album);
+		$album_id = $track->albumid      if (defined $track->album);
 
 		# We didn't get an artist - maybe it is some music service?
 		if ( !($album && $artist) && $track->remote() ) {
@@ -573,7 +571,7 @@ sub _getAlbumFromSongURL {
 			return {
 				artist => $artist,
 				album  => _cleanupAlbumName($album),
-				id     => $id,
+				album_id => $album_id,
 			};
 		}
 	}
