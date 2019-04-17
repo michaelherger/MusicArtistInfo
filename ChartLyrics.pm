@@ -15,55 +15,55 @@ my $log = logger('plugin.musicartistinfo');
 
 sub searchLyrics {
 	my ( $class, $args, $cb ) = @_;
-	
-	Plugins::MusicArtistInfo::Common->call( 
-		sprintf(SEARCH_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title})), 
+
+	Plugins::MusicArtistInfo::Common->call(
+		sprintf(SEARCH_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title})),
 		sub {
 			my $items = shift;
-			
+
 			if ($items && ref $items && $items->{SearchLyricResult} && ref $items->{SearchLyricResult}) {
 				$cb->($items);
 				return;
 			}
-			
+
 			$cb->();
 		}
 	);
-	
+
 	return;
 }
 
 sub searchLyricsDirect {
 	my ( $class, $args, $cb ) = @_;
-	
+
 	Plugins::MusicArtistInfo::Common->call( sprintf(SEARCH_DIRECT_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title})), sub {
 		my $items = shift;
-		
+
 		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
 			$cb->($items);
 			return;
 		}
-		
+
 		$cb->();
 	});
-	
+
 	return;
 }
 
 sub getLyrics {
 	my ( $class, $args, $cb ) = @_;
-	
+
 	Plugins::MusicArtistInfo::Common->call( sprintf(GET_LYRICS_URL, uri_escape_utf8($args->{id}), uri_escape_utf8($args->{checksum})), sub {
 		my $items = shift;
-		
+
 		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
 			$cb->($items);
 			return;
 		}
-		
+
 		$cb->();
 	});
-	
+
 	return;
 }
 
@@ -74,12 +74,27 @@ sub searchLyricsInDirect {
 		my $items = shift;
 
 		if ($items && $items->{SearchLyricResult} && ref $items->{SearchLyricResult} && ref $items->{SearchLyricResult} eq 'ARRAY' ) {
-			my $artist = $args->{artist};
-			my $title  = $args->{title};
-			
+			my $artist = lc($args->{artist});
+			my $title  = lc($args->{title});
+
+			# try exact match first
 			my ($match) = grep {
-				($artist =~ /\Q$_->{Artist}\E/i || $_->{Artist} =~ /\Q$artist\E/i) && ($title =~ /\Q$_->{Song}\E/i || $_->{Song} =~ /\Q$title\E/i);
+				$artist eq lc($_->{Artist}) && $title eq lc($_->{Song});
 			} @{ $items->{SearchLyricResult} };
+
+			# try exact song title next...
+			if (!$match) {
+				($match) = grep {
+					$title eq lc($_->{Song}) && ($artist =~ /\Q$_->{Artist}\E/i || $_->{Artist} =~ /\Q$artist\E/i);
+				} @{ $items->{SearchLyricResult} };
+			}
+
+			# match anything...
+			if (!$match) {
+				($match) = grep {
+					($artist =~ /\Q$_->{Artist}\E/i || $_->{Artist} =~ /\Q$artist\E/i) && ($title =~ /\Q$_->{Song}\E/i || $_->{Song} =~ /\Q$title\E/i);
+				} @{ $items->{SearchLyricResult} };
+			}
 
 			if ( $match && ref $match && $match->{LyricId} && $match->{LyricChecksum} ) {
 				$class->getLyrics( {
@@ -91,10 +106,10 @@ sub searchLyricsInDirect {
 				return;
 			}
 		}
-		
+
 		$cb->();
 	} );
-	
+
 	return;
 }
 
