@@ -525,12 +525,11 @@ sub getDiscography {
 		$items = [ map { {
 			name => $_->{title} . ($_->{'year'} ? ' (' . $_->{'year'} . ')' : ''),
 			image => $_->{image},
-			url => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumMenu
-			# url => sub { Plugins::MusicArtistInfo::AlbumInfoMenu->menu(@_) },
-			# passthrough => [{
-			# 	artist => $args->{artist},
-			# 	album => $_->{title},
-			# }]
+			url => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumMenu,
+			passthrough => [{
+				artist => $args->{artist},
+				album => $_->{title},
+			}]
 		} } sort {
 			$a->{year} cmp $b->{year}
 		} @{$items->{releases}} ];
