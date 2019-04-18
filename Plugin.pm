@@ -17,6 +17,7 @@ use Plugins::MusicArtistInfo::LocalFile;
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant PLUGIN_TAG => 'musicartistinfo';
 
+# Keep in sync with Qobuz plugin
 my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze)\b/i;
 my $WEBBROWSER_UA_RE = qr/\b(?:FireFox|Chrome|Safari)\b/i;
 
