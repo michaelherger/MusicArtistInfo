@@ -57,7 +57,7 @@ sub init {
 			match => qr/mai\/artist\/.+/,
 			func  => \&_artworkUrl,
 		);
-		
+
 		# dirty re-direct of the Artists menu - delay, as some items might not have registered yet
 		require Slim::Utils::Timers;
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 2, \&_hijackArtistsMenu);
@@ -70,20 +70,21 @@ sub init {
 
 sub getArtistMenu {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	$params ||= {};
 	$args   ||= {};
-	
-	$args->{artist} = $params->{'artist'} 
-			|| _getArtistFromSongId($params->{'track_id'}) 
-			|| _getArtistFromArtistId($params->{'artist_id'}) 
-			|| _getArtistFromAlbumId($params->{'album_id'}) 
-			|| _getArtistFromSongURL($client) unless $args->{url} || $args->{id};
-			
+
+	$args->{artist} = $params->{'artist'} || $params->{'name'} || $args->{'name'};
+
+	$args->{artist} ||= _getArtistFromSongId($params->{'track_id'})
+			|| _getArtistFromArtistId($params->{'artist_id'})
+			|| _getArtistFromAlbumId($params->{'album_id'})
+			|| _getArtistFromSongURL($client);
+
 	$args->{artist_id} ||= $params->{artist_id};
-	
+
 	main::DEBUGLOG && $log->debug("Getting artist menu for " . $args->{artist});
-	
+
 	my $pt = [$args];
 
 	my $items = [ {
@@ -102,7 +103,7 @@ sub getArtistMenu {
 		url  => \&getDiscography,
 		passthrough => $pt,
 	} ];
-	
+
 	if ($client) {
 		push @$items, {
 			name => cstring($client, 'BROWSE'),
@@ -111,7 +112,7 @@ sub getArtistMenu {
 			passthrough => $pt,
 		};
 	}
-	
+
 	# we don't show pictures, videos and length text content on ip3k
 	if (!$params->{isButton}) {
 		unshift @$items, {
@@ -128,7 +129,7 @@ sub getArtistMenu {
 			passthrough => $pt,
 		};
 	}
-	
+
 	if ($cb) {
 		$cb->({
 			items => $items,
@@ -147,35 +148,68 @@ sub getBiography {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::AllMusic->getBiography($client,
-		sub {
+	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
+
+	# prefer AllMusic.com if language is EN - it's richer than Last.fm
+	if ($args->{lang} eq 'en') {
+		Plugins::MusicArtistInfo::AllMusic->getBiography($client, sub {
+			$cb->(_getBioItems(shift, $client, $params));
+		}, $args);
+	}
+	else {
+		Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
 			my $bio = shift;
-			my $items = [];
-			
-			if ($bio->{error}) {
-				$items = [{
-					name => $bio->{error},
-					type => 'text'
-				}]
+
+			if ($bio->{error} || !$bio->{bio}) {
+				# in case of error or lack of Bio, try to fall back to English
+				delete $args->{lang};
+
+				Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
+					$bio = shift;
+
+					if ($bio->{error} || !$bio->{bio}) {
+						# fall back to AllMusic
+						Plugins::MusicArtistInfo::AllMusic->getBiography($client, sub {
+							$cb->(_getBioItems(shift, $client, $params));
+						}, $args);
+					}
+					else {
+						$cb->(_getBioItems($bio, $client, $params));
+					}
+				}, $args);
 			}
-			elsif ($bio->{bio}) {
-				my $content = '';
-				if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
-					$content = '<h4>' . $bio->{author} . '</h4>' if $bio->{author};
-					$content .= $bio->{bio};
-				}
-				else {
-					$content = $bio->{author} . '\n\n' if $bio->{author};
-					$content .= $bio->{bioText};
-				}
-				
-				$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+			else {
+				$cb->(_getBioItems($bio, $client, $params));
 			}
-			
-			$cb->($items);
-		},
-		$args,
-	);
+		}, $args);
+	}
+}
+
+sub _getBioItems {
+	my ($bio, $client, $params) = @_;
+	my $items = [];
+
+	if ($bio->{error}) {
+		$items = [{
+			name => $bio->{error},
+			type => 'text'
+		}]
+	}
+	elsif ($bio->{bio}) {
+		my $content = '';
+		if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
+			$content = '<h4>' . $bio->{author} . '</h4>' if $bio->{author};
+			$content .= $bio->{bio};
+		}
+		else {
+			$content = $bio->{author} . '\n\n' if $bio->{author};
+			$content .= $bio->{bioText} ? $bio->{bioText} : $bio->{bio};
+		}
+
+		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+	}
+
+	return $items;
 }
 
 sub getBiographyCLI {
@@ -186,8 +220,8 @@ sub getBiographyCLI {
 	return unless $artist;
 
 	my $client = $request->client();
-	
-	getBiography($client, 
+
+	getBiography($client,
 		sub {
 			my $items = shift || [];
 
@@ -217,13 +251,13 @@ sub getBiographyCLI {
 
 sub _checkRequest {
 	my ($request, $methods) = @_;
-	
+
 	# check this is the correct query.
 	if ($request->isNotQuery([[CLICOMMAND], $methods])) {
 		$request->setStatusBadDispatch();
 		return;
 	}
-	
+
 	$request->setStatusProcessing();
 
 	my $artist_id = $request->getParam('artist_id');
@@ -270,13 +304,13 @@ sub getArtistPhotos {
 				type => 'text'
 			}];
 		}
-		
+
 		$cb->($items);
 	};
 
 	my $request = Slim::Control::Request::executeRequest( $client, ['musicartistinfo', 'artistphotos', 'artist:' . $args->{artist}] );
 
-	if ( $request->isStatusProcessing ) {			
+	if ( $request->isStatusProcessing ) {
 		$request->callbackFunction($getArtistPhotoCb);
 	} else {
 		$getArtistPhotoCb->($request);
@@ -289,7 +323,7 @@ sub getArtistPhotosCLI {
 	my ($artist, $artist_id) = _checkRequest($request, ['artistphotos']);
 
 	return unless $artist;
-	
+
 	my $client = $request->client();
 
 	my $results = {};
@@ -315,7 +349,7 @@ sub getArtistPhotosCLI {
 				$i++;
 			}
 		}
-		
+
 		$request->addResult('count', $i);
 		$request->addResult('offset', 0);
 		$request->setStatusDone();
@@ -325,7 +359,7 @@ sub getArtistPhotosCLI {
 		artist => $artist,
 		artist_id => $artist_id
 	};
-	
+
 	Plugins::MusicArtistInfo::AllMusic->getArtistPhotos($client, sub {
 		$results->{allmusic} = shift;
 		$getArtistPhotoCb->($results);
@@ -340,12 +374,12 @@ sub getArtistPhotosCLI {
 		$results->{discogs} = shift || { photos => [] };
 		$getArtistPhotoCb->($results);
 	}, $args );
-	
+
 	if (CAN_IMAGEPROXY && $args->{artist_id}) {
 		my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto($args);
-		
+
 		$results->{'local'} = {
-			photos => $local ? [{ 
+			photos => $local ? [{
 				url => $local,
 				author => cstring($client, 'SETUP_AUDIODIR'),
 			}] : [],
@@ -354,7 +388,7 @@ sub getArtistPhotosCLI {
 	else {
 		$results->{'local'}->{photos} = [];
 	}
-	
+
 	$getArtistPhotoCb->($results);
 }
 
@@ -364,7 +398,7 @@ sub getArtistPhotoCLI {
 	my ($artist, $artist_id) = _checkRequest($request, ['artistphoto']);
 
 	return unless $artist;
-	
+
 	# try local artwork first
 	if ( CAN_IMAGEPROXY && (Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 		artist    => $artist,
@@ -400,7 +434,7 @@ sub getArtistPhotoCLI {
 
 sub getArtistInfo {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	Plugins::MusicArtistInfo::AllMusic->getArtistDetails($client,
 		sub {
 			my $details = shift;
@@ -414,10 +448,10 @@ sub getArtistInfo {
 			}
 			elsif ( $details->{items} ) {
 				my $colon = cstring($client, 'COLON');
-				
+
 				$items = [ map {
 					my ($k, $v) = each %{$_};
-					
+
 					ref $v eq 'ARRAY' ? {
 						name  => $k,
 						type  => 'outline',
@@ -439,16 +473,16 @@ sub getArtistInfo {
 									name => $_,
 									type => 'text'
 								};
-								
+
 								if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCaseArticles($_, 1, 1) )) ) {
-									$item->{type} = 'link'; 
+									$item->{type} = 'link';
 									$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
 									$item->{passthrough} = [{
 										searchTags => ["genre_id:" . $genre->id]
 									}];
 								}
 								elsif ( $k =~ /also known as/i ) {
-									$item->{type} = 'link'; 
+									$item->{type} = 'link';
 									$item->{url}  = \&_getSearchItem;
 									$item->{passthrough} = [{
 										search => $_
@@ -463,10 +497,10 @@ sub getArtistInfo {
 						type => 'text'
 					}
 				} @{$details->{items}} ];
-				
+
 				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
 			}
-									
+
 			$cb->($items);
 		},
 		$args,
@@ -490,12 +524,12 @@ sub getRelatedArtists {
 			elsif ( $relations->{items} ) {
 				$items = [ map {
 					my ($k, $v) = each %{$_};
-					
+
 					{
 						name  => $k,
 						type  => 'outline',
 						items => [ map {
-							{ 
+							{
 								name => $_->{name},
 								type => 'link',
 								url  => \&getArtistMenu,
@@ -509,7 +543,7 @@ sub getRelatedArtists {
 					}
 				} @{$relations->{items}} ];
 			}
-									
+
 			$cb->($items);
 		},
 		$args,
@@ -521,7 +555,7 @@ sub getDiscography {
 
 	Plugins::MusicArtistInfo::Discogs->getDiscography($client, sub {
 		my $items = shift;
-		
+
 		$items = [ map { {
 			name => $_->{title} . ($_->{'year'} ? ' (' . $_->{'year'} . ')' : ''),
 			image => $_->{image},
@@ -533,12 +567,12 @@ sub getDiscography {
 		} } sort {
 			$a->{year} cmp $b->{year}
 		} @{$items->{releases}} ];
-		
+
 		$cb->($items);
 	}, $args);
-	
+
 =pod
-	Plugins::MusicArtistInfo::MusicBrainz->getDiscography($client, 
+	Plugins::MusicArtistInfo::MusicBrainz->getDiscography($client,
 		sub {
 			my $releases = shift;
 
@@ -550,9 +584,9 @@ sub getDiscography {
 			} } sort {
 				substr($a->{date} . '-01-01', 0, 10) cmp substr($b->{date} . '-01-01', 0, 10);
 			} @$releases ];
-			
+
 			$cb->($items);
-		}, 
+		},
 		$args
 	);
 =cut
@@ -564,13 +598,13 @@ sub trackInfoHandler {
 	if ( !$track->remote && $track->contributors->count > 1 ) {
 		my $items = [];
 		my %seen;
-		
+
 		foreach my $role (Slim::Schema::Contributor->contributorRoles) {
 			my $contributors = $track->contributorsOfType($role);
 
 			while (my $contributor = $contributors->next) {
 				next if $seen{$contributor->id};
-				
+
 				my $item = _objInfoHandler( $client, $contributor->name, undef, $contributor->id );
 				$item->{name} = $contributor->name . ' (' . cstring($client, $role) . ')' if $item && ref $item;
 				push @$items, $item;
@@ -578,12 +612,12 @@ sub trackInfoHandler {
 				$seen{$contributor->id}++;
 			}
 		}
-			
+
 		return {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
 			type => 'outline',
 			items => $items,
-		}; 
+		};
 	}
 	else {
 		return _objInfoHandler( $client, $track->artistName || $remoteMeta->{artist}, $url, $track->remote || $track->artistid );
@@ -597,17 +631,17 @@ sub artistInfoHandler {
 
 sub albumInfoHandler {
 	my ( $client, $url, $album, $remoteMeta ) = @_;
-	
+
 	if ( $album->contributors->count > 1 ) {
 		my $items = [];
 		my %seen;
-		
+
 		foreach my $role (Slim::Schema::Contributor->contributorRoles) {
 			my @contributors = $album->artistsForRoles($role);
 
 			foreach my $contributor (@contributors) {
 				next if $seen{$contributor->id};
-				
+
 				my $item = _objInfoHandler( $client, $contributor->name, undef, $contributor->id );
 				$item->{name} = $contributor->name . ' (' . cstring($client, $role) . ')' if $item && ref $item;
 				push @$items, $item;
@@ -615,12 +649,12 @@ sub albumInfoHandler {
 				$seen{$contributor->id}++;
 			}
 		}
-			
+
 		return {
 			name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
 			type => 'outline',
 			items => $items,
-		}; 
+		};
 	}
 	else {
 		return _objInfoHandler( $client, $album->contributor->name || $remoteMeta->{artist}, $url, $album->contributorid );
@@ -645,13 +679,13 @@ sub _objInfoHandler {
 	};
 
 	my $items = getArtistMenu($client, undef, $args);
-	
+
 	return {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTINFO'),
 		type => 'outline',
 		items => $items,
 		passthrough => [ $args ],
-	};	
+	};
 }
 
 
@@ -712,7 +746,7 @@ sub _getArtistFromArtistId {
 		return unless $artistObj;
 
 		my $artist = $artistObj->name;
-	
+
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from artist ID: '$artist'");
 
 		return $artist;
@@ -724,30 +758,30 @@ sub _getArtistFromAlbumId {
 
 	if (defined($albumId) && $albumId =~ /^\d+$/) {
 		my $album = Slim::Schema->resultset("Album")->find($albumId);
-		
+
 		return unless $album;
 
 		my $artist = $album->contributor->name;
 
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from album ID: '$artist'");
-	
+
 		return $artist;
 	}
 }
 
 sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	my ($url, $spec, $cb) = @_;
-	
+
 	my ($artist_id) = $url =~ m|mai/artist/(.+)|i;
-	
+
 	main::DEBUGLOG && $log->debug("Artist ID is '$artist_id'");
-	
+
 	return Slim::Utils::Misc::fileURLFromPath(
 		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
 	) unless $artist_id;
 
 	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
-	
+
 	# try local artwork first
 	if ( my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 		artist    => $artist,
@@ -762,7 +796,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		my $photo = shift || {};
 
 		main::DEBUGLOG && $log->is_debug && $log->debug("Got online artwork: " . Data::Dump::dump($photo));
-		
+
 		my $img;
 		my $sizeMap = {
 			252 => 252,
@@ -776,13 +810,13 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 			$defaultSize = 500 if ($photo->{width} && $photo->{width} > 1500) || ($photo->{height} && $photo->{height} > 1500);
 		}
 		else {
-			$img = Slim::Utils::Misc::fileURLFromPath( 
+			$img = Slim::Utils::Misc::fileURLFromPath(
 				Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
 			);
 		}
 
 		main::DEBUGLOG && $log->is_debug && $log->debug("Using: $img");
-		
+
 		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || $defaultSize;
 		$img =~ s/\/_\//\/$size\//;
 
@@ -796,7 +830,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 sub _getSearchItem {
 	my ($client, $cb, $params, $args) = @_;
-	
+
 	$args->{search} ||= $args->{artist} || $args->{name};
 	my $searchMenu = Slim::Menu::GlobalSearch->menu( $client, $args ) || {};
 	$cb->($searchMenu->{items} || []);
@@ -806,21 +840,21 @@ sub _getSearchItem {
 my $retry = 0.5;
 sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 	main::DEBUGLOG && $log->is_debug && $prefs->get('browseArtistPictures') && $log->debug('Trying to redirect Artists menu...');
-	
+
 	foreach my $node ( @{ Slim::Menu::BrowseLibrary->_getNodeList() } ) {
 		next unless $node->{id} =~ /^myMusicArtists/;
-	
+
 		if ( $prefs->get('browseArtistPictures') && !$node->{mainCB} ) {
 			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu: ' . $node->{id});
-	
+
 			Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
-	
+
 			my $cb = $node->{feed};
 			$node->{feed} = sub {
 				my ($client, $callback, $args, $pt) = @_;
 				$cb->($client, sub {
 					my $items = shift;
-	
+
 					$items->{items} = [ map {
 						if (!$_->{image} && $_->{passthrough} && ref $_->{passthrough} && @{$_->{passthrough}} && $_->{passthrough}->[0]->{remote_library}) {
 							$_->{image} ||= 'imageproxy/mai/artist/' . URI::Escape::uri_escape_utf8($_->{name} || 0) . '/image.png';
@@ -830,7 +864,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 						}
 						$_;
 					} @{$items->{items}} ];
-	
+
 					$callback->($items);
 				}, $args, $pt);
 			};
@@ -839,9 +873,9 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 		}
 		elsif ( !$prefs->get('browseArtistPictures') && $node->{mainCB} ) {
 			main::DEBUGLOG && $log->debug('Artist menu was hijacked - let\'s free it!');
-	
+
 			Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
-	
+
 			$node->{feed} = delete $node->{mainCB};
 
 			Slim::Menu::BrowseLibrary->registerNode($node);
@@ -853,7 +887,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 	if ($retry) {
 		$retry *= 2;
 		$retry = $retry > 30 ? 30 : $retry;
-		
+
 		main::DEBUGLOG && $log->debug("Failed the hijacking... will try again in $retry seconds.");
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + $retry, \&_hijackArtistsMenu);
 	}

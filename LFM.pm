@@ -18,7 +18,7 @@ sub getLargestPhotoFromList {
 	my ( $class, $photos, $minSize ) = @_;
 
 	$photos = [ $photos ] if $photos && ref $photos eq 'HASH';
-	
+
 	return unless $photos && ref $photos eq 'ARRAY';
 
 	my %photos = map {
@@ -26,42 +26,65 @@ sub getLargestPhotoFromList {
 	} grep {
 		$_->{size} && $_->{'#text'} && $_->{'#text'} !~ m{/arQ/};
 	} @$photos;
-	
+
 	my ($url, $size);
 	foreach ( qw(mega extralarge large medium small) ) {
 		$size = $_;
 		if ($url = $photos{$size}) {
 			last;
 		};
-		
+
 		last if $minSize && $size eq $minSize;
 	}
-	
+
 	if (wantarray) {
 		$url =~ m{/(34|64|126|174|252|500|\d+x\d+)s?/}i;
 		return $url, ($1 || $size);
 	}
-	
+
 	return $url;
+}
+
+sub getBiography {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	_call({
+		method => 'artist.getInfo',
+		artist => $args->{artist},
+		lang   => $args->{lang} || 'en',
+		autocorrect => 1,
+	}, sub {
+		my $artistInfo = shift;
+
+		if ( $artistInfo && $artistInfo->{artist} && $artistInfo->{artist}->{bio} && (my $content = $artistInfo->{artist}->{bio}->{content})) {
+			$cb->({
+				# author => 'Last.fm',
+				bio => $content
+			});
+		}
+		else {
+			$cb->({ error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND') })
+		}
+	});
 }
 
 sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $artist = $args->{artist} || $args->{name};
-	
+
 	if (!$artist) {
 		$cb->();
 		return;
 	}
 
 	my $key = "lfm_artist_photos_" . Slim::Utils::Text::ignoreCaseArticles($artist, 1);
-	$cache ||= Slim::Utils::Cache->new;	
+	$cache ||= Slim::Utils::Cache->new;
 	if ( my $cached = $cache->get($key) ) {
 		$cb->($cached);
 		return;
 	}
-	
+
 	_call({
 		method => 'artist.getInfo',
 		artist => $artist,
@@ -69,7 +92,7 @@ sub getArtistPhotos {
 	}, sub {
 		my $artistInfo = shift;
 		my $result = {};
-		
+
 		if ( $artistInfo && $artistInfo->{artist} && (my $images = $artistInfo->{artist}->{image}) ) {
 			if ( my ($url, $size) = $class->getLargestPhotoFromList($images) ) {
 
@@ -90,7 +113,7 @@ sub getArtistPhotos {
 		if ( !$result->{photos} && $main::SERVER ) {
 			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
-		
+
 		$cb->($result);
 	});
 }
@@ -114,7 +137,7 @@ sub getArtistPhoto {
 				}
 			}
 		}
-		
+
 		if (!$photo && $main::SERVER) {
 			$photo = {
 				error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')
@@ -130,7 +153,7 @@ sub getAlbumCover {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $key = "mai_lfm_albumcover_" . Slim::Utils::Text::ignoreCaseArticles($args->{artist} . $args->{album}, 1);
-	
+
 	if (my $cached = $cache->get($key)) {
 		$cb->($cached);
 		return;
@@ -138,26 +161,26 @@ sub getAlbumCover {
 
 	$class->getAlbumCovers($client, sub {
 		my $covers = shift;
-		
+
 		my $cover = {};
 
 		# getAlbumCovers() would only return a single item
 		if ($covers && $covers->{images} && ref $covers->{images} eq 'ARRAY') {
 			$cover = $covers->{images}->[0];
 		}
-		
+
 		$cache->set($key, $cover, 86400);
 		$cb->($cover);
-	}, $args);	
+	}, $args);
 }
 
 sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
-	
+
 	$class->getAlbum(sub {
 		my $albumInfo = shift;
 		my $result = {};
-		
+
 		if ( $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
 			if ( my ($url, $size) = $class->getLargestPhotoFromList($image, 'extralarge') ) {
 				$result->{images} = [{
@@ -171,14 +194,14 @@ sub getAlbumCovers {
 		if ( !$result->{images} && !main::SCANNER ) {
 			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
-		
+
 		$cb->($result);
 	}, $args);
 }
 
 sub getAlbum {
 	my ( $class, $cb, $args ) = @_;
-	
+
 	if (!$args->{artist} || !$args->{album}) {
 		$cb->();
 		return;
@@ -196,11 +219,11 @@ sub getAlbum {
 
 sub _call {
 	my ( $args, $cb ) = @_;
-	
+
 	Plugins::MusicArtistInfo::Common->call(
-		BASE_URL . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ), 
+		BASE_URL . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ),
 		$cb,
-		{ 
+		{
 			cache => 1,
 			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
 		}

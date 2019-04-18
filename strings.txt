@@ -3,6 +3,7 @@ PLUGIN_MUSICARTISTINFO
 	EN	Music and Artist Information
 
 PLUGIN_MUSICARTISTINFO_DESC
+	DE	Liest Album-Rezensionen, Interpreten-Biographien, ähnliche Interpreten, zeigt Interpretenbilder und vieles mehr.
 	EN	Read album reviews, artist biographies, related artists, see artist pictures and much more.
 
 PLUGIN_MUSICARTISTINFO_ARTISTINFO
@@ -179,3 +180,14 @@ PLUGIN_MUSICARTISTINFO_MIN_SIZE
 PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
 	DE	Tut mir Leid, dieser Dateityp wird auf diesem Gerät nicht unterstützt.
 	EN	I'm sorry, this file type is not supported on your device.
+
+# language codes to be used in Last.fm lookups - only these available, otherwise fall back to English
+PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE
+	DE	de
+	EN	en
+	ES	es
+	FR	fr
+	IT	it
+	PL	pl
+	PT	pt
+	SV	sv
