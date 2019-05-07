@@ -95,15 +95,16 @@ sub getArtistPhotos {
 
 		if ( $artistInfo && $artistInfo->{artist} && (my $images = $artistInfo->{artist}->{image}) ) {
 			if ( my ($url, $size) = $class->getLargestPhotoFromList($images) ) {
+				if ($url !~ /2a96cbd8b46e442fc41c2b86b821562f/i) {
+					$result->{photos} = [ {
+						author => 'Last.fm',
+						url    => $url,
+						width  => $size * 1 || undef
+					}];
 
-				$result->{photos} = [ {
-					author => 'Last.fm',
-					url    => $url,
-					width  => $size * 1 || undef
-				}];
-
-				# we keep an aggressive cache of artist pictures - they don't change often, but are often used
-				$cache->set($key, $result, 86400 * 30);
+					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
+					$cache->set($key, $result, 86400 * 30);
+				}
 			}
 			else {
 				$cache->set($key, '', 3600 * 5);
@@ -132,8 +133,10 @@ sub getArtistPhoto {
 		elsif ($items->{photos} && scalar @{$items->{photos}}) {
 			foreach (@{$items->{photos}}) {
 				if ( my $url = $_->{url} ) {
-					$photo = $_;
-					last;
+					if ($url !~ /2a96cbd8b46e442fc41c2b86b821562f/i) {
+						$photo = $_;
+						last;
+					}
 				}
 			}
 		}
