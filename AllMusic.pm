@@ -82,21 +82,25 @@ sub getArtistPhotos {
 		_get( $client, $cb, {
 			url     => $url,
 			parseCB => sub {
-				my $tree   = shift;
+				my $tree = shift;
+
 				my $result = [];
 
-				foreach ( $tree->look_down('_tag', 'li', 'class', 'media-gallery-image') ) {
-					my $img = $_->look_down('_tag', 'img', 'class', 'lazy') || next;
-					my $url = $img->attr('data-original') || next;
-					
-					$url =~ s|^//|http://|;
+				if ($tree->as_HTML =~ /imageGallery.*?(\[.*?\])/) {
+					my $imageGallery = eval { from_json($1) };
 
-					push @$result, {
-						author => 'AllMusic.com',
-						url    => $url,
-					};
+					if (!$@ && ref $imageGallery && ref $imageGallery eq 'ARRAY' && scalar @$imageGallery) {
+						$result = [ map {
+							{
+								author => $_->{author} || 'AllMusic.com',
+								url    => $_->{url},
+								width  => $_->{width},
+								height => $_->{height}
+							}
+						} @$imageGallery ];
+					}
 				}
-				
+
 				return {
 					photos => $result
 				};
@@ -695,7 +699,7 @@ sub _get {
 			my $result;
 			my $error;
 
-			main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($response->content);
+			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($response->content));
 			
 			if ( $response->headers->content_type =~ /html/ && $response->content ) {
 				my $tree = HTML::TreeBuilder->new;
