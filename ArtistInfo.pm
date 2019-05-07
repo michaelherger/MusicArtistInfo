@@ -273,12 +273,11 @@ sub _checkRequest {
 sub getArtistPhotos {
 	my ($client, $cb, $params, $args) = @_;
 
-	my $getArtistPhotoCb = sub {
-		my $request = shift;
+	_getArtistPhotos($client, $args->{artist}, undef, sub {
+		my $photos = shift;
 
 		my $items = [];
 
-		my $photos = $request->getResult('item_loop');
 		if ($photos && ref $photos eq 'ARRAY') {
 			$items = [ map {
 				my $credit = cstring($client, 'BY') . ' ';
@@ -306,15 +305,7 @@ sub getArtistPhotos {
 		}
 
 		$cb->($items);
-	};
-
-	my $request = Slim::Control::Request::executeRequest( $client, ['musicartistinfo', 'artistphotos', 'artist:' . $args->{artist}] );
-
-	if ( $request->isStatusProcessing ) {
-		$request->callbackFunction($getArtistPhotoCb);
-	} else {
-		$getArtistPhotoCb->($request);
-	}
+	});
 }
 
 sub getArtistPhotosCLI {
@@ -326,70 +317,109 @@ sub getArtistPhotosCLI {
 
 	my $client = $request->client();
 
-	my $results = {};
-
-	my $getArtistPhotoCb = sub {
+	_getArtistPhotos($client, $artist, $artist_id, sub {
 		my $photos = shift;
 
-		# only continue once we have results from all services.
-		return $request->setStatusProcessing() unless $photos->{lfm} && $photos->{allmusic} && $photos->{discogs} && $photos->{'local'};
-
 		my $i = 0;
-		if ( $photos->{lfm}->{photos} || $photos->{allmusic}->{photos} || $photos->{discogs}->{photos} || $photos->{'local'}->{photos} ) {
-			my @photos;
-			push @photos, @{$photos->{'local'}->{photos}} if ref $photos->{'local'}->{photos} eq 'ARRAY';
-			push @photos, @{$photos->{lfm}->{photos}} if ref $photos->{lfm}->{photos} eq 'ARRAY';
-			push @photos, @{$photos->{allmusic}->{photos}} if ref $photos->{allmusic}->{photos} eq 'ARRAY';
-			push @photos, @{$photos->{discogs}->{photos}} if ref $photos->{discogs}->{photos} eq 'ARRAY';
-
-			foreach (@photos) {
-				$request->addResultLoop('item_loop', $i, 'url', $_->{url} || '');
-				$request->addResultLoop('item_loop', $i, 'credits', $_->{author}) if $_->{author};
-				$request->addResultLoop('item_loop', $i, 'artist_id', $artist_id) if $artist_id;
-				$i++;
+		foreach (@$photos) {
+			# wrap local files in imageproxy
+			if ($_->{url} !~ /^imageproxy|^https?:\/\//) {
+				$_->{url} = Plugins::MusicArtistInfo::LocalArtwork::proxiedUrl($_->{url});
 			}
+
+			$request->addResultLoop('item_loop', $i, 'url', $_->{url} || '');
+			$request->addResultLoop('item_loop', $i, 'credits', $_->{credits}) if $_->{credits};
+			$request->addResultLoop('item_loop', $i, 'artist_id', $artist_id) if $artist_id;
+			$i++;
 		}
 
 		$request->addResult('count', $i);
 		$request->addResult('offset', 0);
 		$request->setStatusDone();
-	};
+	});
+
+	$request->setStatusProcessing();
+}
+
+sub _getArtistPhotos {
+	my ($client, $artist, $artist_id, $cb, $services) = @_;
+
+	$services ||= [ 'local', 'allmusic', 'discogs', 'lfm'	];
+
+	my $results = {};
 
 	my $args = {
 		artist => $artist,
 		artist_id => $artist_id
 	};
 
+	my $gotArtistPhotosCb = sub {
+		my $photos = shift;
+
+		# only continue once we have results from all services.
+		return if scalar grep { !$photos->{$_} } @$services;
+
+		my @photos;
+		foreach (@$services) {
+			if (ref $photos->{$_}->{photos} && ref $photos->{$_}->{photos} eq 'ARRAY') {
+				push @photos, @{$photos->{$_}->{photos}};
+			}
+		}
+
+		$cb->( [ map {
+			my $photo = {
+				url => $_->{url}
+			};
+
+			$photo->{credits}   = $_->{author} if $_->{author};
+			$photo->{artist_id} = $artist_id if $artist_id;
+			$photo->{width}     = $_->{width} if $_->{width};
+			$photo->{height}    = $_->{height} if $_->{height};
+
+			$photo;
+		} grep { $_->{url} } @photos ] );
+	};
+
+	my %services = map {
+		$_ => 1
+	} @$services;
+
 	Plugins::MusicArtistInfo::AllMusic->getArtistPhotos($client, sub {
 		$results->{allmusic} = shift;
-		$getArtistPhotoCb->($results);
-	}, $args );
+		$gotArtistPhotosCb->($results);
+	}, $args ) if $services{allmusic};
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
 		$results->{lfm} = shift || { photos => [] };
-		$getArtistPhotoCb->($results);
-	}, $args );
+		$gotArtistPhotosCb->($results);
+	}, $args ) if $services{lfm};
 
 	Plugins::MusicArtistInfo::Discogs->getArtistPhotos($client, sub {
 		$results->{discogs} = shift || { photos => [] };
-		$getArtistPhotoCb->($results);
-	}, $args );
+		$gotArtistPhotosCb->($results);
+	}, $args ) if $services{discogs};
 
-	if (CAN_IMAGEPROXY && $args->{artist_id}) {
-		my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto($args);
+	if ($services{'local'}) {
+		if (CAN_IMAGEPROXY) {
+			my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+				artist    => $args->{artist},
+				artist_id => $args->{artist_id},
+				rawUrl    => 1,
+			});
 
-		$results->{'local'} = {
-			photos => $local ? [{
-				url => $local,
-				author => cstring($client, 'SETUP_AUDIODIR'),
-			}] : [],
-		};
+			$results->{'local'} = {
+				photos => $local ? [{
+					url => $local,
+					author => cstring($client, 'SETUP_AUDIODIR'),
+				}] : [],
+			};
+		}
+		else {
+			$results->{'local'}->{photos} = [];
+		}
 	}
-	else {
-		$results->{'local'}->{photos} = [];
-	}
 
-	$getArtistPhotoCb->($results);
+	$gotArtistPhotosCb->($results);
 }
 
 sub getArtistPhotoCLI {
@@ -405,7 +435,7 @@ sub getArtistPhotoCLI {
 		artist_id => $artist_id,
 		rawUrl    => 1,
 	})) ) {
-		$request->addResult('url', 'imageproxy/mai/artist/' . ($artist_id || $artist) . '/image.png');
+		$request->addResult('url', 'imageproxy/mai/artist/' . URI::Escape::uri_escape_utf8($artist_id || $artist) . '/image.png');
 		$request->addResult('artist_id', $artist_id) if $artist_id;
 		$request->setStatusDone();
 		return;
@@ -413,23 +443,25 @@ sub getArtistPhotoCLI {
 
 	my $client = $request->client();
 
-	Plugins::MusicArtistInfo::LFM->getArtistPhoto($client, sub {
-		my $photo = shift || {};
+	_getArtistPhotos($client, $artist, $artist_id, sub {
+		my $photos = shift;
 
-		if ($photo->{error} || !$photo->{url}) {
-			$log->warn($photo->{error} || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
-			$request->addResult('error', $photo->{error})
+		if (!$photos || !ref $photos || !scalar @$photos) {
+			$log->warn(cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
+			$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'))
 		}
 		else {
+			my $photo = $photos->[0];
+
 			$request->addResult('url', $photo->{url} || '');
-			$request->addResult('credits', $photo->{author}) if $photo->{author};
+			$request->addResult('credits', $photo->{credits}) if $photo->{credits};
 			$request->addResult('artist_id', $artist_id) if $artist_id;
 		}
 
 		$request->setStatusDone();
-	},{
-		artist => $artist,
-	} );
+	});
+
+	$request->setStatusProcessing();
 }
 
 sub getArtistInfo {
@@ -774,7 +806,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 	my ($artist_id) = $url =~ m|mai/artist/(.+)|i;
 
-	main::DEBUGLOG && $log->debug("Artist ID is '$artist_id'");
+	main::INFOLOG && $log->info("Artist ID is '$artist_id'");
 
 	return Slim::Utils::Misc::fileURLFromPath(
 		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
@@ -788,42 +820,29 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		artist_id => $artist_id,
 		rawUrl    => 1,
 	}) ) {
-		main::DEBUGLOG && $log->debug("Found local artwork: $local");
+		main::INFOLOG && $log->info("Found local artwork: $local");
 		return Slim::Utils::Misc::fileURLFromPath($local);
 	}
 
-	Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
-		my $photo = shift || {};
+	_getArtistPhotos(undef, $artist, ($artist_id && $artist_id ne $artist) ? $artist_id : undef, sub {
+		my $photos = shift;
 
-		main::DEBUGLOG && $log->is_debug && $log->debug("Got online artwork: " . Data::Dump::dump($photo));
-
-		my $img;
-		my $sizeMap = {
-			252 => 252,
-			500 => 500,
-		};
-		my $defaultSize = '_';
-
-		if (my $url = $photo->{url}) {
-			$img = $url;
-			# if we've hit one of those huge files, go with a known max of 500px
-			$defaultSize = 500 if ($photo->{width} && $photo->{width} > 1500) || ($photo->{height} && $photo->{height} > 1500);
-		}
-		else {
-			$img = Slim::Utils::Misc::fileURLFromPath(
-				Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
-			);
+		if (!$photos || !ref $photos || !scalar @$photos) {
+			$log->warn(string('PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
+			$photos = [];
 		}
 
-		main::DEBUGLOG && $log->is_debug && $log->debug("Using: $img");
+		my $photo = $photos->[0];
 
-		my $size = Slim::Web::ImageProxy->getRightSize($spec, $sizeMap) || $defaultSize;
-		$img =~ s/\/_\//\/$size\//;
+		my $url = $photo->{url} || Slim::Utils::Misc::fileURLFromPath(
+			Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
+		);
 
-		$cb->($img);
-	},{
-		artist => $artist,
-	} );
+		main::INFOLOG && $log->is_info && $log->info("Got artwork for '$artist': $url");
+
+		$cb->($url);
+	# we don't use discogs here, as we easily get rate limited
+	}, [ 'local', 'allmusic', 'lfm' ]);
 
 	return;
 } }

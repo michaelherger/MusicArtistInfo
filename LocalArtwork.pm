@@ -100,7 +100,7 @@ sub trackInfoHandler { if (!main::SCANNER) {
 
 	my $items = [ map {
 		my $imageUrl = Slim::Utils::Misc::fileURLFromPath( catdir($path, $_) );
-		my $imageId  = _proxiedUrl($imageUrl);
+		my $imageId  = proxiedUrl($imageUrl);
 
 		{
 			type  => 'text',
@@ -127,7 +127,7 @@ sub trackInfoHandler { if (!main::SCANNER) {
 	};
 } }
 
-sub _proxiedUrl {
+sub proxiedUrl {
 	my $url = shift;
 
 	$url = Slim::Utils::Misc::fileURLFromPath($url);
@@ -175,7 +175,7 @@ sub getArtistPhoto {
 	my $cachekey = 'mai_artist_photo_' . Slim::Utils::Text::ignoreCaseArticles($artist, 1);
 	if ( !$args->{force} && (my $local = $cache->get($cachekey)) ) {
 		if (-f $local) {
-			return $args->{rawUrl} ? $local : _proxiedUrl($local);
+			return $args->{rawUrl} ? $local : proxiedUrl($local);
 		}
 	}
 
@@ -243,7 +243,7 @@ sub getArtistPhoto {
 		$cache->set($cachekey, $img);
 	}
 
-	return ($args->{rawUrl} || !$img) ? $img : _proxiedUrl($img);
+	return ($args->{rawUrl} || !$img) ? $img : proxiedUrl($img);
 }
 
 1;

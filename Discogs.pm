@@ -215,7 +215,9 @@ sub getArtistPhotos {
 					$result = [ map {
 						{
 							author => 'Discogs',
-							url    => Slim::Web::ImageProxy::proxiedImage($_->{uri}),
+							url    => $_->{uri},
+							height => $_->{height},
+							width  => $_->{width}
 						};
 					} @$images ]
 				}
