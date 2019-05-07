@@ -322,11 +322,6 @@ sub getArtistPhotosCLI {
 
 		my $i = 0;
 		foreach (@$photos) {
-			# wrap local files in imageproxy
-			if ($_->{url} !~ /^imageproxy|^https?:\/\//) {
-				$_->{url} = Plugins::MusicArtistInfo::LocalArtwork::proxiedUrl($_->{url});
-			}
-
 			$request->addResultLoop('item_loop', $i, 'url', $_->{url} || '');
 			$request->addResultLoop('item_loop', $i, 'credits', $_->{credits}) if $_->{credits};
 			$request->addResultLoop('item_loop', $i, 'artist_id', $artist_id) if $artist_id;
@@ -404,7 +399,6 @@ sub _getArtistPhotos {
 			my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 				artist    => $args->{artist},
 				artist_id => $args->{artist_id},
-				rawUrl    => 1,
 			});
 
 			$results->{'local'} = {
@@ -842,7 +836,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 		$cb->($url);
 	# we don't use discogs here, as we easily get rate limited
-	}, [ 'local', 'allmusic', 'lfm' ]);
+	}, [ 'allmusic', 'lfm' ]);
 
 	return;
 } }
