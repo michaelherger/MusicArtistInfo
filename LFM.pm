@@ -2,6 +2,11 @@ package Plugins::MusicArtistInfo::LFM;
 
 use strict;
 
+use File::Spec::Functions qw(catdir);
+use FindBin qw($Bin);
+use lib catdir($Bin, 'Plugins', 'MusicArtistInfo', 'lib');
+use HTML::TreeBuilder;
+
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Text;
@@ -9,7 +14,9 @@ use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::MusicArtistInfo::Common;
 
-use constant BASE_URL => 'http://ws.audioscrobbler.com/2.0/';
+use constant BASE_API_URL => 'http://ws.audioscrobbler.com/2.0/';
+use constant BASE_URL     => 'https://www.last.fm/music/';
+use constant ARTISTIMAGESEARCH_URL => BASE_URL . '%s/+images';
 
 my $cache = Slim::Utils::Cache->new;
 my $log = logger('plugin.musicartistinfo');
@@ -85,37 +92,43 @@ sub getArtistPhotos {
 		return;
 	}
 
-	_call({
-		method => 'artist.getInfo',
-		artist => $artist,
-		autocorrect => 1,
-	}, sub {
-		my $artistInfo = shift;
-		my $result = {};
+	_get(sprintf(ARTISTIMAGESEARCH_URL, Slim::Utils::Text::ignoreCaseArticles($artist, 1)), sub {
+		my $photos = shift;
 
-		if ( $artistInfo && $artistInfo->{artist} && (my $images = $artistInfo->{artist}->{image}) ) {
-			if ( my ($url, $size) = $class->getLargestPhotoFromList($images) ) {
-				if ($url !~ /2a96cbd8b46e442fc41c2b86b821562f/i) {
-					$result->{photos} = [ {
-						author => 'Last.fm',
-						url    => $url,
-						width  => $size * 1 || undef
-					}];
+		my $result;
+		if (scalar @$photos) {
+			$result = {
+				photos => $photos
+			};
 
-					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
-					$cache->set($key, $result, 86400 * 30);
-				}
-			}
-			else {
-				$cache->set($key, '', 3600 * 5);
-			}
+			# we keep an aggressive cache of artist pictures - they don't change often, but are often used
+			$cache->set($key, $result, 86400 * 30);
 		}
-
-		if ( !$result->{photos} && $main::SERVER ) {
-			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+		else {
+			$cache->set($key, '', 3600 * 5);
 		}
 
 		$cb->($result);
+	}, sub {
+		my $tree = shift;
+		my $photos = [];
+
+		if (my $imageList = $tree->look_down('_tag', 'ul', 'class', 'image-list')) {
+			foreach ($imageList->content_list) {
+				my $image = $_->look_down('_tag', 'img', 'class', 'image-list-image') || next;
+				
+				if (my $url = $image->attr('src')) {
+					$url =~ s/avatar170s\///;
+					$url .= '.jpg' if $url !~ /\.(png|jp.?g)/i;
+					push @$photos, {
+						author => 'Last.fm',
+						url    => $url,
+					};
+				}
+			}
+		}
+
+		return $photos;
 	});
 }
 
@@ -131,14 +144,7 @@ sub getArtistPhoto {
 			$photo = $items;
 		}
 		elsif ($items->{photos} && scalar @{$items->{photos}}) {
-			foreach (@{$items->{photos}}) {
-				if ( my $url = $_->{url} ) {
-					if ($url !~ /2a96cbd8b46e442fc41c2b86b821562f/i) {
-						$photo = $_;
-						last;
-					}
-				}
-			}
+			$photo = $items->{photos}->[0];
 		}
 
 		if (!$photo && $main::SERVER) {
@@ -224,9 +230,35 @@ sub _call {
 	my ( $args, $cb ) = @_;
 
 	Plugins::MusicArtistInfo::Common->call(
-		BASE_URL . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ),
+		BASE_API_URL . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), Plugins::MusicArtistInfo::Common->getHeaders('lfm'), 'format=json' ),
 		$cb,
 		{
+			cache => 1,
+			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
+		}
+	);
+}
+
+sub _get {
+	my ( $url, $cb, $parseCB ) = @_;
+	
+	Plugins::MusicArtistInfo::Common->call( $url,
+		sub {
+			my ($results) = @_;
+			my $result;
+
+			if ($results && !ref $results) {
+				my $tree = HTML::TreeBuilder->new;
+				# $tree->ignore_unknown(0);		# allmusic.com uses unknown "section" tag
+				$tree->parse_content($results);
+
+				$result = $parseCB->($tree) if $parseCB;
+			}
+
+			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
+
+			$cb->($result);
+		},{
 			cache => 1,
 			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
 		}
