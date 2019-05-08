@@ -183,6 +183,7 @@ sub getAlbumCover {
 	}, $args);
 }
 
+# TODO - needs scraping, too?
 sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
 

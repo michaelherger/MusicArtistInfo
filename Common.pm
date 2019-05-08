@@ -57,7 +57,7 @@ sub imageInFolder {
 
 	return unless $folder && @names;
 
-	#main::DEBUGLOG && $log->debug("Trying to find artwork in $folder");
+	main::INFOLOG && $log->info("Trying to find artwork in $folder");
 
 	my $img;
 	my %seen;
@@ -89,7 +89,9 @@ sub getLocalnameVariants {
 	);
 	push @candidates, Slim::Utils::Unicode::utf8toLatin1Transliterate($candidates[-1]);
 
-	return \@candidates;
+	# de-dupe results
+	my %seen;
+	return [ grep { !$seen{$_}++ } @candidates ];
 }
 
 sub call {

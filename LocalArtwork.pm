@@ -238,7 +238,7 @@ sub getArtistPhoto {
 	}
 
 	if ($img) {
-		main::DEBUGLOG && $log->is_debug && $log->debug("Found local artwork $img");
+		main::INFOLOG && $log->is_info && $log->info("Found local artwork $img");
 		$img = Slim::Utils::Unicode::utf8encode($img);
 		$cache->set($cachekey, $img);
 	}
