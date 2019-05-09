@@ -2,11 +2,6 @@ package Plugins::MusicArtistInfo::LFM;
 
 use strict;
 
-use File::Spec::Functions qw(catdir);
-use FindBin qw($Bin);
-use lib catdir($Bin, 'Plugins', 'MusicArtistInfo', 'lib');
-use HTML::TreeBuilder;
-
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Text;
@@ -92,44 +87,51 @@ sub getArtistPhotos {
 		return;
 	}
 
-	_get(sprintf(ARTISTIMAGESEARCH_URL, Slim::Utils::Text::ignoreCaseArticles($artist, 1)), sub {
-		my $photos = shift;
+	Plugins::MusicArtistInfo::Common->call( sprintf(ARTISTIMAGESEARCH_URL, Slim::Utils::Text::ignoreCaseArticles($artist, 1)),
+		sub {
+			my ($results) = @_;
 
-		my $result;
-		if (scalar @$photos) {
-			$result = {
-				photos => $photos
-			};
+			my $result;
 
-			# we keep an aggressive cache of artist pictures - they don't change often, but are often used
-			$cache->set($key, $result, 86400 * 30);
-		}
-		else {
-			$cache->set($key, '', 3600 * 5);
-		}
+			if ($results && !ref $results) {
+				my $photos = [];
 
-		$cb->($result);
-	}, sub {
-		my $tree = shift;
-		my $photos = [];
+				while ($results =~ /class="image-list-item"(.*?)<\//isg) {
+					my $image = $1;
+					if ($image =~ /src.*?=.*?"(http.*?)"/is) {
+						my $url = $1;
+						$url =~ s/avatar170s\///;
+						$url .= '.jpg' if $url !~ /\.(png|jp.?g)/i;
 
-		if (my $imageList = $tree->look_down('_tag', 'ul', 'class', 'image-list')) {
-			foreach ($imageList->content_list) {
-				my $image = $_->look_down('_tag', 'img', 'class', 'image-list-image') || next;
-				
-				if (my $url = $image->attr('src')) {
-					$url =~ s/avatar170s\///;
-					$url .= '.jpg' if $url !~ /\.(png|jp.?g)/i;
-					push @$photos, {
-						author => 'Last.fm',
-						url    => $url,
-					};
+						push @$photos, {
+							author => 'Last.fm',
+							url    => $url,
+						};
+					}
 				}
-			}
-		}
 
-		return $photos;
-	});
+				if (scalar @$photos) {
+					$result = {
+						photos => $photos
+					};
+
+					# we keep an aggressive cache of artist pictures - they don't change often, but are often used
+					$cache->set($key, $result, 86400 * 30);
+				}
+				else {
+					$cache->set($key, '', 3600 * 5);
+				}
+
+			}
+
+			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
+
+			$cb->($result);
+		},{
+			cache => 1,
+			expires => 86400,	# force caching
+		}
+	);
 }
 
 # get a single artist picture - wrapper around getArtistPhotos
@@ -239,32 +241,5 @@ sub _call {
 		}
 	);
 }
-
-sub _get {
-	my ( $url, $cb, $parseCB ) = @_;
-	
-	Plugins::MusicArtistInfo::Common->call( $url,
-		sub {
-			my ($results) = @_;
-			my $result;
-
-			if ($results && !ref $results) {
-				my $tree = HTML::TreeBuilder->new;
-				# $tree->ignore_unknown(0);		# allmusic.com uses unknown "section" tag
-				$tree->parse_content($results);
-
-				$result = $parseCB->($tree) if $parseCB;
-			}
-
-			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
-
-			$cb->($result);
-		},{
-			cache => 1,
-			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
-		}
-	);
-}
-
 
 1;
