@@ -90,7 +90,7 @@ sub _scanAlbumCovers {
 	$imageFolder = $serverprefs->get('artfolder');
 	
 	# use our own folder in the cache folder if the user has not defined an artfolder
-	if ( !($imageFolder && -d $imageFolder && -w $imageFolder) ) {
+	if ( !($imageFolder && -d $imageFolder && -w _) ) {
 		$max = 500;		# if user doesn't care about artwork folder, then he doesn't care about artwork. Only download smaller size.
 		$imageFolder = $class->_cacheFolder;
 	}
@@ -282,7 +282,7 @@ sub _initCacheFolder {
 	# purge cached files
 	$imageFolder = $serverprefs->get('artfolder');
 	
-	my $useCustomFolder = $imageFolder && -d $imageFolder && -w $imageFolder;
+	my $useCustomFolder = $imageFolder && -d $imageFolder && -w _;
 	require File::Copy if $useCustomFolder;
 
 	my $cacheDir = catdir($serverprefs->get('cachedir'), 'mai_coverart');

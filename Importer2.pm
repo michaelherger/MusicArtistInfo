@@ -38,7 +38,10 @@ sub startScan {
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
 			
 	$imageFolder = $prefs->get('artistImageFolder');
-	$imageFolder = undef unless $imageFolder && -d $imageFolder && -w $imageFolder;
+	if ( !($imageFolder && -d $imageFolder && -w _) ) {
+		$imageFolder && $log->error('Artist Image Folder either does not exist or is not writable: ' . $imageFolder);
+		$imageFolder = undef;
+	}
 	
 	# only run scanner if we want to show artist pictures and pre-cache or at least download pictures
 	return unless $prefs->get('browseArtistPictures') && ( $precacheArtwork || $prefs->get('lookupArtistPictures') );

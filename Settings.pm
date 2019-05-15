@@ -39,7 +39,7 @@ sub handler {
 	$paramRef->{limited}   = !CAN_IMAGEPROXY;
 	$paramRef->{artfolder} = $serverprefs->get('artfolder');
 
-	if ( $paramRef->{artfolder} && !(-d $paramRef->{artfolder} && -w $paramRef->{artfolder}) ) {
+	if ( $paramRef->{artfolder} && !(-d $paramRef->{artfolder} && -w _) ) {
 		$paramRef->{saveAlbumCoversDisabled} = 1;
 	}
 
