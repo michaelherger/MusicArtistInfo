@@ -64,7 +64,7 @@ sub imageInFolder {
 
 	foreach my $name (@names) {
 		next if $seen{$name}++;
-		foreach my $ext ('jpg', 'JPG', 'jpeg', 'png', 'gif') {
+		foreach my $ext ('jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'gif', 'GIF') {
 			my $file = catdir($folder, $name . ".$ext");
 
 			if (-f $file) {

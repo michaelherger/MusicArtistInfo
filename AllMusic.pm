@@ -447,7 +447,7 @@ sub getAlbumCovers {
 					if ( $@ ) {
 						# sometimes we don't have a data-lightbox - use the image shown instead
 						if ($img = $cover->attr('src')) {
-							my ($size) = $img =~ /(?:JPG|PNG)_(\d+)/i;
+							my ($size) = $img =~ /(?:jpe?g|png)_(\d+)/i;
 							$result->{images} = [ {
 								author => 'AllMusic.com',
 								url    => $img,
