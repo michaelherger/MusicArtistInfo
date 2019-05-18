@@ -6,7 +6,6 @@ use strict;
 use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use Digest::MD5;
 use File::Spec::Functions qw(catdir);
-use LWP::UserAgent;
 
 use Slim::Music::Import;
 use Slim::Utils::Log;
@@ -82,10 +81,7 @@ sub _scanAlbumCovers {
 		});
 	}
 	
-	$ua = LWP::UserAgent->new(
-		agent   => Slim::Utils::Misc::userAgentString(),
-		timeout => 15,
-	) if $prefs->get('lookupCoverArt');
+	$ua = Plugins::MusicArtistInfo::Common->getUA() if $prefs->get('lookupCoverArt');
 		
 	$imageFolder = $serverprefs->get('artfolder');
 	

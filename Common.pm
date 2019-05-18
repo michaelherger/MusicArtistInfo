@@ -145,11 +145,9 @@ sub call {
 	};
 
 	if (main::SCANNER) {
-		require LWP::UserAgent;
-		$ua ||= LWP::UserAgent->new(
-			agent   => Slim::Utils::Misc::userAgentString(),
-			timeout => $params->{timeout},
-		);
+		$ua ||= $class->getUA({
+			timeout => $params->{timeout}
+		});
 
 		my $request = HTTP::Request->new( GET => $url );
 		my $response = $ua->request( $request );
@@ -163,6 +161,25 @@ sub call {
 			$params
 		)->get($url, %headers);
 	}
+}
+
+sub getUA {
+	my ($class, $args) = @_;
+
+	require LWP::UserAgent;
+	require IO::Socket::SSL;
+
+	# our old LWP::UserAgent doesn't support ssl_opts yet
+	IO::Socket::SSL::set_defaults(
+		SSL_verify_mode => 0
+	);
+
+	my $ua = LWP::UserAgent->new(
+		agent   => Slim::Utils::Misc::userAgentString(),
+		timeout => $args->{timeout} || 15,
+	);
+
+	return $ua;
 }
 
 sub getQueryString {

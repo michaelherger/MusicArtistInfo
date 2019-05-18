@@ -4,7 +4,6 @@ use strict;
 use Digest::MD5;
 use File::Spec::Functions qw(catdir);
 use File::Slurp;
-use LWP::UserAgent;
 use URI::Escape;
 
 use Slim::Music::Import;
@@ -88,10 +87,7 @@ sub _scanArtistPhotos {
 		});
 	}
 	
-	$ua = LWP::UserAgent->new(
-		agent   => Slim::Utils::Misc::userAgentString(),
-		timeout => 15,
-	) if $prefs->get('lookupArtistPictures');
+	$ua = Plugins::MusicArtistInfo::Common->getUA() if $prefs->get('lookupArtistPictures');
 
 	$max = 500 unless $imageFolder;
 	
