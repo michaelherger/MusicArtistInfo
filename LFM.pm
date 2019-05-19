@@ -1,6 +1,7 @@
 package Plugins::MusicArtistInfo::LFM;
 
 use strict;
+use URI::Escape qw(uri_escape_utf8);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -15,6 +16,14 @@ use constant ARTISTIMAGESEARCH_URL => BASE_URL . '%s/+images';
 
 my $cache = Slim::Utils::Cache->new;
 my $log = logger('plugin.musicartistinfo');
+
+# enable debugging if scanner debugging is enabled
+if ( main::SCANNER && main::DEBUGLOG && !$log->is_debug ) {
+	my $scannerlog = logger('scan.scanner');
+	if ($scannerlog->is_debug) {
+		$log = $scannerlog;
+	}
+}
 
 sub getLargestPhotoFromList {
 	my ( $class, $photos, $minSize ) = @_;
@@ -72,6 +81,23 @@ sub getBiography {
 
 sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
+	$class->_getArtistPhotos($client, sub {
+		my ($result) = @_;
+
+		if (!$result && uc($args->{artist}) ne Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1) ) {
+			$args->{simplify} = 1;
+			$class->_getArtistPhotos($client, sub {
+				$cb->(@_);
+			}, $args);
+		}
+		else {
+			$cb->(@_);
+		}
+	}, $args);
+}
+
+sub _getArtistPhotos {
+	my ( $class, $client, $cb, $args ) = @_;
 
 	my $artist = $args->{artist} || $args->{name};
 
@@ -80,14 +106,16 @@ sub getArtistPhotos {
 		return;
 	}
 
-	my $key = "lfm_artist_photos_" . Slim::Utils::Text::ignoreCaseArticles($artist, 1);
+	my $simplifiedArtist = Slim::Utils::Text::ignoreCaseArticles($artist, 1);
+	my $key = "lfm_artist_photos_" . $simplifiedArtist;
 	$cache ||= Slim::Utils::Cache->new;
 	if ( my $cached = $cache->get($key) ) {
 		$cb->($cached);
 		return;
 	}
 
-	Plugins::MusicArtistInfo::Common->call( sprintf(ARTISTIMAGESEARCH_URL, Slim::Utils::Text::ignoreCaseArticles($artist, 1)),
+	Plugins::MusicArtistInfo::Common->call( 
+		sprintf(ARTISTIMAGESEARCH_URL, uri_escape_utf8($args->{simplify} ? $simplifiedArtist : $artist)),
 		sub {
 			my ($results) = @_;
 
