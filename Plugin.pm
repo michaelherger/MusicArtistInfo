@@ -29,10 +29,10 @@ my $log = Slim::Utils::Log->addLogCategory( {
 
 sub initPlugin {
 	my $class = shift;
-	
+
 	$VERSION = $class->_pluginDataFor('version');
 
-	my $prefs = preferences('plugin.musicartistinfo'); 
+	my $prefs = preferences('plugin.musicartistinfo');
 	$prefs->init({
 		browseArtistPictures => 1,
 		runImporter => 1,
@@ -40,7 +40,7 @@ sub initPlugin {
 		lookupCoverArt => 1,
 		lookupAlbumArtistPicturesOnly => 1,
 	});
-	
+
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
 	Plugins::MusicArtistInfo::TrackInfo->init($class);
@@ -58,7 +58,7 @@ sub initPlugin {
 	if (CAN_IMAGEPROXY) {
 		require Plugins::MusicArtistInfo::LocalArtwork;
 		Plugins::MusicArtistInfo::LocalArtwork->init();
-		
+
 		# revert skin pref from previous skinning exercise...
 		preferences('server')->set('skin', 'Default') if lc(preferences('server')->get('skin')) eq 'musicartistinfo';
 		$prefs->remove('skinSet');
@@ -79,12 +79,26 @@ sub initPlugin {
 			func  => \&_wikimediaImgProxy,
 		);
 	}
-	
+
 	if (main::WEBUI) {
 		require Plugins::MusicArtistInfo::Settings;
 		Plugins::MusicArtistInfo::Settings->new();
 	}
-	
+
+	# ugly, ugly hack to inject our logging parameters in to the logging framework...
+	my $logGroups = Slim::Utils::Log::logGroups();
+	$logGroups->{SCANNER}->{categories}->{'plugin.musicartistinfo'} = 'ERROR';
+
+	eval qq{
+		package Slim::Utils::Log;
+
+		sub logGroups {
+			return \$logGroups;
+		}
+
+		1;
+	} || $log->error("Hijacking logging settings failed: $@");
+
 	$class->SUPER::initPlugin(shift);
 }
 
@@ -93,15 +107,15 @@ sub playerMenu {}
 
 sub webPages {
 	my $class = shift;
-	
+
 	my $url = 'plugins/' . PLUGIN_TAG . '/missingartwork.html';
-	
+
 	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => $url } );
 	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => "html/images/cover.png" });
 
 	Slim::Web::Pages->addPageFunction( $url, sub {
 		my $client = $_[0];
-		
+
 		Slim::Web::XMLBrowser->handleWebIndex( {
 			client => $client,
 			path   => 'missingartwork.html',
@@ -113,13 +127,13 @@ sub webPages {
 	} );
 
 	$url = 'plugins/' . PLUGIN_TAG . '/smallartwork.html';
-	
+
 	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => $url } );
 	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => "html/images/cover.png" });
 
 	Slim::Web::Pages->addPageFunction( $url, sub {
 		my $client = $_[0];
-		
+
 		Slim::Web::XMLBrowser->handleWebIndex( {
 			client => $client,
 			feed   => \&getSmallArtworkAlbums,
@@ -143,22 +157,22 @@ sub getMissingArtworkAlbums {
 	},{
 		'order_by' => "me.titlesort $collate",
 	});
-	
+
 	my $items = [];
 	while ( my $album = $albums->next ) {
 		my $artist = $album->contributor->name;
-		
+
 		push @$items, {
 			type => 'slideshow',
 			name => $album->title . ' ' . cstring($client, 'BY') . " $artist",
 			url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers,
-			passthrough => [{ 
+			passthrough => [{
 				album  => $album->title,
 				artist => $artist,
 			}]
 		};
 	}
-	
+
 	$cb->({
 		items => $items,
 	});
@@ -175,7 +189,7 @@ sub getSmallArtworkAlbums {
 			type => 'search',
 			url  => \&getSmallArtworkAlbums,
 		}];
-		
+
 		foreach (1500, 1000, 800, 500, 400, 300) {
 			unshift @$items, {
 				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_MIN_SIZE_X', $_),
@@ -186,7 +200,7 @@ sub getSmallArtworkAlbums {
 				}],
 			}
 		}
-		
+
 		$cb->({
 			items => $items,
 		});
@@ -196,29 +210,29 @@ sub getSmallArtworkAlbums {
 	# this query is expensive - try to grab it from the cache
 	my $cache = Slim::Utils::Cache->new();
 	my $items = $cache->get('mai_smallartwork' . $minSize);
-	
+
 	if ($items) {
 		$cb->({
-			items => [ map { 
+			items => [ map {
 				$_->{url} = \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers;
 				$_;
 			} @$items ],
 		});
 		return;
 	}
-	
+
 	require Slim::Utils::GDResizer;
 
 	# Find distinct albums to check for artwork.
 	my $sth = Slim::Schema->dbh->prepare("SELECT album, cover, url, coverid FROM tracks WHERE NOT coverid IS NULL GROUP BY album");
 	$sth->execute();
-	
+
 	$items = [];
 	while ( my $track = $sth->fetchrow_hashref ) {
 		my $file = $track->{cover} =~ /^\d+$/
 				? Slim::Utils::Misc::pathFromFileURL($track->{url})
 				: $track->{cover};
-		
+
 		# skip files which don't exist
 		if ( !$file || !-e $file ) {
 			$log->warn("File doesn't exits: " . ($file || 'undef'));
@@ -226,64 +240,64 @@ sub getSmallArtworkAlbums {
 		}
 
 		my ($offset, $length, $origref);
-		
+
 		# Load image data from tags if necessary
 		if ( $file && $file !~ /\.(?:jpe?g|gif|png)$/i ) {
 			# Double-check that this isn't an image file
 #			if ( !_content_type_file($file, 0, 1) ) {
 				($offset, $length, $origref) = Slim::Utils::GDResizer::_read_tag($file);
-			
+
 				if ( !$offset ) {
 					if ( !$origref ) {
 						$log->error("Unable to find any image tag in $file");
 						next;
 					}
-					
+
 					$file = '';
 				}
 #			}
 		}
 
 		$origref ||= Slim::Utils::GDResizer::_slurp($file, $length ? $offset : undef, $length || undef) if $file;
-		
+
 		if ( !$origref ) {
 			$log->error("Unable to find any image data in $file");
 			next;
 		}
-		
+
 		my ($w, $h) = Slim::Utils::GDResizer->getSize($origref);
-		
+
 		next if $w >= $minSize || $h >= $minSize;
-		
+
 		my $album = Slim::Schema->search('Album', {
 			'me.id' => { '=' => $track->{album} }
 		})->first;
-		
+
 		if ($album) {
 			my $artist = $album->contributor->name;
 			my $title  = $album->title;
-			
+
 			push @$items, {
 				type => 'slideshow',
 				image => '/music/' . $track->{coverid} . '/cover',
 				name => $title . ' ' . cstring($client, 'BY') . " $artist (${w}x${h}px)",
 #				url  => \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers,
-				passthrough => [{ 
+				passthrough => [{
 					album  => $title,
 					artist => $artist,
 				}]
 			};
 		}
-		
+
 		main::idleStreams();
 	}
-	
+
 	$items = [ sort { lc($a->{name}) cmp lc($b->{name}) } @$items ];
 
 	$cache->set('mai_smallartwork' . $minSize, $items, 60);
-	
+
 	$cb->({
-		items => [ map { 
+		items => [ map {
 			$_->{url} = \&Plugins::MusicArtistInfo::AlbumInfo::getAlbumCovers;
 			$_;
 		} @$items ],
@@ -304,18 +318,18 @@ sub isWebBrowser {
 my $canWrap;
 sub textAreaItem {
 	my ($class, $client, $isButton, $content) = @_;
-	
+
 	my @items;
-	
+
 	# ip3k doesn't support textarea - try to wrap
 	if ($isButton) {
 		if (!defined $canWrap) {
 			eval { require Text::Wrap; };
 			$canWrap = $@ ? 0 : 1;
 		}
-		
+
 		$content =~ s/\\n/\n/g;
-		
+
 		if ($canWrap) {
 			$Text::Wrap::columns = ($client && $client->isa("Slim::Player::Boom")) ? 20 : 35;
 			@items = split(/\n/, Text::Wrap::wrap('', '', $content));
@@ -329,8 +343,8 @@ sub textAreaItem {
 				type => 'text',
 				name => $_,
 			}
-		} grep { 
-			$_ !~ /\[IMAGE\]/ 
+		} grep {
+			$_ !~ /\[IMAGE\]/
 		} grep /.+/, @items;
 	}
 	else {
@@ -339,13 +353,13 @@ sub textAreaItem {
 			type => 'textarea',
 		};
 	}
-	
+
 	return \@items;
 }
 
 sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 	my ($url, $spec) = @_;
-	
+
 	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
 
 	my $size = Slim::Web::ImageProxy->getRightSize($spec, {
@@ -357,7 +371,7 @@ sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 		$url =~ s/serve\/(?:\d+|_)\//serve\/$size\//;
 		$url =~ s/(fm\/i\/u\/)([a-f0-9]{32,})/$1$size\/$2/;
 	}
-	
+
 	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
 
 	return $url;
@@ -365,7 +379,7 @@ sub _lastfmImgProxy { if (CAN_IMAGEPROXY) {
 
 sub _amazonImgProxy { if (CAN_IMAGEPROXY) {
 	my ($url, $spec) = @_;
-	
+
 	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
 
 	my $size = minSize(Slim::Web::Graphics->parseSpec($spec)) || 500;
@@ -378,7 +392,7 @@ sub _amazonImgProxy { if (CAN_IMAGEPROXY) {
 
 sub _wikimediaImgProxy { if (CAN_IMAGEPROXY) {
 	my ($url, $spec) = @_;
-	
+
 	#main::DEBUGLOG && $log->debug("Artwork for $url, $spec");
 
 	my $size = minSize(Slim::Web::Graphics->parseSpec($spec)) || 500;
@@ -393,7 +407,7 @@ sub _wikimediaImgProxy { if (CAN_IMAGEPROXY) {
 	elsif (my ($img) = $url =~ /\/([^\/]*?\.(?:jpe?g|png|svg|gif))$/) {
 		$url =~ s/(\/commons\/)/${1}thumb\//;
 		$url =~ s/$img/$img\/${size}px-$img/;
-		$url =~ s/(\.svg)$/$1.png/;		
+		$url =~ s/(\.svg)$/$1.png/;
 	}
 
 	#main::DEBUGLOG && $log->debug("Artwork file url is '$url'");
@@ -403,14 +417,14 @@ sub _wikimediaImgProxy { if (CAN_IMAGEPROXY) {
 
 sub minSize {
 	my ($width, $height) = @_;
-	
+
 	if ($width || $height) {
 		$width  ||= $height;
 		$height ||= $width;
-		
+
 		return ($width > $height ? $width : $height);
 	}
-	
+
 	return 0;
 }
 

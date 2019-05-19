@@ -17,14 +17,6 @@ use constant ARTISTIMAGESEARCH_URL => BASE_URL . '%s/+images';
 my $cache = Slim::Utils::Cache->new;
 my $log = logger('plugin.musicartistinfo');
 
-# enable debugging if scanner debugging is enabled
-if ( main::SCANNER && main::DEBUGLOG && !$log->is_debug ) {
-	my $scannerlog = logger('scan.scanner');
-	if ($scannerlog->is_debug) {
-		$log = $scannerlog;
-	}
-}
-
 sub getLargestPhotoFromList {
 	my ( $class, $photos, $minSize ) = @_;
 
@@ -114,7 +106,7 @@ sub _getArtistPhotos {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::Common->call( 
+	Plugins::MusicArtistInfo::Common->call(
 		sprintf(ARTISTIMAGESEARCH_URL, uri_escape_utf8($args->{simplify} ? $simplifiedArtist : $artist)),
 		sub {
 			my ($results) = @_;

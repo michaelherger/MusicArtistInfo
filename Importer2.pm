@@ -25,36 +25,28 @@ my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precac
 
 sub startScan {
 	my $class = shift;
-	
-	# enable debugging if scanner debugging is enabled
-	if ( main::DEBUGLOG && !$log->is_debug ) {
-		my $scannerlog = logger('scan.scanner');
-		if ($scannerlog->is_debug) {
-			$log = $scannerlog;
-		}
-	}
-	
+
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
-			
+
 	$imageFolder = $prefs->get('artistImageFolder');
 	if ( !($imageFolder && -d $imageFolder && -w _) ) {
 		$imageFolder && $log->error('Artist Image Folder either does not exist or is not writable: ' . $imageFolder);
 		$imageFolder = undef;
 	}
-	
+
 	# only run scanner if we want to show artist pictures and pre-cache or at least download pictures
 	return unless $prefs->get('browseArtistPictures') && ( $precacheArtwork || $prefs->get('lookupArtistPictures') );
-	
+
 	$class->_scanArtistPhotos();
 }
 
 sub _scanArtistPhotos {
 	my $class = shift;
-	
+
 	# Find distinct artists to check for artwork
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
 	my $sql = 'SELECT contributors.id, contributors.name FROM contributors ';
-	
+
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
 		$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
@@ -65,32 +57,32 @@ sub _scanArtistPhotos {
 	}
 
 	my $dbh = Slim::Schema->dbh;
-	
+
 	my ($count) = $dbh->selectrow_array( qq{
 		SELECT COUNT(*) FROM ( $sql ) AS t1
 	}) || 0;
-	
+
 	my $vaObj = Slim::Schema->variousArtistsObject;
 	$count++ if $vaObj;
-	
+
 	my $sth = $dbh->prepare($sql);
 	$sth->execute();
 
 	my $progress = undef;
 
 	if ($count) {
-		$progress = Slim::Utils::Progress->new({ 
+		$progress = Slim::Utils::Progress->new({
 			'type'  => 'importer',
 			'name'  => 'plugin_musicartistinfo_artistPhoto',
 			'total' => $count,
 			'bar'   => 1
 		});
 	}
-	
+
 	$ua = Plugins::MusicArtistInfo::Common->getUA() if $prefs->get('lookupArtistPictures');
 
 	$max = 500 unless $imageFolder;
-	
+
 	while ( _getArtistPhotoURL({
 		sth      => $sth,
 		count    => $count,
@@ -114,9 +106,9 @@ sub _getArtistPhotoURL {
 
 		$progress->update( $artist->{name} ) if $progress;
 		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
-		
+
 		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->{name});
-		
+
 		if ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 			artist_id => $artist->{id},
 			artist    => $artist->{name},
@@ -142,15 +134,15 @@ sub _getArtistPhotoURL {
 	}
 
 	Slim::Music::Import->endImporter('plugin_musicartistinfo_artistPhoto');
-	
+
 	return 0;
 }
 
 sub _precacheArtistImage {
 	my ($artist, $img) = @_;
-	
+
 	return unless $precacheArtwork || $imageFolder;
-	
+
 	my $artist_id = $artist->{id};
 
 	$specs         ||= join(',', Slim::Music::Artwork::getResizeSpecs());
@@ -158,15 +150,15 @@ sub _precacheArtistImage {
  	$cache         ||= Slim::Utils::Cache->new();
 	$cachedir      ||= $serverprefs->get('cachedir');
 	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
-	
+
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 
 		$url =~ s/\/_\//\/$max\// if $max;
-		
+
 		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
-		
+
 		my $file;
-		
+
 		# if user wants us to save a copy on the disk, write to our image folder instead
 		if ($imageFolder) {
 			$file = Plugins::MusicArtistInfo::Importer::filename($url, $imageFolder, $artist->{name});
@@ -188,13 +180,13 @@ sub _precacheArtistImage {
 				$log->warn("Image download failed for $url: " . $response->message);
 			}
 		}
-		
+
 		return unless $precacheArtwork && -f $file;
 
-=pod	(disabled) check for image resolution: we've seen some crashes on Windows (only)		
+=pod	(disabled) check for image resolution: we've seen some crashes on Windows (only)
 		require Slim::Utils::GDResizer;
 		my ($width, $height) = Slim::Utils::GDResizer->getSize($file);
-		
+
 		if ( !$width || !$height || $width * $height > MAX_IMAGE_SIZE * MAX_IMAGE_SIZE ) {
 			$log->error(sprintf("Image for %s is too large to be processed (%sx%s).", $artist->{name}, $width, $height));
 			if ($imageFolder) {
@@ -205,17 +197,17 @@ sub _precacheArtistImage {
 			return;
 		}
 =cut
-		
+
 		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
-		
+
 		unlink $file unless $imageFolder;
 	}
 	elsif ( $precacheArtwork && $artist_id ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
 		$img = Slim::Utils::Misc::pathFromFileURL($img) if $img =~ /^file/;
-		
+
 		return unless $img && -f $img;
-		
+
 		my $mtime = (stat(_))[9];
 
 		# see whether the file has changed at all - otherwise return quickly
