@@ -1,7 +1,8 @@
 package Plugins::MusicArtistInfo::LocalFile;
 
 use strict;
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
+use File::Next;
 use File::Spec::Functions qw(catdir);
 use Digest::MD5 qw(md5_hex);
 
@@ -37,7 +38,7 @@ my $cache = Slim::Utils::Cache->new;
 
 my $URL_PARSER_RE = qr{mai/localfile/([a-f\d]+)/(.*)$};
 
-sub init { 
+sub init {
 #                                                                    |requires Client
 #                                                                    |  |is a Query
 #                                                                    |  |  |has Tags
@@ -143,7 +144,7 @@ sub _getInfoFileForTrack {
 	my $file;
 	foreach my $candidate ( @$candidates ) {
 		($file) = grep /$candidate$/i, keys %files;
-		last if $file; 
+		last if $file;
 	}
 
 	if ($file) {
@@ -224,7 +225,7 @@ sub trackInfoHandler {
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LOCAL_FILES'),
 		type => 'outline',
 		items => $items,
-	};	
+	};
 }
 
 sub getLocalFileWeblinksCLI {
@@ -286,23 +287,41 @@ sub _findTextFiles {
 	my @files;
 
 	my $TEXTFILES = '(?:artist|album|review|albumreview|bio|biogra.*|credits|notes)';
+	my $EXTENSIONS = '(?:pdf|txt|html|nfo|md)';
 
 	while ( $i == 0 || $previous ne $pathObj->parent->stringify ) {
-		opendir(DIR, $previous) || return [];
+		if ($i == 0) {
+			my $iterator = File::Next::files({
+				file_filter => sub { /\.$EXTENSIONS$/i }
+			}, $previous);
 
-		push @files, map {
-			# don't walk up the tree if we've found a biography or other
-			$i = 999 if /$TEXTFILES\./i;
+			while ( defined (my $file = $iterator->()) ) {
+				# don't walk up the tree if we've found a biography or other
+				$i = 999 if /$TEXTFILES\./i;
 
-			{
-				file => $_,
-				path => $previous,
+				push @files, {
+					file => basename($file),
+					path => dirname($file),
+				};
 			}
-		} grep { 
-			$_ !~ /^\._/o 
-		} grep /$mask\.(?:pdf|txt|html|nfo|md)$/i, readdir(DIR);
+		}
+		else {
+			opendir(DIR, $previous) || return [];
 
-		closedir(DIR);
+			push @files, map {
+				# don't walk up the tree if we've found a biography or other
+				$i = 999 if /$TEXTFILES\./i;
+
+				{
+					file => $_,
+					path => $previous,
+				}
+			} grep {
+				$_ !~ /^\._/o
+			} grep /$mask\.$EXTENSIONS$/i, readdir(DIR);
+
+			closedir(DIR);
+		}
 
 		$pathObj = $pathObj->parent;
 		$previous = $pathObj->stringify;

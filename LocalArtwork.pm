@@ -1,7 +1,8 @@
 package Plugins::MusicArtistInfo::LocalArtwork;
 
 use strict;
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
+use File::Next;
 use File::Spec::Functions qw(catdir);
 use Digest::MD5 qw(md5_hex);
 use Path::Class;
@@ -92,19 +93,24 @@ sub trackInfoHandler { if (!main::SCANNER) {
 		$path = dirname( $path );
 	}
 
-	opendir(DIR, $path) || return;
-	my @images = grep { $_ !~ /^\._/ } grep /\.(?:jpe?g|png|gif)$/i, readdir(DIR);
-	closedir(DIR);
+	my $iterator = File::Next::files({
+		file_filter => sub { /\.(?:jpe?g|png|gif)$/i }
+	}, $path);
+
+	my @images;
+	while ( defined (my $file = $iterator->()) ) {
+		push @images, $file;
+	}
 
 	return unless scalar @images;
 
 	my $items = [ map {
-		my $imageUrl = Slim::Utils::Misc::fileURLFromPath( catdir($path, $_) );
+		my $imageUrl = Slim::Utils::Misc::fileURLFromPath($_);
 		my $imageId  = proxiedUrl($imageUrl);
 
 		{
 			type  => 'text',
-			name  => $_,
+			name  => basename($_),
 			image => $imageId,
 			jive  => {
 				showBigArtwork => 1,
