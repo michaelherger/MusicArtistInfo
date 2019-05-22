@@ -151,6 +151,15 @@ sub _precacheArtistImage {
 	$cachedir      ||= $serverprefs->get('cachedir');
 	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
 
+	if ( $imageFolder && !($artist_id && $img) ) {
+		my $file = Plugins::MusicArtistInfo::Importer::filename('', $imageFolder, $artist->{name});
+		$file =~ s/\./\.missing/;
+		if (!-f $file) {
+			main::DEBUGLOG && $log->debug("Putting placeholder file '$file'");
+			File::Slurp::write_file($file, '');
+		}
+	}
+
 	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 
 		$url =~ s/\/_\//\/$max\// if $max;
@@ -200,7 +209,8 @@ sub _precacheArtistImage {
 
 		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 
-		unlink $file unless $imageFolder;
+		$file =~ s/\.(?:jpe?g|gif|png)$/\.missing/i if $imageFolder;
+		unlink $file;
 	}
 	elsif ( $precacheArtwork && $artist_id ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
