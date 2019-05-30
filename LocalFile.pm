@@ -7,7 +7,7 @@ use File::Spec::Functions qw(catdir);
 use Digest::MD5 qw(md5_hex);
 
 use HTTP::Status qw(
-    RC_FORBIDDEN
+	RC_FORBIDDEN
 	RC_PRECONDITION_FAILED
 	RC_UNAUTHORIZED
 	RC_MOVED_PERMANENTLY
@@ -419,6 +419,10 @@ sub _proxyHandler {
 	elsif ( $path =~ /\.md$/i ) {
 		require Plugins::MusicArtistInfo::Parser::Markdown;
 		return Plugins::MusicArtistInfo::Parser::Markdown->renderAsHTML($httpClient, $response, $path);
+	}
+	elsif ( $path =~ /\.html?$/i ) {
+		require Plugins::MusicArtistInfo::Parser::HTML;
+		return Plugins::MusicArtistInfo::Parser::HTML->renderAsHTML($httpClient, $response, $path);
 	}
 
 	$response->code(RC_OK);
