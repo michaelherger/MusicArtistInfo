@@ -151,7 +151,7 @@ sub _precacheArtistImage {
 	$cachedir      ||= $serverprefs->get('cachedir');
 	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
 
-	if ( $imageFolder && !($artist_id && $img) ) {
+	if ( $imageFolder && !($artist_id && $img) && $prefs->get('saveMissingArtistPicturePlaceholder') ) {
 		my $file = Plugins::MusicArtistInfo::Importer::filename('', $imageFolder, $artist->{name});
 		$file =~ s/\./\.missing/;
 		if (!-f $file) {

@@ -11,27 +11,32 @@
 			<input type="checkbox" [% IF prefs.pref_runImporter %]checked [% END %] class="stdedit" name="pref_runImporter" id="pref_runImporter" value="1" />
 			<label for="pref_runImporter" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE" | string %]</label>
 		[% END %]
-		
+
 		[% WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC" %]
 			<input type="checkbox" [% IF prefs.pref_lookupCoverArt %]checked [% END %] class="stdedit" name="pref_lookupCoverArt" id="pref_lookupCoverArt" value="1" />
 			<label for="pref_lookupCoverArt" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART" | string %]</label>
 		[% END %]
-		
+
 		[% IF !limited; WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC" %]
 			<input type="checkbox" [% IF prefs.pref_lookupArtistPictures %]checked [% END %] class="stdedit" name="pref_lookupArtistPictures" id="pref_lookupArtistPictures" value="1" />
 			<label for="pref_lookupArtistPictures" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE" | string %]</label>
 		[% END; END %]
-		
+
 		[% IF !limited; WRAPPER settingGroup title="" desc="" %]
 			<input type="checkbox" [% IF prefs.pref_lookupAlbumArtistPicturesOnly %]checked [% END %] class="stdedit" name="pref_lookupAlbumArtistPicturesOnly" id="pref_lookupAlbumArtistPicturesOnly" value="1" />
 			<label for="pref_lookupAlbumArtistPicturesOnly" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY" | string %]</label>
+		[% END; END %]
+
+		[% IF !limited; WRAPPER settingGroup title="" desc="" %]
+			<input type="checkbox" [% IF prefs.pref_saveMissingArtistPicturePlaceholder %]checked [% END %] class="stdedit" name="pref_saveMissingArtistPicturePlaceholder" id="pref_saveMissingArtistPicturePlaceholder" value="1" />
+			<label for="pref_saveMissingArtistPicturePlaceholder" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER" | string %]</label>
 		[% END; END %]
 
 		[% WRAPPER settingGroup title="SETUP_ARTFOLDER" desc="SETUP_ARTFOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="artfolder" id="pref_artfolder" value="[% artfolder %]" size="40">
 			[% IF saveAlbumCoverDisabled %]<div style="color:red"><br/>[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED" | string %]</div>[% END %]
 		[% END %]
-		
+
 		[% IF !limited; WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_artistImageFolder" id="pref_artistImageFolder" value="[% prefs.pref_artistImageFolder %]" size="40">
 		[% END; END %]
@@ -39,7 +44,7 @@
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_lyricsFolder" id="pref_lyricsFolder" value="[% prefs.pref_lyricsFolder %]" size="40">
 		[% END %]
-		
+
 	[% END %]
 
 	[% IF limited; WRAPPER setting title="" desc="" %]

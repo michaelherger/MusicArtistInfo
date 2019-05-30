@@ -157,6 +157,10 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	DE	Bilder nur für die Haupt-Interpreten herunterladen, nicht aber für weitere Künstler wie Komponisten, Dirigenten etc.
 	EN	Only download pictures for main artists, but not all contributors (composers, conductors etc.)
 
+PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER
+	DE	Speichere Platzhalter-Date ("artist.missing") falls Interpreten-Bilder heruntergeladen werden sollen, aber nicht gefunden werden.
+	EN	Store placeholder file ("artist.missing") if artist pictures are to be downloaded, but cannot be found.
+
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	DE	Fehlende Plattenhüllen aus Online-Quellen herunterladen und zwischenspeichern
 	EN	Download missing cover art from online sources
