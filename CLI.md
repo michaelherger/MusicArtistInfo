@@ -23,9 +23,9 @@ musicartistinfo albumcovers [artist:abba album:gold | album_id:123 | mbid:abc]
 Return a list of URLs for possible album covers for a given album. See previous `albumreview` command for the parameters.
 
 ```
-musicartistinfo lyrics [artist:abba title:waterloo | album_id:123 | url:]
+musicartistinfo lyrics [artist:abba title:waterloo | track_id:123 | url:]
 ```
-Return lyrics for the given song. Again, `album_id` or `url` would directly point to a local track. For tracks streamed from a service, use `artist` and `title` instead.
+Return lyrics for the given song. Again, `track_id` or `url` would directly point to a local track. For tracks streamed from a service, use `artist` and `title` instead.
 
 ```
 musicartistinfo artistphoto [artist:abba | artist_id:123]
