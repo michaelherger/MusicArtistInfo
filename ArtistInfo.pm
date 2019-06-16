@@ -325,6 +325,8 @@ sub getArtistPhotosCLI {
 			$request->addResultLoop('item_loop', $i, 'url', $_->{url} || '');
 			$request->addResultLoop('item_loop', $i, 'credits', $_->{credits}) if $_->{credits};
 			$request->addResultLoop('item_loop', $i, 'artist_id', $artist_id) if $artist_id;
+			$request->addResultLoop('item_loop', $i, 'width', $_->{width}) if $_->{width};
+			$request->addResultLoop('item_loop', $i, 'height', $_->{height}) if $_->{height};
 			$i++;
 		}
 
@@ -450,6 +452,8 @@ sub getArtistPhotoCLI {
 			$request->addResult('url', $photo->{url} || '');
 			$request->addResult('credits', $photo->{credits}) if $photo->{credits};
 			$request->addResult('artist_id', $artist_id) if $artist_id;
+			$request->addResult('width', $photo->{width}) if $photo->{width};
+			$request->addResult('height', $photo->{height}) if $photo->{height};
 		}
 
 		$request->setStatusDone();

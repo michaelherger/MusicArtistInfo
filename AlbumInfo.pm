@@ -265,6 +265,8 @@ sub getAlbumCoversCLI {
 				$request->addResultLoop('item_loop', $i, 'url', $cover->{url} || '');
 				$request->addResultLoop('item_loop', $i, 'credits', $cover->{author}) if $cover->{author};
 				$request->addResultLoop('item_loop', $i, 'size', $size) if $size;
+				$request->addResultLoop('item_loop', $i, 'width', $cover->{width}) if $cover->{width};
+				$request->addResultLoop('item_loop', $i, 'height', $cover->{height}) if $cover->{height};
 				$request->addResultLoop('item_loop', $i, 'type', $type) if $type;
 				$i++;
 			}
