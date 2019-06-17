@@ -47,6 +47,9 @@ sub _objInfoHandler {
 			$title  = $obj->title;
 			$artist = $obj->artistName;
 		}
+
+		# no need to render our "Lyrics" item if track has lyrics - it'll be added by default handler anyway.
+		return if $obj->lyrics;
 	}
 
 	$remoteMeta ||= {};
@@ -94,25 +97,34 @@ sub getSongLyricsCLI {
 	my $title  = $request->getParam('title');
 	my $id     = $request->getParam('track_id');
 	my $url    = $request->getParam('url');
+
 	my $args   = {
 		artist => $artist,
-		title  => $title
+		title  => $title,
+		url    => $url,
+		track_id => $id
 	};
 
-	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($id, $url)) {
-		$lyrics =~ s/\\n/\n/g;
-		$request->addResult('lyrics', $lyrics);
-		$request->addResult('title', $args->{title}) if $title;
-		$request->addResult('artist', $args->{artist}) if $artist;
-		$request->setStatusDone();
-		return;
+	if ($id || $url) {
+		if (defined $id){
+			$args->{track} = Slim::Schema->find('Track', $id);
+		}
+		elsif ($url) {
+			$args->{track} = Slim::Schema->objectForUrl($url);
+		}
+
+		if ($args->{track}) {
+			$args->{artist} ||= $args->{track}->artistName;
+			$args->{title}  ||= $args->{track}->title;
+		}
 	}
 
-	if ($artist && $title) {
-		$args = {
-			title  => $title,
-			artist => $artist
-		};
+	main::INFOLOG && $log->is_info && $log->info("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
+
+	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($args)) {
+		_renderLyricsResponse($lyrics, $request, $args);
+		$request->setStatusDone();
+		return;
 	}
 
 	if ( !($args && $args->{artist} && $args->{title}) ) {
@@ -124,15 +136,10 @@ sub getSongLyricsCLI {
 	_fetchLyrics($args, sub {
 		my $item = shift;
 
-		my $lyrics = _renderLyrics($item);
+		my $lyrics = $item->{Lyric};
 
 		# CLI clients expect real line breaks, not literal \n
-		$lyrics =~ s/\\n/\n/g;
-		$request->addResult('lyrics', $lyrics) if $lyrics;
-		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;
-		$request->addResult('title', $args->{title}) if $args->{title};
-		$request->addResult('artist', $args->{artist}) if $args->{artist};
-		$request->addResult('lyricUrl', $item->{LyricUrl}) if $item->{LyricUrl};
+		_renderLyricsResponse($lyrics, $request, $args);
 
 		_cacheLyrics($args, $lyrics);
 
@@ -157,52 +164,30 @@ sub getLyrics {
 	$args   ||= {};
 	$cb     ||= sub {};
 
-	main::INFOLOG && $log->is_info && $log->info("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
+	my $gotLyrics = sub {
+		my $lyricsRequest = shift;
 
-	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($args->{id}, $args->{url})) {
-		my $responseText = '';
-
-		if ($lyrics !~ /\Q$args->{artist}\E/i) {
-			$responseText = $args->{title} if $args->{title};
-			$responseText .= ' - ' . $args->{artist} if $args->{artist};
-		}
-
-		$responseText .= "\n\n" if $responseText;
-		$responseText .= $lyrics;
+		my $responseText = $lyricsRequest->getResult('lyrics') || $lyricsRequest->getResult('error');
 
 		$cb->({
 			items => Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $responseText),
 		});
+	};
 
-		return;
+	my $command = [CLICOMMAND, 'lyrics'];
+	foreach (qw(title artist url track_id)) {
+		my $v = $args->{$_};
+		if (defined $v && $v ne '') {
+			push @$command, "$_:$v";
+		}
 	}
 
-	_fetchLyrics($args, sub {
-		my $items = shift;
-
-		my $lyrics;
-		$lyrics = $items->{LyricSong} if $items->{LyricSong};
-		$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
-		$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
-		$lyrics .= "\n\n" if $lyrics;
-		$lyrics .= $items->{Lyric} if $items->{Lyric};
-		$lyrics .= "\n\n" . cstring($client, 'URL') . cstring($client, 'COLON') . ' ' . $items->{LyricUrl} if $items->{LyricUrl};
-
-		_cacheLyrics($args, $lyrics);
-
-		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $lyrics);
-
-		$cb->({
-			items => $items
-		});
-	}, sub {
-		$cb->({
-			items => [{
-				name => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
-				type => 'textarea'
-			}]
-		});
-	});
+	my $request = Slim::Control::Request::executeRequest($client, $command);
+	if ( $request->isStatusProcessing ) {
+		$request->callbackFunction($gotLyrics);
+	} else {
+		$gotLyrics->($request);
+	}
 }
 
 sub _fetchLyrics {
@@ -281,28 +266,27 @@ sub _getLyricsCacheFile {
 }
 
 sub _getLocalLyrics {
-	my ($id, $url) = @_;
+	my ($args) = @_;
 
-	my $track;
-	if (defined $id){
-		$track = Slim::Schema->find('Track', $id);
-	}
-	elsif ($url) {
-		$track = Slim::Schema->objectForUrl($url);
+	my $track = $args->{track};
+	my $url;
+
+	if ($track) {
+		if (my $lyrics = $track->lyrics) {
+			return $lyrics;
+		}
+
+		$url = $track->url;
 	}
 
-	if ($track && (my $lyrics = $track->lyrics)) {
-		return $lyrics;
-	}
-
-	$url ||= $track->url if $track;
+	$url ||= $args->{url};
 
 	# try "Song.mp3.lrc" and "Song.lrc"
 	if ($url && $url =~ /^file:/) {
 		my $filePath = Slim::Utils::Misc::pathFromFileURL($url);
 		my $filePath2 = $filePath . '.lrc';
 		$filePath =~ s/\.\w{2,4}$/.lrc/;
-		return Plugins::MusicArtistInfo::Parser::LRC->parse($filePath) 
+		return Plugins::MusicArtistInfo::Parser::LRC->parse($filePath)
 		    || Plugins::MusicArtistInfo::Parser::LRC->parse($filePath2);
 	}
 
@@ -310,15 +294,35 @@ sub _getLocalLyrics {
 }
 
 sub _renderLyrics {
-	my $items = shift;
+	my ($item, $args) = @_;
+	$item ||= {};
+	$args ||= {};
 
-	my $lyrics = $items->{LyricSong} if $items->{LyricSong};
-	$lyrics .= ' - ' if $lyrics && $items->{LyricArtist};
-	$lyrics .= $items->{LyricArtist} if $items->{LyricArtist};
+	my $title  = $args->{title} || $item->{LyricSong};
+	my $artist = $args->{artist} || $item->{LyricArtist};
+
+	my $lyrics = $title if $title;
+	$lyrics .= ' - ' if $lyrics && $artist;
+	$lyrics .= $artist if $artist;
 	$lyrics .= "\n\n" if $lyrics;
-	$lyrics .= $items->{Lyric} if $items->{Lyric};
+	$lyrics .= $item->{Lyric} if $item->{Lyric};
 
 	return $lyrics;
+}
+
+sub _renderLyricsResponse {
+	my ($lyrics, $request, $args) = @_;
+
+	my $client = $request->client();
+
+	$lyrics =~ s/\\n/\n/g;
+	$lyrics =~ s/\r\n/\n/g;
+	$lyrics =~ s/\n\r/\n/g;
+
+	$request->addResult('lyrics', $lyrics) if $lyrics;
+	$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;
+	$request->addResult('title', $args->{title}) if $args->{title};
+	$request->addResult('artist', $args->{artist}) if $args->{artist};
 }
 
 1;
