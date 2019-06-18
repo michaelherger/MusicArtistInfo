@@ -67,7 +67,7 @@ sub _objInfoHandler {
 	return unless $id || ($title && $artist);
 
 	return {
-		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_LYRICS'),
+		name => cstring($client, 'LYRICS'),
 		type => 'link',
 		url => \&getLyrics,
 		passthrough => [ {
