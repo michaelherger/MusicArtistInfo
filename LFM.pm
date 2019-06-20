@@ -214,7 +214,8 @@ sub getAlbumCovers {
 		my $result = {};
 
 		if ( $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
-			if ( my ($url, $size) = $class->getLargestPhotoFromList($image, 'extralarge') ) {
+			my ($url, $size) = $class->getLargestPhotoFromList($image, 'extralarge');
+			if ( $url && $size ) {
 				$result->{images} = [{
 					author => 'Last.fm',
 					url    => $url,
