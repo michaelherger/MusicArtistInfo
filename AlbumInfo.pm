@@ -254,9 +254,21 @@ sub getAlbumCoversCLI {
 			push @covers, @{$covers->{musicbrainz}->{images}} if ref $covers->{musicbrainz}->{images} eq 'ARRAY';
 
 			foreach my $cover (@covers) {
-				my $size = $cover->{width} || '';
-				if ( $cover->{height} ) {
-					$size .= ($size ? 'x' : '') . $cover->{height};
+				# sometimes we get width=200x200
+				my ($w, $h) = split(/x/i, $cover->{width});
+				if ($w && $h) {
+					$cover->{size} = "${w}x${h}";
+					$cover->{width} = $w;
+					$cover->{height} = $h;
+				}
+
+				if (!$cover->{size}) {
+					my $size = $cover->{width} || '';
+					if ( $cover->{height} ) {
+						$size .= ($size ? 'x' : '') . $cover->{height};
+					}
+
+					$cover->{size} = $size;
 				}
 
 				my ($type) = $cover->{url} =~ /\.(gif|png|jpe?g)(?:\?.+|)$/i;
@@ -264,7 +276,7 @@ sub getAlbumCoversCLI {
 
 				$request->addResultLoop('item_loop', $i, 'url', $cover->{url} || '');
 				$request->addResultLoop('item_loop', $i, 'credits', $cover->{author}) if $cover->{author};
-				$request->addResultLoop('item_loop', $i, 'size', $size) if $size;
+				$request->addResultLoop('item_loop', $i, 'size', $cover->{size}) if $cover->{size};
 				$request->addResultLoop('item_loop', $i, 'width', $cover->{width}) if $cover->{width};
 				$request->addResultLoop('item_loop', $i, 'height', $cover->{height}) if $cover->{height};
 				$request->addResultLoop('item_loop', $i, 'type', $type) if $type;

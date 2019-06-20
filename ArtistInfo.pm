@@ -317,6 +317,8 @@ sub getArtistPhotosCLI {
 
 	my $client = $request->client();
 
+	$request->setStatusProcessing();
+
 	_getArtistPhotos($client, $artist, $artist_id, sub {
 		my $photos = shift;
 
@@ -327,6 +329,7 @@ sub getArtistPhotosCLI {
 			$request->addResultLoop('item_loop', $i, 'artist_id', $artist_id) if $artist_id;
 			$request->addResultLoop('item_loop', $i, 'width', $_->{width}) if $_->{width};
 			$request->addResultLoop('item_loop', $i, 'height', $_->{height}) if $_->{height};
+			$request->addResultLoop('item_loop', $i, 'size', $_->{width} . 'x' . $_->{height}) if $_->{width} && $_->{height};
 			$i++;
 		}
 
@@ -334,8 +337,6 @@ sub getArtistPhotosCLI {
 		$request->addResult('offset', 0);
 		$request->setStatusDone();
 	});
-
-	$request->setStatusProcessing();
 }
 
 sub _getArtistPhotos {
