@@ -181,6 +181,7 @@ sub trackInfoHandler {
 
 	# only deal with local media
 	$url = $track->url if !$url && $track;
+	$url =~ s/^tmp:/file:/ if $url;
 	return unless $url && $url =~ /^file:\/\//i;
 
 	my $path = Slim::Utils::Misc::pathFromFileURL($url);

@@ -280,6 +280,7 @@ sub _getLocalLyrics {
 	}
 
 	$url ||= $args->{url};
+	$url =~ s/^tmp:/file:/ if $url;
 
 	# try "Song.mp3.lrc" and "Song.lrc"
 	if ($url && $url =~ /^file:/) {
