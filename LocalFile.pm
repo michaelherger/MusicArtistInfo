@@ -80,7 +80,7 @@ sub getAlbumReview {
 
 	$sth->execute($args->{album_id});
 
-	return _getInfoFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt']);
+	return _getInfoFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt'], $params);
 }
 
 sub getBiography {
@@ -120,7 +120,7 @@ sub getBiography {
 
 	$sth->execute($var);
 
-	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
+	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html?', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
 }
 
 sub _getInfoFileForTrack {
