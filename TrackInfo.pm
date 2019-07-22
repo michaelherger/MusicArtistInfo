@@ -287,8 +287,25 @@ sub _getLocalLyrics {
 		my $filePath = Slim::Utils::Misc::pathFromFileURL($url);
 		my $filePath2 = $filePath . '.lrc';
 		$filePath =~ s/\.\w{2,4}$/.lrc/;
-		return Plugins::MusicArtistInfo::Parser::LRC->parse($filePath)
+
+		# try .lrc files first
+		my $lyrics = Plugins::MusicArtistInfo::Parser::LRC->parse($filePath)
 		    || Plugins::MusicArtistInfo::Parser::LRC->parse($filePath2);
+
+		return $lyrics if $lyrics;
+
+		# text files second
+		$filePath =~ s/\.lrc$/.txt/;
+		$filePath2 =~ s/\.lrc$/.txt/;
+
+		foreach my $file ($filePath, $filePath2) {
+			if (-r $file) {
+				$lyrics = File::Slurp::read_file($file);
+				last if $lyrics;
+			}
+		}
+
+		return $lyrics;
 	}
 
 	return;
