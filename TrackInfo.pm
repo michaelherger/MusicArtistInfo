@@ -2,6 +2,7 @@ package Plugins::MusicArtistInfo::TrackInfo;
 
 use strict;
 
+use File::Basename qw(dirname);
 use File::Slurp qw(read_file write_file);
 use File::Spec::Functions qw(catfile catdir);
 
@@ -276,11 +277,15 @@ sub _getLocalLyrics {
 			return $lyrics;
 		}
 
+		$args->{title} ||= $track->title;
+		$args->{artist} ||= $track->artistName;
 		$url = $track->url;
 	}
 
 	$url ||= $args->{url};
 	$url =~ s/^tmp:/file:/ if $url;
+
+	my $lyrics;
 
 	# try "Song.mp3.lrc" and "Song.lrc"
 	if ($url && $url =~ /^file:/) {
@@ -289,7 +294,7 @@ sub _getLocalLyrics {
 		$filePath =~ s/\.\w{2,4}$/.lrc/;
 
 		# try .lrc files first
-		my $lyrics = Plugins::MusicArtistInfo::Parser::LRC->parse($filePath)
+		$lyrics = Plugins::MusicArtistInfo::Parser::LRC->parse($filePath)
 		    || Plugins::MusicArtistInfo::Parser::LRC->parse($filePath2);
 
 		return $lyrics if $lyrics;
@@ -301,14 +306,52 @@ sub _getLocalLyrics {
 		foreach my $file ($filePath, $filePath2) {
 			if (-r $file) {
 				$lyrics = File::Slurp::read_file($file);
-				last if $lyrics;
+				if ($lyrics) {
+					utf8::decode($lyrics);
+					last;
+				}
 			}
 		}
 
-		return $lyrics;
+		return $lyrics if $lyrics;
 	}
 
-	return;
+	if ($args->{artist} && $args->{title}) {
+		my $lyricsCacheFolder = _getLyricsCacheFile({
+			artist => $track->artistName,
+			title => $track->title
+		});
+		$lyricsCacheFolder = dirname($lyricsCacheFolder) if $lyricsCacheFolder;
+
+		if ($lyricsCacheFolder && -r $lyricsCacheFolder) {
+			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{title});
+
+			opendir(LYRICSDIR, $lyricsCacheFolder) && do {
+				my %files = map {
+					s/\.txt$//;
+					lc($_) => "$_.txt";
+				} grep {
+					$_ !~ /^(?:\.\.|\.)$/;
+				} readdir(LYRICSDIR);
+				closedir(LYRICSDIR);
+
+				if (keys %files) {
+					foreach (@$candidates) {
+						if ( my $file = $files{lc($_)} ) {
+
+							$lyrics = File::Slurp::read_file(catfile($lyricsCacheFolder, $file));
+							if ($lyrics) {
+								utf8::decode($lyrics);
+								last;
+							}
+						}
+					}
+				}
+			};
+		}
+	}
+
+	return $lyrics;
 }
 
 sub _renderLyrics {
