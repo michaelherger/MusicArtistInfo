@@ -1,4 +1,4 @@
-package Plugins::MusicArtistInfo::ChartLyrics;
+package Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
 
 use strict;
 use XML::Simple;

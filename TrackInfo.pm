@@ -12,8 +12,8 @@ use Slim::Utils::Log;
 use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::AZLyrics;
-use Plugins::MusicArtistInfo::ChartLyrics;
+use Plugins::MusicArtistInfo::Lyrics::AZLyrics;
+use Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
 use Plugins::MusicArtistInfo::Parser::LRC;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
@@ -194,7 +194,7 @@ sub getLyrics {
 sub _fetchLyrics {
 	my ($args, $cb, $ecb) = @_;
 
-	Plugins::MusicArtistInfo::ChartLyrics->searchLyricsInDirect($args, sub {
+	Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, sub {
 		my $results = shift;
 
 		if ($results && keys %$results && !$results->{error}) {
@@ -203,7 +203,7 @@ sub _fetchLyrics {
 		else {
 			main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
 
-			Plugins::MusicArtistInfo::AZLyrics->getLyrics($args, sub {
+			Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
 				$results = shift;
 
 				if ($results && keys %$results && !$results->{error}) {

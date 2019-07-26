@@ -1,4 +1,4 @@
-package Plugins::MusicArtistInfo::AZLyrics;
+package Plugins::MusicArtistInfo::Lyrics::AZLyrics;
 
 use strict;
 
