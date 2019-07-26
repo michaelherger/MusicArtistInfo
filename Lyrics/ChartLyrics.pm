@@ -33,6 +33,7 @@ sub searchLyrics {
 	return;
 }
 
+=pod
 sub searchLyricsDirect {
 	my ( $class, $args, $cb ) = @_;
 
@@ -40,7 +41,7 @@ sub searchLyricsDirect {
 		my $items = shift;
 
 		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
-			$cb->($items);
+			$cb->(_normalize($items));
 			return;
 		}
 
@@ -49,6 +50,7 @@ sub searchLyricsDirect {
 
 	return;
 }
+=cut
 
 sub getLyrics {
 	my ( $class, $args, $cb ) = @_;
@@ -57,7 +59,7 @@ sub getLyrics {
 		my $items = shift;
 
 		if ($items && ref $items && $items->{Lyric} && !ref $items->{Lyric}) {
-			$cb->($items);
+			$cb->(_normalize($items));
 			return;
 		}
 
@@ -113,5 +115,14 @@ sub searchLyricsInDirect {
 	return;
 }
 
+sub _normalize {
+	my ($item) = @_;
+
+	return {
+		lyrics => $item->{Lyric},
+		artist => $item->{LyricArtist},
+		song   => $item->{LyricSong}
+	};
+}
 
 1;

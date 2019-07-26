@@ -12,8 +12,8 @@ use Slim::Utils::Log;
 use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Lyrics::AZLyrics;
 use Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
+
 use Plugins::MusicArtistInfo::Parser::LRC;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
@@ -137,7 +137,7 @@ sub getSongLyricsCLI {
 	_fetchLyrics($args, sub {
 		my $item = shift;
 
-		my $lyrics = $item->{Lyric};
+		my $lyrics = $item->{lyrics};
 
 		# CLI clients expect real line breaks, not literal \n
 		_renderLyricsResponse($lyrics, $request, $args);
@@ -202,6 +202,7 @@ sub _fetchLyrics {
 		}
 		else {
 			main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
+			require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
 
 			Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
 				$results = shift;
@@ -210,7 +211,19 @@ sub _fetchLyrics {
 					$cb->($results);
 				}
 				else {
-					$ecb->($results);
+					main::INFOLOG && $log->is_info && $log->info('Failed lookup on AZLyrics - falling back to Genius');
+					require Plugins::MusicArtistInfo::Lyrics::Genius;
+
+					Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
+						$results = shift;
+
+						if ($results && keys %$results && !$results->{error}) {
+							$cb->($results);
+						}
+						else {
+							$ecb->($results);
+						}
+					});
 				}
 			});
 		}
@@ -359,14 +372,14 @@ sub _renderLyrics {
 	$item ||= {};
 	$args ||= {};
 
-	my $title  = $args->{title} || $item->{LyricSong};
-	my $artist = $args->{artist} || $item->{LyricArtist};
+	my $title  = $args->{title} || $item->{song};
+	my $artist = $args->{artist} || $item->{artist};
 
 	my $lyrics = $title if $title;
 	$lyrics .= ' - ' if $lyrics && $artist;
 	$lyrics .= $artist if $artist;
 	$lyrics .= "\n\n" if $lyrics;
-	$lyrics .= $item->{Lyric} if $item->{Lyric};
+	$lyrics .= $item->{lyrics} if $item->{lyrics};
 
 	return $lyrics;
 }
