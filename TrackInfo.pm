@@ -331,8 +331,8 @@ sub _getLocalLyrics {
 
 	if ($args->{artist} && $args->{title}) {
 		my $lyricsCacheFolder = _getLyricsCacheFile({
-			artist => $track->artistName,
-			title => $track->title
+			artist => $args->{artist},
+			title => $args->{title}
 		});
 		$lyricsCacheFolder = dirname($lyricsCacheFolder) if $lyricsCacheFolder;
 
