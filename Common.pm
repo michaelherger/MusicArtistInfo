@@ -103,6 +103,7 @@ sub call {
 
 	# we can get a list of error codes which we'll ignore in the error messaging - lyrics often end in 404
 	my $noWarn = join('|', grep /\d{3}/, @{delete $params->{ignoreError} || []});
+	my $wantsError = delete $params->{wantError};
 
 	$params->{timeout} ||= 15;
 	my %headers = %{delete $params->{headers} || {}};
@@ -117,6 +118,7 @@ sub call {
 		if ($error) {
 			$log->error(sprintf("Failed to call %s: %s", _debug($response->url), $error)) if (!$noWarn || $noWarn !~ /^($noWarn)/) || (main::INFOLOG && $log->is_info) || (main::DEBUGLOG && $log->is_debug);
 			$result = {};
+			$result->{error} = $error if $wantsError;
 		}
 
 		$result ||= eval {

@@ -13,6 +13,10 @@ use constant GET_LYRICS_URL => BASE_URL . 'GetLyric?lyricId=%s&lyricCheckSum=%s'
 
 my $log = logger('plugin.musicartistinfo');
 
+# sometimes ChartLyrics is down for days - skip it if needed
+use constant RETRY_AFTER => 3600;
+my $nextTry = 0;
+
 sub searchLyrics {
 	my ( $class, $args, $cb ) = @_;
 
@@ -20,6 +24,10 @@ sub searchLyrics {
 		sprintf(SEARCH_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title})),
 		sub {
 			my $items = shift;
+
+			if ($items && ref $items && $items->{error} && $items->{error} =~ /timed out/i) {
+				$nextTry = time + RETRY_AFTER;
+			}
 
 			if ($items && ref $items && $items->{SearchLyricResult} && ref $items->{SearchLyricResult}) {
 				$cb->($items);
@@ -29,6 +37,7 @@ sub searchLyrics {
 			$cb->();
 		},{
 			timeout => 5,
+			wantError => 1,
 		}
 	);
 
@@ -75,6 +84,11 @@ sub getLyrics {
 
 sub searchLyricsInDirect {
 	my ( $class, $args, $cb ) = @_;
+
+	if (time < $nextTry) {
+		main::INFOLOG && $log->is_info && $log->info('Skipping ChartLyrics, as it has been down recently, trying again in ' . ($nextTry - time));
+		$cb->();
+	}
 
 	$class->searchLyrics( $args, sub {
 		my $items = shift;
