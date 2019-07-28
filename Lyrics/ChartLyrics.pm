@@ -27,6 +27,8 @@ sub searchLyrics {
 			}
 
 			$cb->();
+		},{
+			timeout => 5,
 		}
 	);
 
@@ -64,6 +66,8 @@ sub getLyrics {
 		}
 
 		$cb->();
+	},{
+		timeout => 5,
 	});
 
 	return;

@@ -52,6 +52,7 @@ sub getLyrics {
 			lyrics => $lyrics
 		} : undef);
 	}, {
+		timeout => 5,
 		ignoreError => [404]
 	});
 
