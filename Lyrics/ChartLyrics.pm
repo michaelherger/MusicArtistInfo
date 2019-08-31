@@ -87,7 +87,7 @@ sub searchLyricsInDirect {
 
 	if (time < $nextTry) {
 		main::INFOLOG && $log->is_info && $log->info('Skipping ChartLyrics, as it has been down recently, trying again in ' . ($nextTry - time));
-		$cb->();
+		return $cb->();
 	}
 
 	$class->searchLyrics( $args, sub {
