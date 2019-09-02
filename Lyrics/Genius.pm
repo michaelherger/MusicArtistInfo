@@ -49,7 +49,7 @@ sub getLyrics {
 		$cb->($lyrics ? {
 			song => $args->{title},
 			artist => $args->{artist},
-			lyrics => $lyrics
+			lyrics => Slim::Utils::Unicode::utf8decode($lyrics)
 		} : undef);
 	}, {
 		timeout => 5,
