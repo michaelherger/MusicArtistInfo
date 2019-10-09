@@ -3,7 +3,7 @@ package Plugins::MusicArtistInfo::LocalArtwork;
 use strict;
 use File::Basename qw(dirname basename);
 use File::Next;
-use File::Spec::Functions qw(catdir);
+use File::Spec::Functions qw(catdir catfile);
 use Digest::MD5 qw(md5_hex);
 use Path::Class;
 
@@ -46,7 +46,7 @@ sub init {
 			func  => \&artworkUrl,
 		);
 
-		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath('', '/html/images/artists.png');
+		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath(preferences('server')->get('skin'), '/html/images/artists.png');
 
 		_initDefaultArtistImg();
 		$prefs->setChange(\&_initDefaultArtistImg, 'artistImageFolder');
@@ -57,10 +57,13 @@ sub _initDefaultArtistImg {
 	return unless $defaultArtistImg;
 
 	if ( my $imageFolder = $prefs->get('artistImageFolder') ) {
-		my $img = catdir($imageFolder, 'artist.png');
-		if ( !-f $img ) {
-			require File::Copy;
-			File::Copy::copy($defaultArtistImg, $img);
+		my $img = _imageInFolder($imageFolder, 'artist');
+		my $placeholder = catfile($imageFolder, 'artist.png.missing');
+		if ( !$img ) {
+			File::Slurp::write_file($placeholder, '') unless -f $placeholder;
+		}
+		else {
+			unlink $placeholder if -f $placeholder;
 		}
 	}
 }
