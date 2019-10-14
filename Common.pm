@@ -13,7 +13,7 @@ use constant CAN_LFM => 1;
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
-	defaultLevel => 'ERROR',
+	defaultLevel => 'WARN',
 	description  => 'PLUGIN_MUSICARTISTINFO',
 } );
 
@@ -165,16 +165,23 @@ sub call {
 	}
 }
 
-sub getUA {
+sub getUA { if (main::SCANNER) {
 	my ($class, $args) = @_;
 
 	require LWP::UserAgent;
-	require IO::Socket::SSL;
 
-	# our old LWP::UserAgent doesn't support ssl_opts yet
-	IO::Socket::SSL::set_defaults(
-		SSL_verify_mode => 0
-	);
+	eval {
+		require IO::Socket::SSL;
+
+		# our old LWP::UserAgent doesn't support ssl_opts yet
+		IO::Socket::SSL::set_defaults(
+			SSL_verify_mode => 0
+		);
+	};
+
+	if ($@) {
+		$log->warn("Unable to load IO::Socket::SSL, will try connecting to SSL servers in non-SSL mode\n$@\n");
+	}
 
 	my $ua = LWP::UserAgent->new(
 		agent   => Slim::Utils::Misc::userAgentString(),
@@ -182,7 +189,10 @@ sub getUA {
 	);
 
 	return $ua;
-}
+} 
+else {
+	$log->warn('getUA() is only available in the scanner!');
+} }
 
 sub getQueryString {
 	my ($class, $args) = @_;
