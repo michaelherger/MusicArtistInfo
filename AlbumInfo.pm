@@ -461,7 +461,7 @@ sub getAlbumReviewCLI {
 				$items = $items->{items};
 			}
 
-			if ( !$items || ref $items ne 'ARRAY' || !scalar @$items ) {
+			if ( !$items || ref $items ne 'ARRAY' || !scalar @$items || $items->[0]->{name} eq cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND') ) {
 				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 			}
 			elsif ( $items->[0]->{error} ) {
