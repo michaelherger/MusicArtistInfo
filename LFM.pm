@@ -59,7 +59,7 @@ sub getBiography {
 	}, sub {
 		my $artistInfo = shift;
 
-		if ( $artistInfo && $artistInfo->{artist} && $artistInfo->{artist}->{bio} && (my $content = $artistInfo->{artist}->{bio}->{content})) {
+		if ( $artistInfo && ref $artistInfo && $artistInfo->{artist} && $artistInfo->{artist}->{bio} && (my $content = $artistInfo->{artist}->{bio}->{content})) {
 			$cb->({
 				# author => 'Last.fm',
 				bio => $content
@@ -196,7 +196,7 @@ sub getAlbumCover {
 		my $cover = {};
 
 		# getAlbumCovers() would only return a single item
-		if ($covers && $covers->{images} && ref $covers->{images} eq 'ARRAY') {
+		if ($covers && ref $covers && $covers->{images} && ref $covers->{images} eq 'ARRAY') {
 			$cover = $covers->{images}->[0];
 		}
 
@@ -213,7 +213,7 @@ sub getAlbumCovers {
 		my $albumInfo = shift;
 		my $result = {};
 
-		if ( $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
+		if ( $albumInfo && ref $albumInfo && $albumInfo->{album} && (my $image = $albumInfo->{album}->{image}) ) {
 			my ($url, $size) = $class->getLargestPhotoFromList($image, 'extralarge');
 			if ( $url && $size ) {
 				$result->{images} = [{
