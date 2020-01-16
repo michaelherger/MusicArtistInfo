@@ -226,6 +226,8 @@ sub getArtistPhoto {
 
 		my %seen;
 		while (my $track = $sth->fetchrow_hashref) {
+			next unless Slim::Music::Info::isFileURL($track->{url});
+
 			my $path = Slim::Utils::Misc::pathFromFileURL($track->{url});
 			$path = dirname($path) if !-d $path;
 
