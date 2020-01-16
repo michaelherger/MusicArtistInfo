@@ -49,6 +49,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTBLOGS
 PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS
 	EN	Videos
 	FR	Vidéos
+	NL	Videos
 
 PLUGIN_MUSICARTISTINFO_DISCOGRAPHY
 	DE	Diskografie
@@ -77,6 +78,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMDETAILS
 PLUGIN_MUSICARTISTINFO_ALBUMCREDITS
 	EN	Credits
 	FR	Crédits
+	NL	Credits
 
 PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 	DE	Albumkritik
@@ -94,6 +96,7 @@ PLUGIN_MUSICARTISTINFO_URLS
 	DE	Webseiten
 	EN	Websites
 	FR	Sites web
+	NL	Websites
 
 PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 	DE	Bilder aus Musikordner
@@ -105,7 +108,7 @@ PLUGIN_MUSICARTISTINFO_LOCAL_FILES
 	DE	Textdateien aus Musikordner
 	EN	Text files from music folder
 	FR	Documents locaux (PDF et autres)
-	NL	Text en PDF bestanden uit de muziekmap weergeven
+	NL	Tekst en PDF bestanden weergeven
 
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
