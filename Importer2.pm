@@ -23,6 +23,8 @@ my $serverprefs = preferences('server');
 
 my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder);
 
+my $isOnlineLibraryScan = main::SCANNER && $ARGV[-1] && $ARGV[-1] eq 'onlinelibrary' ? 1 : 0;
+
 sub startScan {
 	my $class = shift;
 
@@ -45,15 +47,19 @@ sub _scanArtistPhotos {
 
 	# Find distinct artists to check for artwork
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
-	my $sql = 'SELECT contributors.id, contributors.name FROM contributors ';
+	my $sql = sprintf('SELECT contributors.id, contributors.name %s FROM contributors ', $isOnlineLibraryScan ? ', contributors.extid' : '');
 
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
 		$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
 		$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
 		$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
-		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0)' if $va;
-		$sql   .= "GROUP BY contributors.id";
+		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0) ' if $va;
+		$sql   .= 'AND contributors.extid IS NOT NULL ' if $isOnlineLibraryScan;
+		$sql   .= 'GROUP BY contributors.id';
+	}
+	elsif ($isOnlineLibraryScan) {
+		$sql .= 'WHERE contributors.extid IS NOT NULL';
 	}
 
 	my $dbh = Slim::Schema->dbh;
@@ -107,10 +113,18 @@ sub _getArtistPhotoURL {
 		$progress->update( $artist->{name} ) if $progress;
 		time() > $i && ($i = time + 5) && Slim::Schema->forceCommit;
 
-		main::DEBUGLOG && $log->debug("Getting artwork for " . $artist->{name});
+		main::INFOLOG && $log->is_info && $log->info("Getting artwork for " . $artist->{name});
 
-		if ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
-			artist_id => $artist->{id},
+		my $artist_id = $artist->{id};
+		$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
+		$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
+
+		if ($isOnlineLibraryScan && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+			main::INFOLOG && $log->is_info && $log->info('Pre-cached image already exists for ' . $artist->{name});
+			return 1 if $artist != $params->{vaObj};
+		}
+		elsif ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
+			artist_id => $artist_id,
 			artist    => $artist->{name},
 			rawUrl    => 1,		# don't return the proxied URL, we want the raw file
 			force     => 1,		# don't return cached value, this is a scan
@@ -145,17 +159,15 @@ sub _precacheArtistImage {
 
 	my $artist_id = $artist->{id};
 
-	$specs         ||= join(',', Slim::Music::Artwork::getResizeSpecs());
-	$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
- 	$cache         ||= Slim::Utils::Cache->new();
-	$cachedir      ||= $serverprefs->get('cachedir');
-	$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
+	$specs    ||= join(',', Slim::Music::Artwork::getResizeSpecs());
+ 	$cache    ||= Slim::Utils::Cache->new();
+	$cachedir ||= $serverprefs->get('cachedir');
 
 	if ( $imageFolder && !($artist_id && $img) && $prefs->get('saveMissingArtistPicturePlaceholder') ) {
 		my $file = Plugins::MusicArtistInfo::Importer::filename('', $imageFolder, $artist->{name});
 		$file =~ s/\./\.missing/;
 		if (!-f $file) {
-			main::DEBUGLOG && $log->debug("Putting placeholder file '$file'");
+			main::INFOLOG && $log->is_info && $log->info("Putting placeholder file '$file'");
 			File::Slurp::write_file($file, '');
 		}
 	}
@@ -164,7 +176,7 @@ sub _precacheArtistImage {
 
 		$url =~ s/\/_\//\/$max\// if $max;
 
-		main::DEBUGLOG && $log->debug("Getting $url to be pre-cached");
+		main::INFOLOG && $log->is_info && $log->info("Getting $url to be pre-cached");
 
 		my $file;
 
@@ -223,7 +235,7 @@ sub _precacheArtistImage {
 		# see whether the file has changed at all - otherwise return quickly
 		if (my $cached = $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
 			if ($cached->{original_path} eq $img && $cached->{mtime} == $mtime) {
-				main::DEBUGLOG && $log->is_debug && $log->debug("Pre-cached image has not changed: $img");
+				main::INFOLOG && $log->is_info && $log->info("Pre-cached image has not changed: $img");
 				return;
 			}
 		}
