@@ -55,7 +55,7 @@ sub _scanArtistPhotos {
 		$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
 		$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
 		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0) ' if $va;
-		$sql   .= 'AND IFNULL(contributors.extid, '') != "" ' if $isOnlineLibraryScan;
+		$sql   .= 'AND IFNULL(contributors.extid, "") != "" ' if $isOnlineLibraryScan;
 		$sql   .= 'GROUP BY contributors.id';
 	}
 	elsif ($isOnlineLibraryScan) {
