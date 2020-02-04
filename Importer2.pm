@@ -4,6 +4,7 @@ use strict;
 use Digest::MD5;
 use File::Spec::Functions qw(catdir);
 use File::Slurp;
+use Tie::RegexpHash;
 use URI::Escape;
 
 use Slim::Music::Import;
@@ -16,6 +17,17 @@ use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
 use constant MAX_IMAGE_SIZE => 3072 * 3072;
+use constant CAN_ONLINE_LIBRARY => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
+use constant IS_ONLINE_LIBRARY_SCAN => main::SCANNER && $ARGV[-1] && $ARGV[-1] eq 'onlinelibrary' ? 1 : 0;
+
+# this holds pointers to functions handling a given artist external ID
+my %artistPictureImporterHandlers = ();
+tie %artistPictureImporterHandlers, 'Tie::RegexpHash';
+
+my %serviceImporters = (
+	spotify => 'Plugins::Spotty::Importer',
+	qobuz   => 'Plugins::Qobuz::Importer',
+);
 
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
@@ -23,10 +35,19 @@ my $serverprefs = preferences('server');
 
 my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder);
 
-my $isOnlineLibraryScan = main::SCANNER && $ARGV[-1] && $ARGV[-1] eq 'onlinelibrary' ? 1 : 0;
-
 sub startScan {
 	my $class = shift;
+
+	if (CAN_ONLINE_LIBRARY && !scalar keys %artistPictureImporterHandlers) {
+		while (my ($prefix, $importerClass) = each %serviceImporters) {
+			eval {
+				if ($importerClass->can('getArtistPicture')) {
+					my $regex = "^${prefix}:";
+					$artistPictureImporterHandlers{qr/$regex/} = $importerClass;
+				}
+			};
+		}
+	}
 
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
 
@@ -47,7 +68,7 @@ sub _scanArtistPhotos {
 
 	# Find distinct artists to check for artwork
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
-	my $sql = sprintf('SELECT contributors.id, contributors.name %s FROM contributors ', $isOnlineLibraryScan ? ', contributors.extid' : '');
+	my $sql = sprintf('SELECT contributors.id, contributors.name %s FROM contributors ', CAN_ONLINE_LIBRARY ? ', contributors.extid' : '');
 
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
@@ -55,10 +76,10 @@ sub _scanArtistPhotos {
 		$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
 		$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
 		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0) ' if $va;
-		$sql   .= 'AND IFNULL(contributors.extid, "") != "" ' if $isOnlineLibraryScan;
+		$sql   .= 'AND IFNULL(contributors.extid, "") != "" ' if IS_ONLINE_LIBRARY_SCAN;
 		$sql   .= 'GROUP BY contributors.id';
 	}
-	elsif ($isOnlineLibraryScan) {
+	elsif (IS_ONLINE_LIBRARY_SCAN) {
 		$sql .= 'WHERE contributors.extid IS NOT NULL';
 	}
 
@@ -100,7 +121,6 @@ sub _scanArtistPhotos {
 	}) ) {}
 }
 
-
 sub _getArtistPhotoURL {
 	my $params = shift;
 
@@ -119,7 +139,7 @@ sub _getArtistPhotoURL {
 		$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
 		$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
 
-		if ($isOnlineLibraryScan && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+		if (IS_ONLINE_LIBRARY_SCAN && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
 			main::INFOLOG && $log->is_info && $log->info('Pre-cached image already exists for ' . $artist->{name});
 			return 1 if $artist != $params->{vaObj};
 		}
@@ -130,6 +150,11 @@ sub _getArtistPhotoURL {
 			force     => 1,		# don't return cached value, this is a scan
 		}) ) {
 			_precacheArtistImage($artist, $file);
+		}
+		elsif (CAN_ONLINE_LIBRARY && (my $url = _getImageUrlFromService($artist))) {
+			_precacheArtistImage($artist, {
+				url => $url
+			});
 		}
 		elsif ($ua) {		# only defined if $prefs->get('lookupArtistPictures')
 			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
@@ -150,6 +175,16 @@ sub _getArtistPhotoURL {
 	Slim::Music::Import->endImporter('plugin_musicartistinfo_artistPhoto');
 
 	return 0;
+}
+
+sub _getImageUrlFromService {
+	my ($artist) = @_;
+
+	my $extid = $artist->{extid} || return;
+
+	if (my $serviceHandler = $artistPictureImporterHandlers{$extid}) {
+		return $serviceHandler->getArtistPicture($extid);
+	}
 }
 
 sub _precacheArtistImage {
@@ -188,14 +223,31 @@ sub _precacheArtistImage {
 			$file = catdir( $cachedir, 'imgproxy_' . Digest::MD5::md5_hex($url) );
 		}
 
-		my $cacheKey = URI::Escape::uri_escape_utf8("mai_$url");
-		if (my $image = $cache->get($cacheKey)) {
-			File::Slurp::write_file($file, $image);
+		if (my $cached = $imgProxyCache->get($url)) {
+			File::Slurp::write_file($file, $cached->{data_ref});
 		}
 		else {
 			my $response = $ua->get( $url, ':content_file' => $file );
+
 			if ($response && $response->is_success) {
-				$cache->set($cacheKey, scalar File::Slurp::read_file($file, binmode => ':raw'), 86400) unless $imageFolder;
+				my ($ct) = $response->headers->content_type =~ /image\/(png|jpe?g)/;
+				$ct =~ s/jpeg/jpg/;
+
+				# some music services don't provide an extension - create it from the content type
+				if ($file !~ /\.(?:jpe?g|gif|png)$/) {
+					my $newName = $file . ($file =~ /\.$/ ? '' : '.') . $ct;
+					rename $file, $newName;
+					$file = $newName;
+				}
+
+				if (!$imageFolder) {
+					$imgProxyCache->set($url, {
+						content_type  => $ct,
+						mtime         => 0,
+						original_path => undef,
+						data_ref      => File::Slurp::read_file($file, binmode => ':raw', scalar_ref => 1),
+					});
+				}
 			}
 			else {
 				$log->warn("Image download failed for $url: " . $response->message);
