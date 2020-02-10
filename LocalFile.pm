@@ -75,7 +75,7 @@ sub getAlbumReview {
 	my $sth = $dbh->prepare_cached(qq(
 		SELECT tracks.url
 		FROM tracks
-		WHERE tracks.album = ?
+		WHERE tracks.album = ? AND tracks.url like 'file://%'
 	));
 
 	$sth->execute($args->{album_id});
@@ -95,7 +95,7 @@ sub getBiography {
 			SELECT tracks.url
 			FROM contributor_track
 			JOIN tracks ON tracks.id = contributor_track.track
-			WHERE contributor_track.contributor = ? AND contributor_track.role IN (1,5)
+			WHERE contributor_track.contributor = ? AND contributor_track.role IN (1,5) AND tracks.url like 'file://%'
 		);
 
 		$var = $args->{artist_id};
@@ -106,7 +106,7 @@ sub getBiography {
 			FROM contributors
 			JOIN contributor_track ON contributor_track.contributor = contributors.id AND contributor_track.role IN (1,5)
 			JOIN tracks ON tracks.id = contributor_track.track
-			WHERE contributors.namesearch = ?
+			WHERE contributors.namesearch = ? AND tracks.url like 'file://%'
 		);
 
 		$var = Slim::Utils::Unicode::utf8decode_locale($args->{artist});

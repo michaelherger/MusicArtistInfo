@@ -301,7 +301,7 @@ sub _getLocalLyrics {
 	my $lyrics;
 
 	# try "Song.mp3.lrc" and "Song.lrc"
-	if ($url && $url =~ /^file:/) {
+	if ($url && Slim::Music::Info::isFileURL($url)) {
 		my $filePath = Slim::Utils::Misc::pathFromFileURL($url);
 		my $filePath2 = $filePath . '.lrc';
 		$filePath =~ s/\.\w{2,4}$/.lrc/;

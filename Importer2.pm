@@ -278,7 +278,7 @@ sub _precacheArtistImage {
 	}
 	elsif ( $precacheArtwork && $artist_id ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
-		$img = Slim::Utils::Misc::pathFromFileURL($img) if $img =~ /^file/;
+		$img = Slim::Utils::Misc::pathFromFileURL($img) if Slim::Music::Info::isFileURL($img);
 
 		return unless $img && -f $img;
 
