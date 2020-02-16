@@ -241,11 +241,12 @@ sub _precacheArtistImage {
 				}
 
 				if (!$imageFolder) {
+					my $imageRef = File::Slurp::read_file($file, binmode => ':raw', scalar_ref => 1);
 					$imgProxyCache->set($url, {
 						content_type  => $ct,
 						mtime         => 0,
 						original_path => undef,
-						data_ref      => File::Slurp::read_file($file, binmode => ':raw', scalar_ref => 1),
+						data_ref      => $imageRef,
 					});
 				}
 			}
