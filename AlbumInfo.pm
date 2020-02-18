@@ -122,7 +122,7 @@ sub getAlbumReview {
 				my $content = '';
 				if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
 					$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
-					$content .= '<div><img src="' . $review->{image} . '"></div>' if $review->{image};
+					$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
 					$content .= $review->{review};
 				}
 				else {

@@ -9,7 +9,7 @@
 	<style>
 		body {
 			font-family: HelveticaNeue,sans-serif;
-		} 
+		}
 		.title {
 			font-weight: bold;
 		}
@@ -19,7 +19,7 @@
 	[%
 		FOREACH item=items;
 			IF item.type == 'image';
-				"<p><img src=\"$item.url\"></p>";
+				"<p><img src=\"$item.url\" " onerror=\"this.style.display='none'\"></p>";
 			ELSIF item.type == 'textarea';
 				"<p class=\"title\">$item.title</p>";
 				"<p>$item.value</p>";
