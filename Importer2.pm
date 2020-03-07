@@ -72,11 +72,11 @@ sub _scanArtistPhotos {
 
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
-		$sql   .= 'JOIN contributor_album ON contributor_album.contributor = contributors.id ';
-		$sql   .= 'JOIN albums ON contributor_album.album = albums.id ' if $va;
-		$sql   .= 'WHERE contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ') ';
+		$sql   .= 'LEFT JOIN contributor_album ON contributor_album.contributor = contributors.id ';
+		$sql   .= 'LEFT JOIN albums ON contributor_album.album = albums.id ' if $va;
+		$sql   .= 'WHERE (contributor_album.role IS NULL OR contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ')) ';
 		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0) ' if $va;
-		$sql   .= 'AND IFNULL(contributors.extid, "") != "" ' if IS_ONLINE_LIBRARY_SCAN;
+		$sql   .= 'AND contributors.extid IS NOT NULL AND contributors.extid != "" ' if IS_ONLINE_LIBRARY_SCAN;
 		$sql   .= 'GROUP BY contributors.id';
 	}
 	elsif (IS_ONLINE_LIBRARY_SCAN) {

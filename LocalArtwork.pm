@@ -217,7 +217,8 @@ sub getArtistPhoto {
 			SELECT url
 			FROM tracks
 			JOIN contributor_track ON contributor_track.track = tracks.id
-			WHERE contributor_track.contributor = ? AND tracks.url LIKE 'file://%'
+			-- only ALBUMARTIST and ARTIST roles
+			WHERE contributor_track.contributor = ? AND role IN (5, 1) AND tracks.url LIKE 'file://%'
 			GROUP BY album
 		);
 
