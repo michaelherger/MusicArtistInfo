@@ -93,7 +93,7 @@ sub initPlugin {
 		package Slim::Utils::Log;
 
 		sub logGroups {
-			return \$logGroups;
+			return Storable::dclone(\$logGroups);
 		}
 
 		1;
