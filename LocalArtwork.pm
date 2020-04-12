@@ -46,7 +46,7 @@ sub init {
 			func  => \&artworkUrl,
 		);
 
-		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath(preferences('server')->get('skin'), '/html/images/artists.png');
+		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath(preferences('server')->get('skin'), '/plugins/MusicArtistInfo/html/artist.png');
 
 		_initDefaultArtistImg();
 		$prefs->setChange(\&_initDefaultArtistImg, 'artistImageFolder');
