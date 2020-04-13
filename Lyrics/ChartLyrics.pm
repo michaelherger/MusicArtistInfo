@@ -1,6 +1,10 @@
 package Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
 
 use strict;
+
+use File::Spec::Functions qw(catdir);
+use FindBin qw($Bin);
+use lib catdir($Bin, 'Plugins', 'MusicArtistInfo', 'lib');
 use XML::Simple;
 use URI::Escape qw(uri_escape_utf8);
 
@@ -10,6 +14,9 @@ use constant BASE_URL => 'http://api.chartlyrics.com/apiv1.asmx/';
 use constant SEARCH_URL => BASE_URL . 'SearchLyric?artist=%s&song=%s';
 use constant SEARCH_DIRECT_URL => BASE_URL . 'SearchLyricDirect?artist=%s&song=%s';
 use constant GET_LYRICS_URL => BASE_URL . 'GetLyric?lyricId=%s&lyricCheckSum=%s';
+
+# max. editing distance as found by Levenshtein algorithm
+use constant MAX_DISTANCE => 6;
 
 my $log = logger('plugin.musicartistinfo');
 
@@ -111,8 +118,12 @@ sub searchLyricsInDirect {
 
 			# match anything...
 			if (!$match) {
+				require Text::Levenshtein;
 				($match) = grep {
-					($artist =~ /\Q$_->{Artist}\E/i || $_->{Artist} =~ /\Q$artist\E/i) && ($title =~ /\Q$_->{Song}\E/i || $_->{Song} =~ /\Q$title\E/i);
+					($artist =~ /\Q$_->{Artist}\E/i || $_->{Artist} =~ /\Q$artist\E/i)
+					&& ($title =~ /\Q$_->{Song}\E/i || $_->{Song} =~ /\Q$title\E/i)
+					&& Text::Levenshtein::distance($args->{artist}, $_->{Artist}) <= MAX_DISTANCE
+					&& Text::Levenshtein::distance($args->{title}, $_->{Song}) <= MAX_DISTANCE;
 				} @{ $items->{SearchLyricResult} };
 			}
 
