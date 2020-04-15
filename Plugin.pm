@@ -25,6 +25,7 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
 	defaultLevel => 'ERROR',
 	description  => 'PLUGIN_MUSICARTISTINFO',
+	logGroups    => 'SCANNER',
 } );
 
 sub initPlugin {
@@ -84,20 +85,6 @@ sub initPlugin {
 		require Plugins::MusicArtistInfo::Settings;
 		Plugins::MusicArtistInfo::Settings->new();
 	}
-
-	# ugly, ugly hack to inject our logging parameters in to the logging framework...
-	my $logGroups = Slim::Utils::Log::logGroups();
-	$logGroups->{SCANNER}->{categories}->{'plugin.musicartistinfo'} = 'ERROR';
-
-	eval qq{
-		package Slim::Utils::Log;
-
-		sub logGroups {
-			return Storable::dclone(\$logGroups);
-		}
-
-		1;
-	} || $log->error("Hijacking logging settings failed: $@");
 
 	$class->SUPER::initPlugin(shift);
 }
