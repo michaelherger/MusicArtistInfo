@@ -81,6 +81,9 @@ sub getArtistMenu {
 			|| _getArtistFromAlbumId($params->{'album_id'})
 			|| _getArtistFromSongURL($client);
 
+	# remove stuff in brackets, as this is often confusing additions - might want to make this optional?
+	$args->{artist} =~ s/\s*\[.*?\]\s*//g;
+
 	$args->{artist_id} ||= $params->{artist_id};
 
 	main::DEBUGLOG && $log->debug("Getting artist menu for " . $args->{artist});
