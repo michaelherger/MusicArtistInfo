@@ -239,7 +239,7 @@ sub _cacheLyrics {
 		my $encodedLyrics = $lyrics;
 		utf8::encode($encodedLyrics);
 
-		write_file($lyricsFile, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
+		write_file($lyricsFile, { err_mode => 'carp' }, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
 	}
 }
 

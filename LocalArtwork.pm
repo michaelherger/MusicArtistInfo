@@ -60,7 +60,7 @@ sub _initDefaultArtistImg {
 		my $img = _imageInFolder($imageFolder, 'artist');
 		my $placeholder = catfile($imageFolder, 'artist.png.missing');
 		if ( !$img ) {
-			File::Slurp::write_file($placeholder, '') unless -f $placeholder;
+			File::Slurp::write_file($placeholder, { err_mode => 'carp' }, '' ) unless -f $placeholder;
 		}
 		else {
 			unlink $placeholder if -f $placeholder;

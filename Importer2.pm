@@ -203,7 +203,7 @@ sub _precacheArtistImage {
 		$file =~ s/\./\.missing/;
 		if (!-f $file) {
 			main::INFOLOG && $log->is_info && $log->info("Putting placeholder file '$file'");
-			File::Slurp::write_file($file, '');
+			File::Slurp::write_file($file, { err_mode => 'carp' }, '');
 		}
 	}
 
@@ -224,7 +224,7 @@ sub _precacheArtistImage {
 		}
 
 		if (my $cached = $imgProxyCache->get($url)) {
-			File::Slurp::write_file($file, $cached->{data_ref});
+			File::Slurp::write_file($file, { err_mode => 'carp' }, $cached->{data_ref});
 		}
 		else {
 			my $response = $ua->get( $url, ':content_file' => $file );
