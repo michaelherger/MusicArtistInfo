@@ -25,6 +25,7 @@ sub getLyrics {
 		my $result = shift;
 
 		my $tree = HTML::TreeBuilder->new;
+		$result = Slim::Utils::Unicode::utf8decode($result);
 		$tree->parse_content( $result );
 
 		my $container = $tree->look_down('_tag', 'div', 'class', 'col-xs-12 col-lg-8 text-center');
