@@ -62,6 +62,7 @@ sub getLyrics {
 sub _cleanupName {
 	my $name = $_[0];
 
+	$name =~ s/&/and/g;
 	$name = Slim::Utils::Text::ignorePunct($name);
 	$name = lc(Slim::Utils::Unicode::utf8toLatin1Transliterate($name));
 	$name =~ s/[^a-z0-9]//g;

@@ -16,8 +16,6 @@ use Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
 
 use Plugins::MusicArtistInfo::Parser::LRC;
 
-*_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
-
 use constant CLICOMMAND => 'musicartistinfo';
 
 my $log = logger('plugin.musicartistinfo');
@@ -193,6 +191,14 @@ sub getLyrics {
 
 sub _fetchLyrics {
 	my ($args, $cb, $ecb) = @_;
+
+	# some cleanup... music services add too many appendices
+	$args->{title} =~ s/[([][^)]].?(deluxe|edition|remaster|live|anniversary)[^)]].?[)]]//ig;
+	$args->{title} =~ s/ -[^-]*(deluxe|edition|remaster|live|anniversary).*//ig;
+
+	# remove trailing non-word characters
+	$args->{title} =~ s/[\s\W]{2,}$//;
+	$args->{title} =~ s/\s*$//;
 
 	Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, sub {
 		my $results = shift;

@@ -242,6 +242,10 @@ sub getArtist {
 		return;
 	}
 
+	my $artist2 = $args->{artist};
+	$artist2 =~ s/&/and/g;
+	$artist2 = Slim::Utils::Text::ignoreCaseArticles($artist2, 1);
+
 	$class->searchArtists($client, sub {
 		my $items = shift;
 
@@ -256,7 +260,7 @@ sub getArtist {
 			my $current = lc( Slim::Utils::Unicode::utf8decode($_->{name}) );
 
 			# immediately stop if names are identical
-			if ( $current eq $artist || $current eq $artistLC ) {
+			if ( $current eq $artist || $current eq $artistLC || $current eq $artist2 ) {
 				$artistInfo = $_;
 				last;
 			}
@@ -264,7 +268,7 @@ sub getArtist {
 			$current = Slim::Utils::Text::ignoreCaseArticles($current, 1);
 
 			# alternatively pick first to partially match the name
-			if ( !$artistInfo && $current =~ /\Q$artist\E/i ) {
+			if ( !$artistInfo && $current =~ /(\Q$artist\E|\Q$artist2\E)/i ) {
 				$artistInfo = $_;
 			}
 		}
@@ -542,6 +546,10 @@ sub getAlbum {
 		return;
 	}
 
+	my $artist2 = $args->{artist};
+	$artist2 =~ s/&/and/g;
+	$artist2 = Slim::Utils::Text::ignoreCaseArticles($artist2, 1);
+
 	$class->searchAlbums($client, sub {
 		my $items = shift;
 
@@ -555,8 +563,9 @@ sub getAlbum {
 		foreach (@$items) {
 			$_->{name} = Slim::Utils::Unicode::utf8decode($_->{name});
 			$_->{artist}->{name} = Slim::Utils::Unicode::utf8decode($_->{artist}->{name});
+			my $artistName = Slim::Utils::Text::ignoreCaseArticles($_->{artist}->{name}, 1);
 
-			if ( Slim::Utils::Text::ignoreCaseArticles($_->{artist}->{name}, 1) =~ /\Q$artist\E/i ) {
+			if ( $artistName =~ /\Q$artist\E/i || $artistName =~ /\Q$artist2\E/i ) {
 				if ( lc($_->{name}) eq $albumLC ) {
 					$albumInfo = $_;
 					last;
