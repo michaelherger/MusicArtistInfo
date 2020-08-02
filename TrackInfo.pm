@@ -193,7 +193,7 @@ sub _fetchLyrics {
 	my ($args, $cb, $ecb) = @_;
 
 	# some cleanup... music services add too many appendices
-	$args->{title} =~ s/[([][^)]].?(deluxe|edition|remaster|live|anniversary)[^)]].?[)]]//ig;
+	$args->{title} =~ s/[([][^)\]]*?(deluxe|edition|remaster|live|anniversary)[^)\]]*?[)\]]//ig;
 	$args->{title} =~ s/ -[^-]*(deluxe|edition|remaster|live|anniversary).*//ig;
 
 	# remove trailing non-word characters
