@@ -28,7 +28,7 @@ sub cleanupAlbumName {
 	main::INFOLOG && $log->info("Cleaning up album name: '$album'");
 
 	# remove everything between () or []... But don't for PG's eponymous first four albums :-)
-	$album =~ s/[\(\[].*?[\)\]]//g if $album !~ /Peter Gabriel .*\b[1-4]\b/i;
+	$album =~ s/(?<!^)[\(\[].*?[\)\]]//g if $album !~ /Peter Gabriel .*\b[1-4]\b/i;
 
 	# remove stuff like "CD02", "1 of 2"
 	$album =~ s/\b(disc \d+ of \d+)\b//ig;
@@ -39,6 +39,7 @@ sub cleanupAlbumName {
 	# remove trailing non-word characters
 	$album =~ s/[\s\W]{2,}$//;
 	$album =~ s/\s*$//;
+	$album =~ s/^\s*//;
 
 	main::INFOLOG && $log->info("Album name cleaned up:  '$album'");
 
@@ -189,7 +190,7 @@ sub getUA { if (main::SCANNER) {
 	);
 
 	return $ua;
-} 
+}
 else {
 	$log->warn('getUA() is only available in the scanner!');
 } }
