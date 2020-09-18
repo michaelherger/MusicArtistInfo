@@ -116,7 +116,7 @@ sub _getArtistPhotos {
 			if ($results && !ref $results) {
 				my $photos = [];
 
-				while ($results =~ /class="image-list-item"(.*?)<\//isg) {
+				while ($results =~ /class="image-list-item-wrapper"(.*?)<\//isg) {
 					my $image = $1;
 					if ($image =~ /src.*?=.*?"(http.*?)"/is) {
 						my $url = $1;
