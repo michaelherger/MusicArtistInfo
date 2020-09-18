@@ -123,15 +123,19 @@ sub call {
 		}
 
 		$result ||= eval {
+			my $content = $response->can('decoded_content')
+				? $response->decoded_content
+				: $response->content;
+
 			if ( $response->headers->content_type =~ /xml/ ) {
 				require XML::Simple;
-				XML::Simple::XMLin( $response->content );
+				XML::Simple::XMLin( $content );
 			}
 			elsif ( $response->headers->content_type =~ /json/ ) {
-				from_json( $response->content );
+				from_json( $content );
 			}
 			else {
-				$response->content;
+				$content;
 			}
 		};
 
@@ -152,10 +156,7 @@ sub call {
 			timeout => $params->{timeout}
 		});
 
-		my $request = HTTP::Request->new( GET => $url );
-		my $response = $ua->request( $request );
-
-		$cb2->($response);
+		$cb2->($ua->get($url));
 	}
 	else {
 		Slim::Networking::SimpleAsyncHTTP->new(
@@ -169,6 +170,7 @@ sub call {
 sub getUA { if (main::SCANNER) {
 	my ($class, $args) = @_;
 
+	require HTTP::Message;
 	require LWP::UserAgent;
 
 	eval {
@@ -188,6 +190,8 @@ sub getUA { if (main::SCANNER) {
 		agent   => Slim::Utils::Misc::userAgentString(),
 		timeout => $args->{timeout} || 15,
 	);
+
+	$ua->default_header('Accept-Encoding' => scalar HTTP::Message::decodable());
 
 	return $ua;
 }
