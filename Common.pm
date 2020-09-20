@@ -191,7 +191,9 @@ sub getUA { if (main::SCANNER) {
 		timeout => $args->{timeout} || 15,
 	);
 
-	$ua->default_header('Accept-Encoding' => scalar HTTP::Message::decodable());
+	if (my $encodings = eval { scalar HTTP::Message::decodable() }) {
+		$ua->default_header('Accept-Encoding' => $encodings);
+	}
 
 	return $ua;
 }
