@@ -24,11 +24,6 @@ use constant IS_ONLINE_LIBRARY_SCAN => main::SCANNER && $ARGV[-1] && $ARGV[-1] e
 my %artistPictureImporterHandlers = ();
 tie %artistPictureImporterHandlers, 'Tie::RegexpHash';
 
-my %serviceImporters = (
-	spotify => 'Plugins::Spotty::Importer',
-	qobuz   => 'Plugins::Qobuz::Importer',
-);
-
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
@@ -39,10 +34,14 @@ sub startScan {
 	my $class = shift;
 
 	if (CAN_ONLINE_LIBRARY && !scalar keys %artistPictureImporterHandlers) {
-		while (my ($prefix, $importerClass) = each %serviceImporters) {
+		foreach my $importerClass (Slim::Utils::PluginManager->enabledPlugins) {
 			eval {
 				if ($importerClass->can('getArtistPicture')) {
+					my ($prefix) = $importerClass =~ /([^:]*?)::Importer/;
+					$prefix = lc($prefix);
+					$prefix = 'spotify' if $prefix eq 'spotty';
 					my $regex = "^${prefix}:";
+
 					$artistPictureImporterHandlers{qr/$regex/} = $importerClass;
 				}
 			};
@@ -151,7 +150,7 @@ sub _getArtistPhotoURL {
 		}) ) {
 			_precacheArtistImage($artist, $file);
 		}
-		elsif (CAN_ONLINE_LIBRARY && (my $url = _getImageUrlFromService($artist))) {
+		elsif (CAN_ONLINE_LIBRARY && $ua && (my $url = _getImageUrlFromService($artist))) {
 			_precacheArtistImage($artist, {
 				url => $url
 			});
