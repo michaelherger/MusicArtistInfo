@@ -199,7 +199,7 @@ sub _precacheArtistImage {
 
 	if ( $imageFolder && !($artist_id && $img) && $prefs->get('saveMissingArtistPicturePlaceholder') ) {
 		my $file = Plugins::MusicArtistInfo::Importer::filename('', $imageFolder, $artist->{name});
-		$file =~ s/\./\.missing/;
+		$file =~ s/\.$/\.missing/;
 		if (!-f $file) {
 			main::INFOLOG && $log->is_info && $log->info("Putting placeholder file '$file'");
 			File::Slurp::write_file($file, { err_mode => 'carp' }, '');
