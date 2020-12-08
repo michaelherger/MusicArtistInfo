@@ -156,6 +156,9 @@ sub call {
 			timeout => $params->{timeout}
 		});
 
+		# our sometimes outdated HTML::Parser seems to trip over some headers - ignore them...
+		$ua->parse_head($url =~ /last\.fm/ ? 0 : 1);
+
 		$cb2->($ua->get($url));
 	}
 	else {
