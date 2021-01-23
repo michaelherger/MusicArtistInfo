@@ -242,7 +242,7 @@ sub getLocalFileWeblinksCLI {
 	$request->setStatusProcessing();
 
 	my $path = $request->getParam('folder');
-	my $files = _findTextFiles(Slim::Utils::Unicode::utf8encode($path));
+	my $files = $path ? _findTextFiles(Slim::Utils::Unicode::utf8encode($path)) : [];
 
 	my $i = 0;
 
