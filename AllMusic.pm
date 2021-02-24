@@ -319,29 +319,22 @@ sub getAlbumReview {
 
 				main::DEBUGLOG && $log->is_debug && $tree->dump;
 
-				if ( my $review = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody') ) {
-
+				if ( my $review = $tree->look_down('_tag', 'script', 'type', 'application/ld+json') ) {
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
 
-					$review = _cleanupLinksAndImages($review);
+					$review = $review->as_HTML;
+					$review =~ s/.*?<script.*?>(.*)<\/script.*/$1/sig;
 
-					$result->{review} = _decodeHTML($review->as_HTML);
-					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map {
-						$_->as_trimmed_text;
-					} $review->content_list) );
+					$review = eval { from_json($review) };
 
-					$result->{review} || $log->warn('Failed to find album review for ' . $url);
+					$log->error("Failed to parse $url: $@") if $@;
+
+					if ($review && ref $review) {
+						$result->{review} = $result->{reviewText} = $review->{review}->{reviewBody};
+						$result->{author} = $review->{review}->{name};
+						$result->{image} = $review->{image};
+					}
 				}
-
-				my $author = $tree->look_down('_tag', 'h4', 'class', 'review-author headline');
-				$result->{author} = $author->as_trimmed_text if $author;
-
-				my $cover = $tree->look_down('_tag', 'div', 'class', 'album-contain');
-				if ( $cover && (my $img = $cover->look_down('_tag', 'img')) ) {
-					$result->{image} = _makeLinkAbsolute($img->attr('src'));
-				}
-
-				$result->{author} = $author->as_trimmed_text if $author;
 
 				return $result;
 			}
