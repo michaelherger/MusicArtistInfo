@@ -40,9 +40,8 @@ sub getBiography {
 
 				main::DEBUGLOG && $log->is_debug && $tree->dump;
 
-				if ( my $bio = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody') ) {
-
-					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
+				if ( my $bio = $tree->look_down('_tag', 'section', 'class', 'biography') ) {
+					main::DEBUGLOG && $log->is_debug && $log->debug('Found biography - parsing');
 
 					$bio = _cleanupLinksAndImages($bio);
 
@@ -333,6 +332,31 @@ sub getAlbumReview {
 						$result->{review} = $result->{reviewText} = $review->{review}->{reviewBody};
 						$result->{author} = $review->{review}->{name};
 						$result->{image} = $review->{image};
+					}
+				}
+				elsif ( my $review = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody') ) {
+
+					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
+
+					$review = _cleanupLinksAndImages($review);
+
+					$result->{review} = _decodeHTML($review->as_HTML);
+					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map {
+						$_->as_trimmed_text;
+					} $review->content_list) );
+
+					$result->{review} || $log->warn('Failed to find album review for ' . $url);
+				}
+
+				if (!$result->{author}) {
+					my $author = $tree->look_down('_tag', 'h4', 'class', 'review-author headline');
+					$result->{author} = $author->as_trimmed_text if $author;
+				}
+
+				if (!$result->{image}) {
+					my $cover = $tree->look_down('_tag', 'div', 'class', 'album-contain');
+					if ( $cover && (my $img = $cover->look_down('_tag', 'img')) ) {
+						$result->{image} = _makeLinkAbsolute($img->attr('src'));
 					}
 				}
 
