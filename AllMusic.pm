@@ -46,6 +46,8 @@ sub getBiography {
 					$bio = _cleanupLinksAndImages($bio);
 
 					$result->{bio} = _decodeHTML($bio->as_HTML);
+					$result->{bio} =~ s/\bh3\b/h4/ig;
+					$result->{bio} =~ s/"headline"//g;
 					$result->{bioText} = Encode::decode( 'utf8', join('\n\n', map {
 						$_->as_trimmed_text;
 					} $bio->content_list) );
@@ -318,7 +320,19 @@ sub getAlbumReview {
 
 				main::DEBUGLOG && $log->is_debug && $tree->dump;
 
-				if ( my $review = $tree->look_down('_tag', 'script', 'type', 'application/ld+json') ) {
+				if ( my $review = $tree->look_down('_tag', 'section', 'id', 'review-read-more') ) {
+					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
+
+					$review = _cleanupLinksAndImages($review->look_down('_tag', 'div'));
+
+					$result->{review} = _decodeHTML($review->as_HTML);
+					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map {
+						$_->as_trimmed_text;
+					} $review->content_list) );
+				}
+
+				# fall back to stripped down version in JSON format
+				if ( !$result->{review} && (my $review = $tree->look_down('_tag', 'script', 'type', 'application/ld+json')) ) {
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
 
 					$review = $review->as_HTML;
@@ -334,7 +348,8 @@ sub getAlbumReview {
 						$result->{image} = $review->{image};
 					}
 				}
-				elsif ( my $review = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody') ) {
+
+				if ( !$result->{review} && (my $review = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody')) ) {
 
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
 
@@ -349,7 +364,7 @@ sub getAlbumReview {
 				}
 
 				if (!$result->{author}) {
-					my $author = $tree->look_down('_tag', 'h4', 'class', 'review-author headline');
+					my $author = $tree->look_down('_tag', 'h4', 'class', 'review-author headline') || $tree->look_down('_tag', 'h3', 'class', 'review-author headline');
 					$result->{author} = $author->as_trimmed_text if $author;
 				}
 
