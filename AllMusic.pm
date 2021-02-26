@@ -536,7 +536,7 @@ sub getAlbumCredits {
 				my $result = [];
 
 				if ( my $credits = $tree->look_down('_tag', 'table') ) {
-					foreach ($credits->content_list) {
+					foreach ($credits->look_down('_tag', 'tr')) {
 						my $artist = $_->look_down('_tag', 'td', 'class', 'artist') || next;
 
 						my $artistData = _parseArtistInfo($artist);
