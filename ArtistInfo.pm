@@ -808,13 +808,13 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 	my ($artist_id) = $url =~ m|mai/artist/(.+)|i;
 
-	main::INFOLOG && $log->info("Artist ID is '$artist_id'");
-
 	return Slim::Utils::Misc::fileURLFromPath(
 		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
 	) unless $artist_id;
 
 	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
+
+	main::INFOLOG && $log->info("Artist ID is '$artist_id'");
 
 	# try local artwork first
 	if ( my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
@@ -881,7 +881,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 							$_->{image} ||= 'imageproxy/mai/artist/' . URI::Escape::uri_escape_utf8($_->{name} || 0) . '/image.png';
 						}
 						else {
-							$_->{image} ||= 'imageproxy/mai/artist/' . ($_->{id} || 0) . '/image.png';
+							$_->{image} ||= 'imageproxy/mai/artist/' . Plugins::MusicArtistInfo::Common->getArtistPictureId($_) . '/image.png';
 						}
 						$_;
 					} @{$items->{items}} ];

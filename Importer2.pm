@@ -135,10 +135,12 @@ sub _getArtistPhotoURL {
 		main::INFOLOG && $log->is_info && $log->info("Getting artwork for " . $artist->{name});
 
 		my $artist_id = $artist->{id};
+		my $imageId = $artist->{imageId} = Plugins::MusicArtistInfo::Common->getArtistPictureId($artist);
+
 		$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
 		$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
 
-		if (IS_ONLINE_LIBRARY_SCAN && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+		if (IS_ONLINE_LIBRARY_SCAN && $imgProxyCache->get("imageproxy/mai/artist/$imageId/image_$testSpec") ) {
 			main::INFOLOG && $log->is_info && $log->info('Pre-cached image already exists for ' . $artist->{name});
 			return 1 if $artist != $params->{vaObj};
 		}
@@ -206,7 +208,10 @@ sub _precacheArtistImage {
 		}
 	}
 
-	if ( $artist_id && ref $img eq 'HASH' && (my $url = $img->{url}) ) {
+	my $imageId = $artist->{imageId};
+	return unless $artist_id && $imageId;
+
+	if ( ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 
 		$url =~ s/\/_\//\/$max\// if $max;
 
@@ -271,12 +276,12 @@ sub _precacheArtistImage {
 		}
 =cut
 
-		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
+		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$imageId/image_", $specs, undef, $imgProxyCache );
 
 		$file =~ s/\.(?:jpe?g|gif|png)$/\.missing/i if $imageFolder;
 		unlink $file;
 	}
-	elsif ( $precacheArtwork && $artist_id ) {
+	elsif ( $precacheArtwork ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
 		$img = Slim::Utils::Misc::pathFromFileURL($img) if Slim::Music::Info::isFileURL($img);
 
@@ -285,14 +290,14 @@ sub _precacheArtistImage {
 		my $mtime = (stat(_))[9];
 
 		# see whether the file has changed at all - otherwise return quickly
-		if (my $cached = $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+		if (my $cached = $imgProxyCache->get("imageproxy/mai/artist/$imageId/image_$testSpec") ) {
 			if ($cached->{original_path} eq $img && $cached->{mtime} == $mtime) {
 				main::INFOLOG && $log->is_info && $log->info("Pre-cached image has not changed: $img");
 				return;
 			}
 		}
 
-		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
+		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$imageId/image_", $specs, undef, $imgProxyCache );
 	}
 }
 

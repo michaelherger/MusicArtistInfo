@@ -46,6 +46,12 @@ sub cleanupAlbumName {
 	return $album || $fullAlbum;
 }
 
+sub getArtistPictureId {
+	my ($class, $artist) = @_;
+	return 0 unless $artist->{id};
+	return lc(Slim::Utils::Text::ignoreCaseArticles($artist->{name}, 1));
+}
+
 my @HEADER_DATA = map {
 	# s/=*$|\s//sg;
 	MIME::Base64::decode_base64($_);
