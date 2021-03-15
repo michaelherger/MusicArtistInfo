@@ -7,6 +7,7 @@ use File::Spec::Functions qw(catdir);
 use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
+use Slim::Utils::Cache;
 use Slim::Utils::Log;
 
 BEGIN {
@@ -20,6 +21,7 @@ BEGIN {
 	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM );
 }
 
+my $cache = Slim::Utils::Cache->new();
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
 	defaultLevel => 'WARN',
@@ -198,6 +200,12 @@ sub call {
 	};
 
 	if (main::SCANNER) {
+		my $cacheKey = "mai_$url";
+
+		if (my $cached = $cache->get($cacheKey)) {
+			return $cb2->($cached);
+		}
+
 		$ua ||= $class->getUA({
 			timeout => $params->{timeout}
 		});
@@ -205,7 +213,11 @@ sub call {
 		# our sometimes outdated HTML::Parser seems to trip over some headers - ignore them...
 		$ua->parse_head($url =~ /last\.fm/ ? 0 : 1);
 
-		$cb2->($ua->get($url));
+		my $response = $ua->get($url);
+
+		$cache->set($cacheKey, $response, '1d');
+
+		$cb2->($response);
 	}
 	else {
 		Slim::Networking::SimpleAsyncHTTP->new(

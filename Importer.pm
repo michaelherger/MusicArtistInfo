@@ -246,7 +246,7 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 	require Plugins::MusicArtistInfo::AllMusic::Sync;
 
 	my $dbh = Slim::Schema->dbh or return;
-	my $sth = $dbh->prepare_cached("SELECT COUNT(1) FROM albums WHERE albums.extid IS NOT NULL;");
+	my $sth = $dbh->prepare_cached("SELECT COUNT(1) FROM albums WHERE albums.extid LIKE 'spotify:%' OR albums.extid LIKE 'wimp:%' OR albums.extid LIKE 'bandcamp:';");
 	$sth->execute();
 	my ($count) = $sth->fetchrow_array;
 	$sth->finish;
