@@ -569,18 +569,10 @@ sub getAlbumCredits {
 sub getAlbum {
 	my ( $class, $client, $cb, $args ) = @_;
 
-	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
-	my $album  = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
-	my $albumLC= lc( $args->{album} );
-
-	if (!$artist || !$album) {
+	if (!$args->{artist} || !$args->{album}) {
 		$cb->();
 		return;
 	}
-
-	my $artist2 = $args->{artist};
-	$artist2 =~ s/&/and/g;
-	$artist2 = Slim::Utils::Text::ignoreCaseArticles($artist2, 1);
 
 	$class->searchAlbums($client, sub {
 		my $items = shift;
@@ -593,19 +585,18 @@ sub getAlbum {
 		my $albumInfo;
 
 		foreach (@$items) {
-			$_->{name} = Slim::Utils::Unicode::utf8decode($_->{name});
-			$_->{artist}->{name} = Slim::Utils::Unicode::utf8decode($_->{artist}->{name});
-			my $artistName = Slim::Utils::Text::ignoreCaseArticles($_->{artist}->{name}, 1);
+			my $candidate = {
+				artist => $_->{artist}->{name},
+				album  => $_->{name}
+			};
 
-			if ( $artistName =~ /\Q$artist\E/i || $artistName =~ /\Q$artist2\E/i ) {
-				if ( lc($_->{name}) eq $albumLC ) {
-					$albumInfo = $_;
-					last;
-				}
+			if (Plugins::MusicArtistInfo::Common->matchAlbum($args, $candidate, 'strict')) {
+				$albumInfo = $_;
+				last;
+			}
 
-				if ( !$albumInfo && Slim::Utils::Text::ignoreCaseArticles($_->{name}, 1) =~ /\Q$album\E/i ) {
-					$albumInfo = $_;
-				}
+			if ( !$albumInfo && Plugins::MusicArtistInfo::Common->matchAlbum($args, $candidate)) {
+				$albumInfo = $_;
 			}
 		}
 
