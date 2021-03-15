@@ -774,17 +774,23 @@ sub _getArtistFromSongId {
 sub _getArtistFromArtistId {
 	my $artistId = shift;
 
-	if (defined($artistId) && $artistId =~ /^\d+$/) {
-		my $artistObj = Slim::Schema->resultset("Contributor")->find($artistId);
+	return unless defined($artistId);
 
-		return unless $artistObj;
+	my $artistObj;
 
-		my $artist = $artistObj->name;
-
-		main::DEBUGLOG && $artist && $log->debug("Got artist name from artist ID: '$artist'");
-
-		return $artist;
+	if ($artistId =~ /^\d+$/) {
+		$artistObj = Slim::Schema->resultset("Contributor")->find($artistId);
 	}
+
+	$artistObj ||= Slim::Schema->rs("Contributor")->search({ 'namesearch' => Slim::Utils::Text::ignoreCaseArticles($artistId) })->first;
+
+	return unless $artistObj;
+
+	my $artist = $artistObj->name;
+
+	main::INFOLOG && $artist && $log->info("Got artist name from artist ID: '$artist'");
+
+	return $artist;
 }
 
 sub _getArtistFromAlbumId {

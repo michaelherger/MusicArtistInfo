@@ -89,11 +89,13 @@ sub imageInFolder {
 sub getLocalnameVariants {
 	my ($name) = @_;
 
-	my @candidates = (
-		$name,
-		Slim::Utils::Unicode::utf8encode($name),
-		Slim::Utils::Text::ignorePunct($name)
-	);
+	my @candidates = map {
+		(
+			$_,
+			Slim::Utils::Unicode::utf8encode($_),
+			Slim::Utils::Text::ignorePunct($_)
+		);
+	} (Slim::Utils::Misc::cleanupFilename($name), $name);
 	push @candidates, Slim::Utils::Unicode::utf8toLatin1Transliterate($candidates[-1]);
 
 	# de-dupe results
