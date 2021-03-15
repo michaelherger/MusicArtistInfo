@@ -1,15 +1,24 @@
 package Plugins::MusicArtistInfo::Common;
 
 use strict;
+
+use Exporter::Lite;
 use File::Spec::Functions qw(catdir);
 use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Log;
 
-use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
-use constant CAN_DISCOGS => 0;
-use constant CAN_LFM => 1;
+BEGIN {
+	use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
+	use constant CAN_ONLINE_LIBRARY => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
+	use constant CAN_DISCOGS => 0;
+	use constant CAN_LFM => 1;
+	use constant CLICOMMAND => 'musicartistinfo';
+
+	use Exporter::Lite;
+	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM );
+}
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
@@ -45,6 +54,35 @@ sub cleanupAlbumName {
 
 	return $album || $fullAlbum;
 }
+
+sub matchAlbum {
+	my ($class, $wanted, $candidate, $strict) = @_;
+
+	my $artist = Slim::Utils::Text::ignoreCaseArticles($wanted->{artist}, 1);
+	my $album  = Slim::Utils::Text::ignoreCaseArticles($wanted->{album}, 1);
+
+	return if !$artist || !$album;
+
+	my $albumLC = lc( $wanted->{album} );
+	my $artist2 = $wanted->{artist};
+	$artist2 =~ s/&/and/g;
+	$artist2 = Slim::Utils::Text::ignoreCaseArticles($artist2, 1);
+
+	my $artistName = Slim::Utils::Text::ignoreCaseArticles($candidate->{artist}, 1);
+
+	if ( $artistName =~ /\Q$artist\E/i || $artistName =~ /\Q$artist2\E/i ) {
+		if ( lc($candidate->{album}) eq $albumLC ) {
+			return 1;
+		}
+
+		if ( !$strict && Slim::Utils::Text::ignoreCaseArticles($candidate->{album}, 1) =~ /\Q$album\E/i ) {
+			return 1;
+		}
+	}
+
+	return;
+}
+
 
 sub getArtistPictureId {
 	my ($class, $artist) = @_;

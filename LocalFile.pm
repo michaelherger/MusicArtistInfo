@@ -30,7 +30,7 @@ use Slim::Utils::Prefs;
 
 use Slim::Web::Pages;
 
-use constant CLICOMMAND => 'musicartistinfo';
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND);
 
 my $log   = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');

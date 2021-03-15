@@ -12,11 +12,9 @@ use Slim::Utils::Log;
 use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND);
 use Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
-
 use Plugins::MusicArtistInfo::Parser::LRC;
-
-use constant CLICOMMAND => 'musicartistinfo';
 
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');

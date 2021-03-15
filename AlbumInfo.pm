@@ -9,15 +9,12 @@ use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
 use Plugins::MusicArtistInfo::AllMusic;
-use Plugins::MusicArtistInfo::Common;
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::MusicBrainz;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
-
-use constant CLICOMMAND => 'musicartistinfo';
-use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 
 my $log = logger('plugin.musicartistinfo');
 

@@ -3,7 +3,7 @@ package Plugins::MusicArtistInfo::Importer;
 # this is a helper class to only load the actual importer if LMS is compatible
 
 use strict;
-use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
+
 use Digest::MD5;
 use File::Spec::Functions qw(catdir);
 
@@ -11,8 +11,7 @@ use Slim::Music::Import;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Common;
-#use Plugins::MusicArtistInfo::Discogs;
+use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::LFM;
 
 my ($i, $ua, $imageFolder, $filenameTemplate, $max, $cachedir);
@@ -24,7 +23,7 @@ my $serverprefs = preferences('server');
 sub initPlugin {
 	my $class = shift;
 
-	return unless $prefs->get('runImporter') && ($serverprefs->get('precacheArtwork') || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt'));
+	return unless $prefs->get('runImporter') && ($serverprefs->get('precacheArtwork') || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt') || $prefs->get('replaceOnlineGenres'));
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'post',
@@ -41,11 +40,14 @@ sub startScan {
 	my $class = shift;
 
 	$class->_scanAlbumCovers();
+	$class->_scanAlbumGenre() if CAN_ONLINE_LIBRARY && $prefs->get('replaceOnlineGenres');
 
-	if (CAN_IMAGEPROXY) {
+	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
 		require Plugins::MusicArtistInfo::Importer2;
 		return Plugins::MusicArtistInfo::Importer2->startScan(@_);
 	}
+
+	Slim::Music::Import->endImporter($class);
 }
 
 sub _scanAlbumCovers {
@@ -157,43 +159,34 @@ sub _getAlbumCoverURL {
 				_setAlbumCover($artist, $albumname, $file, $params);
 			}
 			elsif ($ua) {
-#				Plugins::MusicArtistInfo::Discogs->getAlbumCover(undef, sub {
-#					my $albumInfo = shift;
-#
-#					if ($albumInfo->{url}) {
-#						_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
-#					}
-#					else {
-						Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
-							my $albumInfo = shift;
+				Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
+					my $albumInfo = shift;
 
-							if ($albumInfo->{url}) {
-								_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
-							}
-							else {
-								# another try if this is a compilation album
-								if ($album->compilation) {
-									$args->{artist} = 'Various Artists';
-									Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
-										my $albumInfo = shift;
+					if ($albumInfo->{url}) {
+						_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
+					}
+					else {
+						# another try if this is a compilation album
+						if ($album->compilation) {
+							$args->{artist} = 'Various Artists';
+							Plugins::MusicArtistInfo::LFM->getAlbumCover(undef, sub {
+								my $albumInfo = shift;
 
-										if ($albumInfo->{url}) {
-											_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
-										}
-										else {
-											# nothing to do?
-											$log->warn("No cover found for: $artist - $albumname");
-										}
-									}, $args);
+								if ($albumInfo->{url}) {
+									_setAlbumCover($artist, $albumname, $albumInfo->{url}, $params);
 								}
 								else {
 									# nothing to do?
 									$log->warn("No cover found for: $artist - $albumname");
 								}
-							}
-						}, $args);
-#					}
-#				}, $args);
+							}, $args);
+						}
+						else {
+							# nothing to do?
+							$log->warn("No cover found for: $artist - $albumname");
+						}
+					}
+				}, $args);
 			}
 		}
 
@@ -202,10 +195,7 @@ sub _getAlbumCoverURL {
 
 	if ( $progress ) {
 		$progress->final($params->{count}) ;
-		$log->error( "getAlbumCoverURL finished in " . $progress->duration );
 	}
-
-	Slim::Music::Import->endImporter('plugin_musicartistinfo_albumCover');
 
 	return 0;
 }
@@ -249,6 +239,70 @@ sub _setAlbumCover {
 		}
 	}
 }
+
+sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
+	my $class = shift;
+
+	require Plugins::MusicArtistInfo::AllMusic::Sync;
+
+	my $dbh = Slim::Schema->dbh or return;
+	my $sth = $dbh->prepare_cached("SELECT COUNT(1) FROM albums WHERE albums.extid IS NOT NULL;");
+	$sth->execute();
+	my ($count) = $sth->fetchrow_array;
+	$sth->finish;
+
+	my $progress = Slim::Utils::Progress->new({
+		'type'  => 'importer',
+		'name'  => 'plugin_musicartistinfo_genre_replacement',
+		'total' => $count,
+		'bar'   => 1,
+	});
+
+	my $sql = q(SELECT albums.id, albums.title, contributors.name
+					FROM albums JOIN contributors ON contributors.id = albums.contributor
+					WHERE albums.extid IS NOT NULL;);
+
+	my ($albumId, $title, $name);
+
+	$sth = $dbh->prepare_cached($sql);
+	$sth->execute();
+	$sth->bind_columns(\$albumId, \$title, \$name);
+
+	my $mappings = {};
+	my $selectSQL = q(SELECT tracks.id
+							FROM tracks
+							WHERE tracks.album = ? AND tracks.extid IS NOT NULL;);
+
+	my $trackId;
+	my $tracks_sth = $dbh->prepare_cached($selectSQL);
+	$tracks_sth->bind_columns(\$trackId);
+
+	while ( $sth->fetch ) {
+		utf8::decode($title);
+		utf8::decode($name);
+
+		$progress->update(sprintf('%s - %s', $title, $name));
+		Slim::Schema->forceCommit;
+
+		my $albumInfo = Plugins::MusicArtistInfo::AllMusic::Sync->getAlbumInfo({
+			artist => $name,
+			album  => $title
+		}) || {};
+
+		if (my $genreName = $albumInfo->{genres}) {
+			$tracks_sth->execute($albumId);
+
+			while ($tracks_sth->fetch) {
+				foreach (split /,\s*/, $genreName) {
+					Slim::Schema::Genre->add($_, $trackId + 0);
+				}
+			}
+		}
+	}
+
+	$progress->final();
+	Slim::Schema->forceCommit;
+} }
 
 sub filename {
 	my ($url, $folder, $artist, $album) = @_;

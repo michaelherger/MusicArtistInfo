@@ -11,10 +11,10 @@ use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::MusicArtistInfo::AlbumInfo;
 use Plugins::MusicArtistInfo::ArtistInfo;
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::TrackInfo;
 use Plugins::MusicArtistInfo::LocalFile;
 
-use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 use constant PLUGIN_TAG => 'musicartistinfo';
 
 # Keep in sync with Qobuz plugin

@@ -5,7 +5,7 @@ use base qw(Slim::Web::Settings);
 
 use Slim::Utils::Prefs;
 
-use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_ONLINE_LIBRARY);
 
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
@@ -15,7 +15,7 @@ sub name {
 }
 
 sub prefs {
-	return ($prefs, qw(browseArtistPictures runImporter lookupArtistPictures lookupCoverArt artistImageFolder lyricsFolder lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder));
+	return ($prefs, qw(browseArtistPictures runImporter lookupArtistPictures lookupCoverArt artistImageFolder lyricsFolder lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres));
 }
 
 sub page {
@@ -36,7 +36,8 @@ sub handler {
 		}
 	}
 
-	$paramRef->{limited}   = !CAN_IMAGEPROXY;
+	$paramRef->{noImageProxy} = !CAN_IMAGEPROXY;
+	$paramRef->{canOnlineLibrary} = CAN_ONLINE_LIBRARY;
 	$paramRef->{artfolder} = $serverprefs->get('artfolder');
 
 	if ( $paramRef->{artfolder} && !(-d $paramRef->{artfolder} && -w _) ) {

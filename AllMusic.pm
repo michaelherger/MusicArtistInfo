@@ -15,9 +15,9 @@ use Slim::Networking::SimpleAsyncHTTP;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string cstring);
 
-use constant BASE_URL         => 'http://www.allmusic.com/';
+use Plugins::MusicArtistInfo::AllMusic::Common qw(BASE_URL ALBUMSEARCH_URL);
+
 use constant SEARCH_URL       => BASE_URL . 'search/typeahead/all/%s';
-use constant ALBUMSEARCH_URL  => BASE_URL . 'search/albums/%s%%2C%%20%s';
 use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s';
 use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biography';
 use constant RELATED_URL      => BASE_URL . 'artist/%s/related';

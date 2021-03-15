@@ -13,11 +13,11 @@ use Slim::Utils::ImageResizer;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY);
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
 use constant MAX_IMAGE_SIZE => 3072 * 3072;
-use constant CAN_ONLINE_LIBRARY => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 use constant IS_ONLINE_LIBRARY_SCAN => main::SCANNER && $ARGV[-1] && $ARGV[-1] eq 'onlinelibrary' ? 1 : 0;
 
 # this holds pointers to functions handling a given artist external ID

@@ -130,13 +130,13 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	DE	Interpretenbilder suchen
-	EN	Artist picture lookup
+	EN	Artist Picture Lookup
 	FR	Recherche des photos d'artistes
 	NL	Artiest afbeelding opzoeken
 
 PLUGIN_MUSICARTISTINFO_ALBUMCOVER_PROGRESS
 	DE	Plattenhüllen suchen
-	EN	Album cover lookup
+	EN	Album Cover Lookup
 	FR	Recherche des pochettes d'albums
 	NL	Album afbeelding opzoeken
 
@@ -145,6 +145,10 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	EN	Artists photos
 	FR	Photos d'artistes
 	NL	Artiest afbeeldingen
+
+PLUGIN_MUSICARTISTINFO_GENRE_REPLACEMENT_PROGRESS
+	DE	Online Stilrichtungen nachschlagen und ersetzen
+	EN	Online Genre Lookup and Replacement
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
@@ -195,16 +199,16 @@ PLUGIN_MUSICARTISTINFO_IMPORTER
 	NL	Importeer instellingen
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
-	DE	Sie können beim Durchsuchen der Musiksammlung nach Interpreten-Bildern und fehlenden Plattenhüllen suchen lassen. Diese können als artist.jpg (oder .png/.gif) im Ordner mit einem Album des Interpreten abgelegt sein, oder in den unten definierten Bilder-Ordnern. Zusätzlich kann online nach Bildern gesucht werden.
-	EN	When scanning your music library we can look for artist pictures and find missing cover arts online. These can be stored in an artist's album folder as artist.jpg (or .png/.gif) or in one of the image folders defined below. Additionally it is possible to run a search of artist pictures in online sources.
-	FR	Lorsque vous analysez la bibliothèque musicale, vous pouvez rechercher sur internet des photos d’artistes et des pochettes de disques manquantes. Celles-ci peuvent être enregistrées dans le dossier des photos d'artistes sous la forme artist.jpg (ou .png/.gif) ou dans l'un des dossiers d'images définis ci-dessous. Les photos peuvent également être recherchées en ligne ultérieurement.
-	NL	Als de mediacollectie wordt gescand, kan er worden gezocht naar artiest afbeeldingen en album afbeeldingen. Deze kunnen worden opgeslagen in de map van de artiest als artiest.jpg (of .png/.gif) of in de onderstaande mappen. Het is ook mogelijk om te zoeken naar artiest afbeeldingen in online bronnen.
+	DE	Sie können beim Durchsuchen der Musiksammlung nach Informationen zur Musik und den Interpreten suchen lassen.
+	EN	When scanning your music library we can look for music and artist information online.
+	FR	Lorsque vous analysez la bibliothèque musicale, vous pouvez rechercher de l'information sur la musique et l'artiste sur internet.
+	NL	Als de mediacollectie wordt gescand, kan er worden gezocht naar muziek en artiest informatie.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
-	DE	Beim Durchsuchen der Musiksammlung Bilder online suchen
-	EN	Find artwork online during library scan
-	FR	Rechercher des photos en ligne pendant l'analyse de la bibliothèque musicale
-	NL	Vind album afbeeldingen online tijdens het scannen van de mediacollectie
+	DE	Beim Durchsuchen der Musiksammlung Informationen online suchen
+	EN	Find music and artist information online during library scan
+	FR	Rechercher de l'information en ligne pendant l'analyse de la bibliothèque musicale
+	NL	Vind Muziek en Artiest Informatie afbeeldingen online tijdens het scannen van de mediacollectie
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern
@@ -241,6 +245,14 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 	EN	Downloading missing cover art can be quite time-consuming. Found artwork will be stored locally (if possible), to be re-used in future rescans.
 	FR	Le téléchargement et la mise en cache des pochettes manquantes peuvent prendre un certain temps. Toutefois, les données récupérées sur internet seront stockées localement (si possible) et réutilisées lors des prochaines analyses.
 	NL	Downloaden van album afbeeldingen kan erg lang duren. Gevonden afbeeldingen worden lokaal opgeslagen (indien mogelijk), zodat ze kunnen worden gebruikt bij een nieuwe scan van de mediacollectie.
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES
+	DE	Fehlende Stilrichtungen für Alben aus Online Musikdiensten nachschlagen
+	EN	Look up missing genres for albums from online music services
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
+	DE	Manche Musikdienste stellen ordnen den Alben keine Stilrichtung zu. Diese Option erlaubt es, die Stilrichtung online nachzuschlagen und automatisch in der Datenbank zu ersetzen.
+	EN	Some online streaming services don't provide any genre information for albums. Using this option allows you to automatically look up genres online and use them in the library.
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
