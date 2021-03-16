@@ -214,7 +214,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern
 	EN	Download and pre-cache artist pictures from online sources
 	FR	Télécharger des photos d'artistes à partir de sources en ligne et les mettre en cache
-	NL	Donwload en cache artiest afbeeldingen van online bronnen
+	NL	Download en cache artiest afbeeldingen van online bronnen
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.
@@ -249,10 +249,12 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES
 	DE	Fehlende Stilrichtungen für Alben aus Online Musikdiensten nachschlagen
 	EN	Look up missing genres for albums from online music services
+	NL	Zoek missende genres op voor albums van online muziekdiensten
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 	DE	Manche Musikdienste stellen ordnen den Alben keine Stilrichtung zu. Diese Option erlaubt es, die Stilrichtung online nachzuschlagen und automatisch in der Datenbank zu ersetzen.
 	EN	Some online streaming services don't provide any genre information for albums. Using this option allows you to automatically look up genres online and use them in the library.
+	NL	Sommige online muziekdiensten hebben geen genre informatie voor albums. Met deze optie worden genres automatisch online opgezocht en is het mogelijk deze te gebruiken in de muziekbibliotheek.
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
