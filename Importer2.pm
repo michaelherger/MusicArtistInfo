@@ -170,10 +170,8 @@ sub _getArtistPhotoURL {
 
 	if ( $progress ) {
 		$progress->final($params->{count});
-		$log->error( "getArtistPhotoURL finished in " . $progress->duration );
+		$log->error(sprintf('finished in %.3f seconds', $progress->duration));
 	}
-
-	Slim::Music::Import->endImporter('plugin_musicartistinfo_artistPhoto');
 
 	return 0;
 }

@@ -44,7 +44,7 @@ sub startScan {
 
 	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
 		require Plugins::MusicArtistInfo::Importer2;
-		return Plugins::MusicArtistInfo::Importer2->startScan(@_);
+		Plugins::MusicArtistInfo::Importer2->startScan(@_);
 	}
 
 	Slim::Music::Import->endImporter($class);
@@ -193,8 +193,9 @@ sub _getAlbumCoverURL {
 		return 1;
 	}
 
-	if ( $progress ) {
+	if ($progress) {
 		$progress->final($params->{count}) ;
+		$log->error(sprintf('  finished in %.3f seconds', $progress->duration));
 	}
 
 	return 0;
@@ -300,7 +301,11 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 		}
 	}
 
-	$progress->final();
+	if ($progress) {
+		$progress->final($count) ;
+		$log->error(sprintf('    finished in %.3f seconds', $progress->duration));
+	}
+
 	Slim::Schema->forceCommit;
 } }
 
