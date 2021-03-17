@@ -885,7 +885,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 							$_->{image} ||= 'imageproxy/mai/artist/' . URI::Escape::uri_escape_utf8($_->{name} || 0) . '/image.png';
 						}
 						else {
-							$_->{image} ||= 'imageproxy/mai/artist/' . Plugins::MusicArtistInfo::Common->getArtistPictureId($_) . '/image.png';
+							$_->{image} ||= 'imageproxy/mai/artist/' . ($_->{id} || 0) . '/image.png';
 						}
 						$_;
 					} @{$items->{items}} ];

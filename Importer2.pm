@@ -9,6 +9,7 @@ use URI::Escape;
 
 use Slim::Music::Import;
 use Slim::Utils::ArtworkCache;
+use Slim::Utils::Cache;
 use Slim::Utils::ImageResizer;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
@@ -24,11 +25,12 @@ use constant IS_ONLINE_LIBRARY_SCAN => main::SCANNER && $ARGV[-1] && $ARGV[-1] e
 my %artistPictureImporterHandlers = ();
 tie %artistPictureImporterHandlers, 'Tie::RegexpHash';
 
+my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
 
-my ($i, $ua, $cache, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder);
+my ($i, $ua, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder, $isWipeDb);
 
 sub startScan {
 	my $class = shift;
@@ -47,6 +49,8 @@ sub startScan {
 			};
 		}
 	}
+
+	$isWipeDb = Slim::Music::Import->stillScanning() eq 'SETUP_WIPEDB';
 
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
 
@@ -135,15 +139,26 @@ sub _getArtistPhotoURL {
 		main::INFOLOG && $log->is_info && $log->info("Getting artwork for " . $artist->{name});
 
 		my $artist_id = $artist->{id};
-		my $imageId = $artist->{imageId} = Plugins::MusicArtistInfo::Common->getArtistPictureId($artist);
+		my $idMatchKey = 'mai_id_map_' . lc(Slim::Utils::Text::ignoreCaseArticles($artist->{name}, 1));
 
 		$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
 		$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
 
-		if (IS_ONLINE_LIBRARY_SCAN && $imgProxyCache->get("imageproxy/mai/artist/$imageId/image_$testSpec") ) {
-			main::INFOLOG && $log->is_info && $log->info('Pre-cached image already exists for ' . $artist->{name});
-			return 1 if $artist != $params->{vaObj};
+		my $done = 0;
+
+		# we need to manually remove stale cache entries - or they'll stick around for weeks, blowing up the image proxy cache
+		if ($isWipeDb && (my $cachedId = $cache->get($idMatchKey))) {
+			foreach (Slim::Music::Artwork::getResizeSpecs()) {
+				$imgProxyCache->remove("imageproxy/mai/artist/$cachedId/image_$_");
+			}
 		}
+
+		# online only scan - no need to update if cached image exists
+		if (IS_ONLINE_LIBRARY_SCAN && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+			main::INFOLOG && $log->is_info && $log->info('Pre-cached image already exists for ' . $artist->{name});
+			$done++;
+		}
+		# always look up local file updates
 		elsif ( my $file = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
 			artist_id => $artist_id,
 			artist    => $artist->{name},
@@ -151,20 +166,30 @@ sub _getArtistPhotoURL {
 			force     => 1,		# don't return cached value, this is a scan
 		}) ) {
 			_precacheArtistImage($artist, $file);
+			$done++;
 		}
-		elsif (CAN_ONLINE_LIBRARY && $ua && (my $url = _getImageUrlFromService($artist))) {
+
+		# cut short if rescanning and new artist ID is the same as the old one
+		if (!$done && !$isWipeDb && (my $cachedId = $cache->get($idMatchKey))) {
+			$done = $cachedId == $artist_id;
+		}
+
+		if (CAN_ONLINE_LIBRARY && !$done && $ua && (my $url = _getImageUrlFromService($artist))) {
 			_precacheArtistImage($artist, {
 				url => $url
 			});
+			$done++;
 		}
-		elsif ($ua) {		# only defined if $prefs->get('lookupArtistPictures')
+		elsif (!$done && $ua) {		# only defined if $prefs->get('lookupArtistPictures')
 			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
 				_precacheArtistImage($artist, @_);
 			}, {
 				artist => $artist->{name}
 			});
+			$done++;
 		}
 
+		$cache->set($idMatchKey, $artist_id, '1y');
 		return 1 if $artist != $params->{vaObj};
 	}
 
@@ -194,7 +219,6 @@ sub _precacheArtistImage {
 	my $artist_id = $artist->{id};
 
 	$specs    ||= join(',', Slim::Music::Artwork::getResizeSpecs());
- 	$cache    ||= Slim::Utils::Cache->new();
 	$cachedir ||= $serverprefs->get('cachedir');
 
 	if ( $imageFolder && !($artist_id && $img) && $prefs->get('saveMissingArtistPicturePlaceholder') ) {
@@ -206,8 +230,7 @@ sub _precacheArtistImage {
 		}
 	}
 
-	my $imageId = $artist->{imageId};
-	return unless $artist_id && $imageId;
+	return unless $artist_id;
 
 	if ( ref $img eq 'HASH' && (my $url = $img->{url}) ) {
 
@@ -274,7 +297,7 @@ sub _precacheArtistImage {
 		}
 =cut
 
-		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$imageId/image_", $specs, undef, $imgProxyCache );
+		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 
 		$file =~ s/\.(?:jpe?g|gif|png)$/\.missing/i if $imageFolder;
 		unlink $file;
@@ -288,14 +311,14 @@ sub _precacheArtistImage {
 		my $mtime = (stat(_))[9];
 
 		# see whether the file has changed at all - otherwise return quickly
-		if (my $cached = $imgProxyCache->get("imageproxy/mai/artist/$imageId/image_$testSpec") ) {
+		if (my $cached = $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
 			if ($cached->{original_path} eq $img && $cached->{mtime} == $mtime) {
 				main::INFOLOG && $log->is_info && $log->info("Pre-cached image has not changed: $img");
 				return;
 			}
 		}
 
-		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$imageId/image_", $specs, undef, $imgProxyCache );
+		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 	}
 }
 
