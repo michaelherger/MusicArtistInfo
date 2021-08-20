@@ -1,7 +1,7 @@
 PLUGIN_MUSICARTISTINFO
 	DE	Musik- und Interpreten-Information
 	EN	Music and Artist Information
-	FR	Informations sur la Musique et l'Artiste
+	FR	Informations sur la Musique et les Artistes
 	NL	Muziek en Artiest Informatie
 
 PLUGIN_MUSICARTISTINFO_DESC
@@ -89,7 +89,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	DE	Tut mir Leid, konnte keine relevanten Informationen finden.
 	EN	I'm sorry, didn't find any relevant information.
-	FR	Je suis désolé, impossible de trouver des informations pertinentes.
+	FR	Malheureusement, aucune information pertinente n'a été trouvée.
 	NL	Helaas is er geen relevante informatie gevonden.
 
 PLUGIN_MUSICARTISTINFO_URLS
@@ -149,7 +149,7 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 PLUGIN_MUSICARTISTINFO_GENRE_REPLACEMENT_PROGRESS
 	DE	Online Stilrichtungen nachschlagen und ersetzen
 	EN	Online Genre Lookup and Replacement
-	FR	Rechercher et remplacer des genres en ligne
+	FR	Recherche et remplacement des genres en ligne
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
@@ -256,7 +256,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES
 PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 	DE	Manche Musikdienste stellen ordnen den Alben keine Stilrichtung zu. Diese Option erlaubt es, die Stilrichtung online nachzuschlagen und automatisch in der Datenbank zu ersetzen.
 	EN	Some online streaming services don't provide any genre information for albums. Using this option allows you to automatically look up genres online and use them in the library.
-	FR	Certains services de musique n'attribuent pas de genre aux albums. Cette option vous permet de rechercher le genre en ligne et de le remplacer automatiquement dans la base de données.
+	FR	Certains services de streaming de musique n'attribuent pas de genre aux albums. Cette option permet de rechercher le genre en ligne et de le stocker en base de données.
 	NL	Sommige online muziekdiensten hebben geen genre informatie voor albums. Met deze optie worden genres automatisch online opgezocht en is het mogelijk deze te gebruiken in de muziekbibliotheek.
 
 PLUGIN_MUSICARTISTINFO_SORRY
