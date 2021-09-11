@@ -323,7 +323,7 @@ sub getAlbumReview {
 				if ( my $review = $tree->look_down('_tag', 'section', 'id', 'review-read-more') ) {
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
 
-					$review = _cleanupLinksAndImages($review->look_down('_tag', 'div'));
+					$review = _cleanupLinksAndImages($review->look_down('_tag', 'div', 'class', 'text'));
 
 					$result->{review} = _decodeHTML($review->as_HTML);
 					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map {
