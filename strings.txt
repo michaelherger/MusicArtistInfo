@@ -8,13 +8,13 @@ PLUGIN_MUSICARTISTINFO_DESC
 	DE	Liest Album-Rezensionen, Interpreten-Biographien, ähnliche Interpreten, zeigt Interpretenbilder und vieles mehr.
 	EN	Read album reviews, artist biographies, related artists, see artist pictures and much more.
 	FR	Critiques d’albums, biographies d’artistes, photos d'artistes, artistes similaires et bien plus encore.
-	NL	Lees album recensies, artiest biografieën, gerelateerde artiesten, bekijk artiest afbeeldingen en nog veel meer.
+	NL	Album recensies, artiest biografieën, gerelateerde artiesten, foto's van artiesten en nog veel meer.
 
 PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	DE	Interpreten-Information
 	EN	Artist information
 	FR	Informations sur l'artiste
-	NL	Artiest informatie
+	NL	Informatie over artiesten
 
 PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 	DE	Biographie
@@ -32,7 +32,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
 	DE	Fotos
 	EN	Pictures
 	FR	Photos
-	NL	Afbeeldingen
+	NL	Foto's
 
 PLUGIN_MUSICARTISTINFO_ARTISTNEWS
 	DE	In den News
@@ -114,72 +114,73 @@ PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
 	EN	Find album cover online
 	FR	Rechercher une pochette sur internet
-	NL	Vind album afbeelding online
+	NL	Vind albumhoes online
 
 PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	DE	Alben ohne Plattenhülle suchen
 	EN	Find albums with missing artwork
 	FR	Rechercher les albums sans pochette
-	NL	Vind albums zonder afbeelding
+	NL	Vind albums zonder albumhoes
 
 PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 	DE	Alben mit kleiner Plattenhülle suchen
 	EN	Find albums with small artwork
 	FR	Rechercher les albums avec une petite pochette
-	NL	Vind albums met kleine afbeelding
+	NL	Vind albums met kleine albumhoes
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	DE	Interpretenbilder suchen
 	EN	Artist Picture Lookup
 	FR	Recherche des photos d'artistes
-	NL	Artiest afbeelding opzoeken
+	NL	Foto's van artiesten opzoeken
 
 PLUGIN_MUSICARTISTINFO_ALBUMCOVER_PROGRESS
 	DE	Plattenhüllen suchen
 	EN	Album Cover Lookup
 	FR	Recherche des pochettes d'albums
-	NL	Album afbeelding opzoeken
+	NL	Albumhoezen opzoeken
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	DE	Interpreten-Photos
 	EN	Artists photos
 	FR	Photos d'artistes
-	NL	Artiest afbeeldingen
+	NL	Foto's van artiesten
 
 PLUGIN_MUSICARTISTINFO_GENRE_REPLACEMENT_PROGRESS
 	DE	Online Stilrichtungen nachschlagen und ersetzen
 	EN	Online Genre Lookup and Replacement
 	FR	Recherche et remplacement des genres en ligne
+	NL	Online genre opzoeken en vervangen
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	DE	Bilder anzeigen (kann u.U. Anzeige verlangsamen)
 	EN	Show pictures (can slow down browsing)
 	FR	Afficher les photos (peut ralentir l'affichage)
-	NL	Toon afbeeldingen (kan het bladeren vertragen)
+	NL	Toon foto's (kan het bladeren vertragen)
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
 	DE	Ordner für Interpreten-Photos
 	EN	Folder with artist photos
 	FR	Dossier pour les photos d'artistes
-	NL	Map met artiest afbeeldingen
+	NL	Map met foto's van artiesten
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Interpreten-Photos angeben, so werden darin gespeicherte Photos verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.jpg (png, gif, z.B. 'Peter Gabriel.jpg'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for artist photos, this will be used as an additional source for pictures. Use filenames like %ARTIST.jpg (png, gif, eg. 'Peter Gabriel.jpg'). If a file is found in this folder, then no online-source will be used.
 	FR	Si vous spécifiez un dossier pour les photos d'artistes, les photos qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST.jpg (png, gif, par exemple "Peter Gabriel.jpg"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
-	NL	Als je een map gebruikt voor artiest afbeeldingen, wordt deze map gebruikt als een additionele bron voor afbeeldingen. Gebruik bestandsnamen als %ARTIST.jpg (png. gif, bijv. 'Peter Gabriel.jpg'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
+	NL	Als je een map gebruikt voor foto's van artiesten, wordt deze gebruikt als een additionele bron voor foto's. Gebruik bestandsnamen als %ARTIST.jpg (png. gif, bijv. 'Peter Gabriel.jpg'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
 	DE	Speichern der heruntergeladenen Bilder ist nicht möglich! Bitte stellen Sie sicher, dass der angegebene Ordner existiert und von Logitech Media Server beschreibbar ist!
 	EN	Pictures can't be saved in the defined folder. Please make sure the folder does exist and is writable by Logitech Media Server!
 	FR	L'enregistrement des images téléchargées n'est pas possible ! Assurez-vous que le dossier spécifié existe et qu'il est accessible en écriture pour Logitech Media Server !
-	NL	Afbeeldingen kunnen niet worden opgeslagen in deze map. Zorg ervoor dat de map bestaat en beschrijfbaar is door Logitech Media Server!
+	NL	Foto's kunnen niet worden opgeslagen in deze map. Zorg ervoor dat de map bestaat en beschrijfbaar is door Logitech Media Server!
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	DE	Bilder nicht anzeigen
 	EN	Don't show pictures
 	FR	Ne pas afficher les photos
-	NL	Toon geen afbeeldingen
+	NL	Toon geen foto's
 
 PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER
 	DE	Ordner für Songtexte
@@ -203,49 +204,49 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	DE	Sie können beim Durchsuchen der Musiksammlung nach Informationen zur Musik und den Interpreten suchen lassen.
 	EN	When scanning your music library we can look for music and artist information online.
 	FR	Lorsque vous analysez la bibliothèque musicale, vous pouvez rechercher de l'information sur la musique et l'artiste sur internet.
-	NL	Als de mediacollectie wordt gescand, kan er worden gezocht naar muziek en artiest informatie.
+	NL	Als de mediabibliotheek wordt gescand, kan er worden gezocht naar muziek en artiest informatie.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
 	DE	Beim Durchsuchen der Musiksammlung Informationen online suchen
 	EN	Find music and artist information online during library scan
 	FR	Rechercher de l'information en ligne pendant l'analyse de la bibliothèque musicale
-	NL	Vind Muziek en Artiest Informatie afbeeldingen online tijdens het scannen van de mediacollectie
+	NL	Vind informatie over muziek en artiesten online tijdens het scannen van de mediacollectie
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	DE	Interpreten-Bilder aus Online-Quellen herunterladen und zwischenspeichern
 	EN	Download and pre-cache artist pictures from online sources
 	FR	Télécharger des photos d'artistes à partir de sources en ligne et les mettre en cache
-	NL	Download en cache artiest afbeeldingen van online bronnen
+	NL	Download en cache foto's van artiesten van online bronnen
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern, beschleunigt aber das Durchsuchen von Interpreten erheblich.
 	EN	Downloading and pre-caching of artist pictures can be quite time-consuming, but will speed up browsing by artist considerably.
 	FR	Le téléchargement et la mise en cache des photos peuvent prendre un certain temps, mais accélèrent considérablement la navigation par artiste.
-	NL	Downloaden en cachen van artiest afbeeldingen kan erg lang duren, maar zal het bladeren op artiest flink versnellen.
+	NL	Downloaden en cachen van foto's van artiesten kan erg lang duren, maar zal het bladeren op artiest flink versnellen.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	DE	Bilder nur für die Haupt-Interpreten herunterladen, nicht aber für weitere Künstler wie Komponisten, Dirigenten etc.
 	EN	Only download pictures for main artists, but not all contributors (composers, conductors etc.)
 	FR	Télécharger des photos uniquement pour les artistes principaux, mais pas pour les autres artistes tels que les compositeurs, les chefs d'orchestre, etc.
-	NL	Download alleen afbeeldingen van artiesten, maar niet van bijdragers (componisten, dirigenten, etc).
+	NL	Download alleen foto's van artiesten, maar niet van andere uitvoerenden (componisten, dirigenten, etc).
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER
 	DE	Speichere Platzhalter-Datei ("artist.missing") falls Interpreten-Bilder heruntergeladen werden sollen, aber nicht gefunden werden.
 	EN	Store placeholder file ("artist.missing") if artist pictures are to be downloaded, but cannot be found.
 	FR	Enregistrer un fichier "artist.missing" pour les artistes dont la photo a été recherchée mais pas trouvée.
-	NL	Maak een bestand ("artist.missing") aan als de artiest afbeelding dient te worden gedownload maar niet kan worden gevonden.
+	NL	Maak een bestand ("artist.missing") aan als de foto van de artiest dient te worden gedownload maar niet kan worden gevonden.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	DE	Fehlende Plattenhüllen aus Online-Quellen herunterladen und zwischenspeichern
 	EN	Download missing cover art from online sources
 	FR	Télécharger sur internet et mettre en cache les pochettes d'albums manquantes
-	NL	Download album afbeeldingen van online bronnen
+	NL	Download albumhoezen van online bronnen
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern. Die Daten werden jedoch wenn möglich lokal gespeichert und beim nächsten Scan wieder verwendet.
 	EN	Downloading missing cover art can be quite time-consuming. Found artwork will be stored locally (if possible), to be re-used in future rescans.
 	FR	Le téléchargement et la mise en cache des pochettes manquantes peuvent prendre un certain temps. Toutefois, les données récupérées sur internet seront stockées localement (si possible) et réutilisées lors des prochaines analyses.
-	NL	Downloaden van album afbeeldingen kan erg lang duren. Gevonden afbeeldingen worden lokaal opgeslagen (indien mogelijk), zodat ze kunnen worden gebruikt bij een nieuwe scan van de mediacollectie.
+	NL	Downloaden van albumhoezen kan erg lang duren. Gevonden albumhoezen worden lokaal opgeslagen (indien mogelijk), zodat ze kunnen worden gebruikt bij een nieuwe scan van de mediabibliotheek.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES
 	DE	Fehlende Stilrichtungen für Alben aus Online Musikdiensten nachschlagen
@@ -257,13 +258,13 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 	DE	Manche Musikdienste stellen ordnen den Alben keine Stilrichtung zu. Diese Option erlaubt es, die Stilrichtung online nachzuschlagen und automatisch in der Datenbank zu ersetzen.
 	EN	Some online streaming services don't provide any genre information for albums. Using this option allows you to automatically look up genres online and use them in the library.
 	FR	Certains services de streaming de musique n'attribuent pas de genre aux albums. Cette option permet de rechercher le genre en ligne et de le stocker en base de données.
-	NL	Sommige online muziekdiensten hebben geen genre informatie voor albums. Met deze optie worden genres automatisch online opgezocht en is het mogelijk deze te gebruiken in de muziekbibliotheek.
+	NL	Sommige online muziekdiensten hebben geen genre informatie voor albums. Met deze optie worden genres automatisch online opgezocht en is het mogelijk deze te gebruiken in de mediabibliotheek.
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
 	EN	I'm sorry, but in order to profit from all the advanced features of this plugin (eg. artist pictures when browsing artists) you'll need to run Logitech Media Server 7.8 or later.
 	FR	Je suis désolé, mais pour tirer le meilleur parti de ce plug-in (par exemple, les photos d'artistes lorsque vous naviguez dans votre liste d'artistes), vous devez disposer au moins de Logitech Media Server 7.8.
-	NL	Om alle mogelijkheden van deze plugin te benutten, heb je Logitech Media Server 7.8 of hoger nodig.
+	NL	Om alle mogelijkheden van deze plug-in te benutten, heb je Logitech Media Server 7.8 of hoger nodig.
 
 PLUGIN_MUSICARTISTINFO_MIN_SIZE_X
 	DE	Kleiner als %s Bildpunkte
@@ -275,7 +276,7 @@ PLUGIN_MUSICARTISTINFO_MIN_SIZE
 	DE	Mindestgrösse (Kantenlänge)
 	EN	Minimum picture size
 	FR	Taille minimum
-	NL	Minimum afbeeldingsgrootte
+	NL	Minimum grootte
 
 PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
 	DE	Tut mir Leid, dieser Dateityp wird auf diesem Gerät nicht unterstützt.
