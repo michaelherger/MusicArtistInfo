@@ -30,9 +30,9 @@ sub getLyrics {
 		my $tree = HTML::TreeBuilder->new;
 		$tree->parse_content( $result );
 
-		my $container = $tree->look_down('_tag', 'div', 'class', 'lyrics');
+		my $container = $tree->look_down('_tag', 'div', 'id', 'lyrics-root');
 
-		my @content = $container->look_down('_tag', 'p') if $container;
+		my @content = $container->look_down('_tag', 'div') if $container;
 
 		my $lyrics;
 

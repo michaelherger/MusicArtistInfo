@@ -187,7 +187,7 @@ sub call {
 			 $result->{error} = $@;
 		}
 
-		main::DEBUGLOG && $log->is_debug && warn Data::Dump::dump($result);
+		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 
 		$cb->($result);
 	};
