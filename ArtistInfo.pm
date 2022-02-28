@@ -226,7 +226,7 @@ sub getBiographyCLI {
 		sub {
 			my $items = shift || [];
 
-			if ( !$items || !scalar @$items ) {
+			if ( !$items || !ref $items || !scalar @$items ) {
 				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 			}
 			elsif ( $items->[0]->{error} ) {
