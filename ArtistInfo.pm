@@ -226,7 +226,8 @@ sub getBiographyCLI {
 		sub {
 			my $items = shift || [];
 
-			if ( !$items || !ref $items || !scalar @$items ) {
+			if ( !$items || !ref $items || ref $items ne 'ARRAY' || !scalar @$items ) {
+				main::INFOLOG && $log->is_info && $log->info("No Biography found: " . Data::Dump::dump($items));
 				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 			}
 			elsif ( $items->[0]->{error} ) {

@@ -154,6 +154,7 @@ sub _getInfoFileForTrack {
 
 		# .nfo files are structured XML. They would return a menu, not the biography/review only.
 		($content) = grep { lc($_->{name}) eq $key } @$content if $file =~ /\.nfo$/i && scalar @$content > 1;
+		$content = $content->{items} if $content && ref $content && ref $content eq 'HASH' && $content->{items};
 
 		return $content;
 	}
