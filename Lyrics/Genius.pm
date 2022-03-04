@@ -32,17 +32,15 @@ sub getLyrics {
 
 		my $container = $tree->look_down('_tag', 'div', 'id', 'lyrics-root');
 
-		my @content = $container->look_down('_tag', 'div') if $container;
+		my @content = $container->look_down('_tag', 'div', 'data-lyrics-container', 'true') if $container;
 
 		my $lyrics;
 
 		foreach my $p (@content) {
-			$lyrics = HTML::FormatText->format_string(
+			$lyrics .= HTML::FormatText->format_string(
 				$p->as_HTML,
 				leftmargin => 0,
 			);
-
-			last if $lyrics;
 		}
 
 		# # let's mimic ChartLyric's data format
