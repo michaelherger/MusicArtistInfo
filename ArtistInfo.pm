@@ -729,8 +729,8 @@ sub _getArtistFromSongURL {
 	return unless $client;
 
 	if ( !$url ) {
-		$url = Slim::Player::Playlist::song($client);
-		$url = $url->url if $url;
+		my $track = Slim::Player::Playlist::track($client);
+		$url = $track->url if $track;
 	}
 
 	if ( $url ) {

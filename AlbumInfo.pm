@@ -554,8 +554,8 @@ sub _getAlbumFromSongURL {
 
 	return unless $client;
 
-	if ( !defined $url && (my $song = Slim::Player::Playlist::song($client)) ) {
-		$url = $song->url;
+	if ( !defined $url && (my $track = Slim::Player::Playlist::track($client)) ) {
+		$url = $track->url;
 	}
 
 	if ( $url ) {
