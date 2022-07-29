@@ -99,24 +99,30 @@ sub imageInFolder {
 
 	main::INFOLOG && $log->info("Trying to find artwork in $folder");
 
-	my $img;
+	return fileInFolder($folder, ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'gif', 'GIF'], @names);
+}
+
+sub fileInFolder {
+	my ($folder, $extensions, @names) = @_;
+
+	my $file;
 	my %seen;
 
 	foreach my $name (@names) {
 		next if $seen{$name}++;
-		foreach my $ext ('jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'gif', 'GIF') {
-			my $file = catdir($folder, $name . ".$ext");
+		foreach my $ext (@$extensions) {
+			my $candidate = catdir($folder, $name . ".$ext");
 
-			if (-f $file) {
-				$img = $file;
+			if (-f $candidate) {
+				$file = $candidate;
 				last;
 			}
 		}
 
-		last if $img;
+		last if $file;
 	}
 
-	return $img;
+	return $file;
 }
 
 sub getLocalnameVariants {

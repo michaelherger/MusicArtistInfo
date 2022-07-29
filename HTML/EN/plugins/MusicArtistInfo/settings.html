@@ -42,9 +42,17 @@
 			[% IF saveAlbumCoverDisabled %]<div style="color:red"><br/>[% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED" | string %]</div>[% END %]
 		[% END %]
 
+		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER_DESC" %]
+			<input type="text" class="stdedit selectFolder" name="pref_reviewFolder" id="pref_reviewFolder" value="[% prefs.pref_reviewFolder %]" size="40">
+		[% END %]
+
 		[% IF !noImageProxy; WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_artistImageFolder" id="pref_artistImageFolder" value="[% prefs.pref_artistImageFolder %]" size="40">
 		[% END; END %]
+
+		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_BIOS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC" %]
+			<input type="text" class="stdedit selectFolder" name="pref_bioFolder" id="pref_bioFolder" value="[% prefs.pref_bioFolder %]" size="40">
+		[% END %]
 
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_lyricsFolder" id="pref_lyricsFolder" value="[% prefs.pref_lyricsFolder %]" size="40">

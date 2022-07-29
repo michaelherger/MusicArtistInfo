@@ -69,18 +69,30 @@ sub init {
 sub getAlbumReview {
 	my ( $class, $client, $params, $args ) = @_;
 
-	return unless $args->{album_id};
+	my $review;
 
-	my $dbh = Slim::Schema->dbh;
-	my $sth = $dbh->prepare_cached(qq(
-		SELECT tracks.url
-		FROM tracks
-		WHERE tracks.album = ? AND tracks.url like 'file://%'
-	));
+	if ($args->{album_id}) {
+		my $dbh = Slim::Schema->dbh;
+		my $sth = $dbh->prepare_cached(qq(
+			SELECT tracks.url
+			FROM tracks
+			WHERE tracks.album = ? AND tracks.url like 'file://%'
+		));
 
-	$sth->execute($args->{album_id});
+		$sth->execute($args->{album_id});
 
-	return _getInfoFileForTrack($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt'], $params);
+		$review = _getInfoFileForTrackFromDb($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt'], $params);
+	}
+
+	if ( !$review && $args->{album} && $args->{artist} && (my $reviewFolder = $prefs->get('reviewFolder')) ) {
+		my $artists = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist});
+		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{album});
+
+		my $folders = [ map { catdir($reviewFolder, $_) } @$artists ];
+		$review = _getInfoFileFromFolder($client, $folders, 'review', ['nfo', 'html', 'htm', 'txt'], $candidates, $params);
+	}
+
+	return $review;
 }
 
 sub getBiography {
@@ -120,10 +132,17 @@ sub getBiography {
 
 	$sth->execute($var);
 
-	return _getInfoFileForTrack($client, $sth, 'biography', ['artist.nfo', 'biography.html?', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
+	my $biography = _getInfoFileForTrackFromDb($client, $sth, 'biography', ['artist.nfo', 'biography.html?', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
+
+	if ( !$biography && $args->{artist} && (my $bioFolder = $prefs->get('bioFolder')) ) {
+		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist});
+		$biography = _getInfoFileFromFolder($client, $bioFolder, 'biography', ['nfo', 'html', 'htm', 'txt'], $candidates, $params);
+	}
+
+	return $biography;
 }
 
-sub _getInfoFileForTrack {
+sub _getInfoFileForTrackFromDb {
 	my ( $client, $sth, $key, $candidates, $params ) = @_;
 
 	my %seen;
@@ -147,7 +166,27 @@ sub _getInfoFileForTrack {
 		last if $file;
 	}
 
-	if ($file) {
+	return _getInfoFileContent($client, $file, $key, $params);
+}
+
+sub _getInfoFileFromFolder {
+	my ($client, $folders, $key, $extensions, $candidates, $params) = @_;
+
+	$folders = [$folders] unless ref $folders;
+
+	my $file;
+	foreach my $folder ( @$folders ) {
+		$file = Plugins::MusicArtistInfo::Common::fileInFolder($folder, $extensions, @$candidates);
+		last if $file;
+	}
+
+	return _getInfoFileContent($client, $file, $key, $params);
+}
+
+sub _getInfoFileContent {
+	my ($client, $file, $key, $params) = @_;
+
+	if ($file && -f $file) {
 		main::DEBUGLOG && $log->debug("Found $key on local file system: $file");
 
 		my $content = getFileContent($client, undef, $params, { path => $file });
