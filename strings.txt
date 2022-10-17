@@ -174,25 +174,25 @@ PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER
 	DE	Ordner für Albumkritiken
 	EN	Folder with album reviews
 	FR	Dossier pour les critiques d'albums
-	NL	Map met recensie's
+	NL	Map met recensies
 
 PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Albumkritiken angeben, so werden darin gespeicherte Texte verwendet. Verwenden Sie Dateinamen im Stil %ARTIST/%ALBUM.txt (html, nfo, z.B. 'Peter Gabriel/So.html'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for album reviews, this will be used as an additional source for textual content. Use filenames like %ARTIST/%ALBUM.txt (html, nfo, eg. 'Peter Gabriel/So.html'). If a file is found in this folder, then no online-source will be used.
 	FR	Si vous spécifiez un dossier pour les critiques d'albums, les fichiers qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST/%ALBUM.txt (html, nfo, par exemple "Peter Gabriel/So.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
-	NL	Als je een map gebruikt voor recensie's, wordt deze gebruikt als een additionele bron voor recensie's. Gebruik bestandsnamen als %ARTIST/%ALBUM.txt (html, nfo, bijv. 'Peter Gabriel/So.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
+	NL	Als je een map gebruikt voor recensies, wordt deze gebruikt als een additionele bron voor recensies. Gebruik bestandsnamen als %ARTIST/%ALBUM.txt (html, nfo, bijv. 'Peter Gabriel/So.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
 PLUGIN_MUSICARTISTINFO_BIOS_FOLDER
 	DE	Ordner für Biografien
 	EN	Folder with biographies
 	FR	Dossier pour les biographies
-	NL	Map met biografie's
+	NL	Map met biografieën
 
 PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Biographien angeben, so werden darin gespeicherte Texte verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.txt (html, nfo, z.B. 'Peter Gabriel.html'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for biographies, this will be used as an additional source for textual content. Use filenames like %ARTIST.txt (html, nfo, eg. 'Peter Gabriel.html'). If a file is found in this folder, then no online-source will be used.
 	FR	Si vous spécifiez un dossier pour les biographies d'artistes, les fichiers qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST.txt (html, nfo, par exemple "Peter Gabriel.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
-	NL	Als je een map gebruikt voor biografie's van artiesten, wordt deze gebruikt als een additionele bron voor biografie's. Gebruik bestandsnamen als %ARTIST.txt (html, nfo, bijv. 'Peter Gabriel.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
+	NL	Als je een map gebruikt voor biografieën van artiesten, wordt deze gebruikt als een additionele bron voor biografieën. Gebruik bestandsnamen als %ARTIST.txt (html, nfo, bijv. 'Peter Gabriel.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
 	DE	Speichern der heruntergeladenen Bilder ist nicht möglich! Bitte stellen Sie sicher, dass der angegebene Ordner existiert und von Logitech Media Server beschreibbar ist!
