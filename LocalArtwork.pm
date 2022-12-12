@@ -20,6 +20,16 @@ my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
 my ($defaultArtistImg, $fallbackArtistImg, $checkFallbackArtistImg);
 
+my %ignoreList = Slim::Utils::OSDetect::getOS->ignoredItems();
+while (my ($k, $v) = each %ignoreList) {
+	delete $ignoreList{$k} if $v != 1;
+}
+
+# some items which are exposed on shares on popular platforms
+$ignoreList{'#recycle'} = 1;
+$ignoreList{'#snapshot'} = 1;
+$ignoreList{'@eaDir'} = 1;
+
 sub init {
 	if (!main::SCANNER) {
 		require Slim::Menu::AlbumInfo;
@@ -98,7 +108,8 @@ sub trackInfoHandler { if (!main::SCANNER) {
 	}
 
 	my $iterator = File::Next::files({
-		file_filter => sub { /\.(?:jpe?g|png|gif)$/i }
+		file_filter => sub { /\.(?:jpe?g|png|gif)$/i },
+		descend_filter => sub { !$ignoreList{$_} },
 	}, $path);
 
 	my @images;
