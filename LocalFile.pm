@@ -333,7 +333,7 @@ sub _findTextFiles {
 	while ( $i == 0 || $previous ne $pathObj->parent->stringify ) {
 		if ($i == 0) {
 			my $iterator = File::Next::files({
-				file_filter => sub { /\.$EXTENSIONS$/i }
+				file_filter => sub { /^[^.].*\.$EXTENSIONS$/i }
 			}, $previous);
 
 			while ( defined (my $file = $iterator->()) ) {

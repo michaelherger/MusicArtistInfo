@@ -108,7 +108,7 @@ sub trackInfoHandler { if (!main::SCANNER) {
 	}
 
 	my $iterator = File::Next::files({
-		file_filter => sub { /\.(?:jpe?g|png|gif)$/i },
+		file_filter => sub { /^[^.].*\.(?:jpe?g|png|gif)$/i },
 		descend_filter => sub { !$ignoreList{$_} },
 	}, $path);
 
