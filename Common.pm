@@ -47,6 +47,9 @@ sub cleanupAlbumName {
 	$album =~ s/\b(cd\s*\d+|\d+ of \d+|disc \d+)\b//ig;
 	$album =~ s/- live\b//i;
 
+	# remove additional information added by the Radio Now Playing plugin
+	$album =~ s/\|.*//;
+
 	# remove trailing non-word characters
 	$album =~ s/[\s\W]{2,}$//;
 	$album =~ s/\s*$//;
