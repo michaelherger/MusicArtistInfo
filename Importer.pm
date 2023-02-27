@@ -14,6 +14,8 @@ use Slim::Utils::Prefs;
 use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::LFM;
 
+use constant GENRE_REPLACE_ID => ['spotify', 'wimp'];
+
 my ($i, $ua, $imageFolder, $filenameTemplate, $max, $cachedir);
 
 my $log = logger('plugin.musicartistinfo');
@@ -246,8 +248,12 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 
 	require Plugins::MusicArtistInfo::AllMusic::Sync;
 
+	my $extIdCondition = join(' OR ', map {
+		"albums.extid LIKE '$_%'";
+	} @{GENRE_REPLACE_ID()});
+
 	my $dbh = Slim::Schema->dbh or return;
-	my $sth = $dbh->prepare_cached("SELECT COUNT(1) FROM albums WHERE albums.extid IS NOT NULL;");
+	my $sth = $dbh->prepare_cached("SELECT COUNT(1) FROM albums WHERE $extIdCondition;");
 	$sth->execute();
 	my ($count) = $sth->fetchrow_array;
 	$sth->finish;
@@ -259,9 +265,9 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 		'bar'   => 1,
 	});
 
-	my $sql = q(SELECT albums.id, albums.title, contributors.name
+	my $sql = qq(SELECT albums.id, albums.title, contributors.name
 					FROM albums JOIN contributors ON contributors.id = albums.contributor
-					WHERE albums.extid IS NOT NULL;);
+					WHERE $extIdCondition;);
 
 	my ($albumId, $title, $name);
 
