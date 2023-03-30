@@ -14,7 +14,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	DE	Interpreten-Information
 	EN	Artist information
 	FR	Informations sur l'artiste
-	NL	Informatie over artiesten
+	NL	Artiest informatie
 
 PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 	DE	Biographie
@@ -108,7 +108,7 @@ PLUGIN_MUSICARTISTINFO_LOCAL_FILES
 	DE	Textdateien aus Musikordner
 	EN	Text files from music folder
 	FR	Documents locaux (PDF et autres)
-	NL	Tekst en PDF bestanden weergeven
+	NL	Lokale tekst en PDF bestanden
 
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	DE	Plattenhülle online suchen
