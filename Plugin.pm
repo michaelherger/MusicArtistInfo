@@ -18,7 +18,7 @@ use Plugins::MusicArtistInfo::LocalFile;
 use constant PLUGIN_TAG => 'musicartistinfo';
 
 # Keep in sync with Qobuz plugin
-my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze|Squeeze-Control)\b/i;
+my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze|Squeeze-Control|Squeezer|OpenSqueeze)\b/i;
 my $WEBBROWSER_UA_RE = qr/\b(?:FireFox|Chrome|Safari)\b/i;
 
 my $log = Slim::Utils::Log->addLogCategory( {
