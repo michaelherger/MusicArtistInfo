@@ -49,6 +49,8 @@ sub startScan {
 		Plugins::MusicArtistInfo::Importer2->startScan(@_);
 	}
 
+	$class->_cleanupEmbeddedImagesFolder() if CAN_IMAGEPROXY;
+
 	Slim::Music::Import->endImporter($class);
 }
 
@@ -314,6 +316,12 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 
 	Slim::Schema->forceCommit;
 } }
+
+sub _cleanupEmbeddedImagesFolder {
+	require Plugins::MusicArtistInfo::LocalArtwork;
+	Plugins::MusicArtistInfo::LocalArtwork->init();
+	Plugins::MusicArtistInfo::LocalArtwork->purgeCacheFolder();
+}
 
 sub filename {
 	my ($url, $folder, $artist, $album) = @_;

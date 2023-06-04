@@ -18,7 +18,7 @@ use Slim::Utils::Prefs;
 my $log   = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new;
-my ($defaultArtistImg, $fallbackArtistImg, $checkFallbackArtistImg);
+my ($defaultArtistImg, $fallbackArtistImg, $checkFallbackArtistImg, $imageCacheDir);
 
 my %ignoreList = Slim::Utils::OSDetect::getOS->ignoredItems();
 while (my ($k, $v) = each %ignoreList) {
@@ -31,6 +31,10 @@ $ignoreList{'#snapshot'} = 1;
 $ignoreList{'@eaDir'} = 1;
 
 sub init {
+	my $serverprefs = preferences('server');
+	$imageCacheDir = catdir($serverprefs->get('cachedir'), 'mai_embedded');
+	mkdir $imageCacheDir unless -d $imageCacheDir;
+
 	if (!main::SCANNER) {
 		require Slim::Menu::AlbumInfo;
 		require Slim::Menu::FolderInfo;
@@ -56,7 +60,7 @@ sub init {
 			func  => \&artworkUrl,
 		);
 
-		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath(preferences('server')->get('skin'), '/plugins/MusicArtistInfo/html/artist.png');
+		$defaultArtistImg = Slim::Web::HTTP::getSkinManager->fixHttpPath($serverprefs->get('skin'), '/plugins/MusicArtistInfo/html/artist.png');
 
 		_initDefaultArtistImg();
 		$prefs->setChange(\&_initDefaultArtistImg, 'artistImageFolder');
@@ -101,10 +105,55 @@ sub trackInfoHandler { if (!main::SCANNER) {
 	$url =~ s/^tmp:/file:/ if $url;
 	return unless $url && $url =~ /^file:\/\//i;
 
-	my $path = Slim::Utils::Misc::pathFromFileURL($url);
+	my $file = my $path = Slim::Utils::Misc::pathFromFileURL($url);
 
 	if (! -d $path) {
 		$path = dirname( $path );
+	}
+
+	my @images;
+
+	# see whether a file has multiple artwork embedded
+	if ($track->cover && $track->cover =~ /^\d+$/ && ! -d _) {
+		# Enable artwork in Audio::Scan
+		local $ENV{AUDIO_SCAN_NO_ARTWORK} = 0;
+
+		my $s = Audio::Scan->scan_tags($file);
+		my $tags = $s->{tags};
+
+		my $pics;
+
+		if ($tags->{ALLPICTURES}) {
+			$pics = [ sort {
+				$a->{picture_type} <=> $b->{picture_type}
+			} grep {
+				# skip front picture
+				$_->{picture_type} != 3
+			} @{ $tags->{ALLPICTURES} } ];
+		}
+		elsif ($tags->{APIC}) {
+			$pics = [ sort { $a->[1] <=> $b->[1] } @{ $tags->{APIC} } ];
+			# first is the front picture - skip it
+			shift @$pics;
+		}
+
+		my $imgProxyCache = Slim::Web::ImageProxy::Cache->new();
+
+		my $i = 0;;
+		my $coverId = $track->coverid;
+		foreach (@$pics) {
+			my $file = catfile($imageCacheDir, "embedded-$coverId-$i.");
+			my ($ext) = $_->[0] =~ m|image/(.*)|;
+			$ext =~ s/jpeg/jpg/;
+			$file .= $ext;
+
+			if (!-f $file) {
+				File::Slurp::write_file($file, { binmode => ':raw' }, $_->[3]);
+			}
+
+			push @images, $file;
+			$i++;
+		}
 	}
 
 	my $iterator = File::Next::files({
@@ -112,7 +161,6 @@ sub trackInfoHandler { if (!main::SCANNER) {
 		descend_filter => sub { !$ignoreList{$_} },
 	}, $path);
 
-	my @images;
 	while ( defined (my $file = $iterator->()) ) {
 		push @images, $file;
 	}
@@ -266,6 +314,25 @@ sub getArtistPhoto {
 	}
 
 	return ($args->{rawUrl} || !$img) ? $img : proxiedUrl($img);
+}
+
+sub purgeCacheFolder {
+	my $iterator = File::Next::files($imageCacheDir);
+
+	my $dbh = Slim::Schema->dbh;
+	my $sth = $dbh->prepare_cached("SELECT id FROM tracks WHERE coverid = ? LIMIT 1");
+
+	while ( defined (my $file = $iterator->()) ) {
+		if ($file =~ m|/embedded-([a-f0-9]{8})-\d+|) {
+			$sth->execute($1);
+			my ($trackId) = $sth->fetchrow_array;
+			next() if $trackId;
+		}
+
+		unlink $file;
+	}
+
+	$sth->finish;
 }
 
 1;
