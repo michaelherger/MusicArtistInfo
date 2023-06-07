@@ -123,7 +123,7 @@ sub trackInfoHandler { if (!main::SCANNER) {
 
 		my $pics;
 
-		if ($tags->{ALLPICTURES}) {
+		if ($tags->{ALLPICTURES} && ref $tags->{ALLPICTURES} && ref $tags->{ALLPICTURES} eq 'ARRAY') {
 			$pics = [ sort {
 				$a->{picture_type} <=> $b->{picture_type}
 			} grep {
@@ -131,7 +131,7 @@ sub trackInfoHandler { if (!main::SCANNER) {
 				$_->{picture_type} != 3
 			} @{ $tags->{ALLPICTURES} } ];
 		}
-		elsif ($tags->{APIC}) {
+		elsif ($tags->{APIC} && ref $tags->{APIC} && ref $tags->{APIC} eq 'ARRAY' && ref $tags->{APIC}->[0]) {
 			$pics = [ sort { $a->[1] <=> $b->[1] } @{ $tags->{APIC} } ];
 			# first is the front picture - skip it
 			shift @$pics;
