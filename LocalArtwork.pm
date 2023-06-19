@@ -132,7 +132,15 @@ sub trackInfoHandler { if (!main::SCANNER) {
 			} @{ $tags->{ALLPICTURES} } ];
 		}
 		elsif ($tags->{APIC} && ref $tags->{APIC} && ref $tags->{APIC} eq 'ARRAY' && ref $tags->{APIC}->[0]) {
-			$pics = [ sort { $a->[1] <=> $b->[1] } @{ $tags->{APIC} } ];
+			$pics = [
+				map { {
+					image_data => $_->[3],
+					mime_type  => $_->[0],
+				} } sort {
+					$a->[1] <=> $b->[1]
+				} @{ $tags->{APIC} }
+			];
+
 			# first is the front picture - skip it
 			shift @$pics;
 		}
@@ -143,12 +151,12 @@ sub trackInfoHandler { if (!main::SCANNER) {
 		my $coverId = $track->coverid;
 		foreach (@$pics) {
 			my $file = catfile($imageCacheDir, "embedded-$coverId-$i.");
-			my ($ext) = $_->[0] =~ m|image/(.*)|;
+			my ($ext) = $_->{mime_type} =~ m|image/(.*)|;
 			$ext =~ s/jpeg/jpg/;
 			$file .= $ext;
 
 			if (!-f $file) {
-				File::Slurp::write_file($file, { binmode => ':raw' }, $_->[3]);
+				File::Slurp::write_file($file, { binmode => ':raw' }, $_->{image_data});
 			}
 
 			push @images, $file;
