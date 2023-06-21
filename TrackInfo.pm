@@ -194,6 +194,9 @@ sub _fetchLyrics {
 	$args->{title} =~ s/[([][^)\]]*?(deluxe|edition|remaster|live|anniversary)[^)\]]*?[)\]]//ig;
 	$args->{title} =~ s/ -[^-]*(deluxe|edition|remaster|live|anniversary).*//ig;
 
+	# specific rule for the "[E]"xplicit flag - it's too specific/short to fit in with the above
+	$args->{title} =~ s/\[E\]//g;
+
 	# remove trailing non-word characters
 	$args->{title} =~ s/[\s\W]{2,}$//;
 	$args->{title} =~ s/\s*$//;
