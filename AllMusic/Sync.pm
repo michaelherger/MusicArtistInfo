@@ -29,7 +29,7 @@ sub searchAlbums {
 
 	my $albums = [];
 
-	while ($$bodyRef =~ m{<li class="album">(.*?)<\/li}gs) {
+	while ($$bodyRef =~ m{<div class="album">(.*?<div class="genres">.*)</div}gs) {
 		my $snippet = $1;
 		my $album = {};
 

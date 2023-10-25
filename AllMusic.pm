@@ -21,9 +21,10 @@ use constant SEARCH_URL       => BASE_URL . 'search/typeahead/all/%s';
 use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s';
 use constant ARTIST_URL       => BASE_URL . 'artist/%s';
 use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biographyAjax';
-use constant RELATED_URL      => BASE_URL . 'artist/%s/related';
+use constant RELATED_URL      => BASE_URL . 'artist/%s/relatedArtistsAjax';
 use constant ALBUMREVIEW_URL  => BASE_URL . 'album/%s/reviewAjax';
-use constant ALBUMCREDITS_URL => BASE_URL . ALBUMREVIEW_URL . '/credits';
+use constant ALBUMDETAILS_URL => BASE_URL . 'album/%s';
+use constant ALBUMCREDITS_URL => BASE_URL . ALBUMREVIEW_URL . '/creditsAjax';
 
 my $log = logger('plugin.musicartistinfo');
 
@@ -195,7 +196,7 @@ sub getRelatedArtists {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getRelatedArtistsCB = sub {
-		my $url = $_[0]->{url} ? ($_[0]->{url} . '/related') : sprintf(RELATED_URL, $_[0]->{id});
+		my $url = $_[0]->{url} ? ($_[0]->{url} . '/relatedArtistsAjax') : sprintf(RELATED_URL, $_[0]->{id});
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -204,14 +205,13 @@ sub getRelatedArtists {
 				my $result = [];
 
 				foreach ( 'similars', 'influencers', 'followers', 'associatedwith', 'collaboratorwith' ) {
-					my $related = $tree->look_down('_tag', 'section', 'class', "related $_") || next;
-					my $title = $related->look_down('_tag', 'h3') || next;
-					my $items = $related->look_down("_tag", "ul") || next;
+					my $related = $tree->look_down('_tag', 'div', 'class', "related $_ clearfix") || next;
+					my $title = $related->look_down('_tag', 'h2') || next;
 
 					push @$result, {
 						$title->as_trimmed_text => [ map {
 							_parseArtistInfo($_);
-						} $items->content_list ]
+						} $related->look_down("_tag", "a") ]
 					};
 				}
 
@@ -352,7 +352,7 @@ sub getAlbumDetails {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumDetailsCB = sub {
-		my $url = _getAlbumReviewUrl(shift);
+		my $url = _getAlbumDetailsUrl(shift);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -360,26 +360,38 @@ sub getAlbumDetails {
 				my $tree   = shift;
 				my $result = [];
 
-				if ( my $details = $tree->look_down('_tag', 'section', 'class', 'basic-info') ) {
-					foreach ( 'release-date', 'recording-date', 'duration', 'genre', 'styles' ) {
+				if ( my $details = $tree->look_down('_tag', 'div', 'id', 'basicInfoMeta') ) {
+					foreach ( 'release-date', 'recording-date', 'duration', 'genre', 'styles', 'recording-location' ) {
 						if ( my $item = $details->look_down('_tag', 'div', 'class', $_) ) {
 							my $title = $item->look_down('_tag', 'h4');
-							my $value = $item->look_down('_tag', 'div', 'class', undef) || $item->look_down('_tag', 'span');
+							my $value = $item->look_down('_tag', 'span');
+							my $values = $item->look_down('_tag', 'div', 'class', undef);
 
-							next unless $title && $value;
+							next unless $title && ($value || $values);
+							$title = $title->as_trimmed_text;
 
-							if ( /genre|styles/ ) {
+							if ( $values && /genre|styles/ ) {
 								# XXX - link to genre/artist pages?
-								my $values = [];
-								foreach ( $value->look_down('_tag', 'a') ) {
-									push @$values, $_->as_trimmed_text;
+								my @values;
+								foreach ( $values->look_down('_tag', 'a') ) {
+									push @values, $_->as_trimmed_text;
 								}
 
-								$value = $values if scalar @$values;
+								$value = \@values if scalar @values;
+							}
+							elsif ( $values && /location/ ) {
+								my @values;
+								foreach ( $item->look_down('_tag', 'div', 'class', undef) ) {
+									push @values, $_->as_trimmed_text;
+								}
+								$value = join(', ', @values) if scalar @values;
+							}
+							elsif ($value) {
+								$value = $value->as_trimmed_text;
 							}
 
 							push @$result, {
-								$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
+								$title => $value,
 							} if $title && $value;
 						}
 					}
@@ -423,8 +435,11 @@ sub getAlbumDetails {
 sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
 
+	return $cb->();
+
+=pod
 	my $getAlbumCoverCB = sub {
-		my $url = _getAlbumReviewUrl(shift);
+		my $url = _getAlbumDetailsUrl(shift);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -479,13 +494,16 @@ sub getAlbumCovers {
 			$getAlbumCoverCB->( shift );
 		}, $args);
 	}
+=cut
 }
 
 sub getAlbumCredits {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumDetailsCB = sub {
-		my $url = $_[0]->{url} ? ($_[0]->{url} . '/credits') : sprintf(ALBUMCREDITS_URL, $_[0]->{id});
+		my $url = $_[0]->{url} ? ($_[0]->{url} . '/creditsAjax') : sprintf(ALBUMCREDITS_URL, $_[0]->{id});
+		my $referer = $url;
+		$referer =~ s|/creditsAjax||;
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -493,13 +511,13 @@ sub getAlbumCredits {
 				my $tree   = shift;
 				my $result = [];
 
-				if ( my $credits = $tree->look_down('_tag', 'table') ) {
+				if ( my $credits = $tree->look_down('_tag', 'table', 'class', 'creditsTable') ) {
 					foreach ($credits->look_down('_tag', 'tr')) {
-						my $artist = $_->look_down('_tag', 'td', 'class', 'artist') || next;
+						my $artist = $_->look_down('_tag', 'td', 'class', 'singleCredit') || next;
 
-						my $artistData = _parseArtistInfo($artist);
+						my $artistData = _parseArtistInfo($artist->look_down('_tag', 'span', 'class', 'artist'));
 
-						if ( my $credit = $_->look_down('_tag', 'td', 'class', 'credit') ) {
+						if ( my $credit = $artist->look_down('_tag', 'span', 'class', 'artistCredits') ) {
 							$artistData->{credit} = $credit->as_trimmed_text;
 						}
 
@@ -508,10 +526,10 @@ sub getAlbumCredits {
 				}
 
 				return {
-					items => $result
+					items => [ sort { $a->{name} cmp $b->{name} } @$result ]
 				};
 			}
-		} );
+		}, ['referer', $referer] );
 	};
 
 	if ( $args->{url} || $args->{id} ) {
@@ -640,7 +658,7 @@ sub _parseArtistInfo {
 	};
 
 	if ( my $url = $data->look_down('_tag', 'a') ) {
-		$artistInfo->{url} = $url->attr('href');
+		$artistInfo->{url} = _makeLinkAbsolute($url->attr('href'));
 
 		my $id = _getIdFromUrl($artistInfo->{url});
 		$artistInfo->{id} = $id if $id;
@@ -663,6 +681,10 @@ sub _getBioUrl {
 
 sub _getAlbumReviewUrl {
 	return $_[0]->{url} ? ($_[0]->{url} . '/reviewAjax') : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
+}
+
+sub _getAlbumDetailsUrl {
+	return $_[0]->{url} ? $_[0]->{url} : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
 }
 
 sub _getIdFromUrl {
