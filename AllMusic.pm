@@ -19,9 +19,10 @@ use Plugins::MusicArtistInfo::AllMusic::Common qw(BASE_URL ALBUMSEARCH_URL);
 
 use constant SEARCH_URL       => BASE_URL . 'search/typeahead/all/%s';
 use constant ARTISTSEARCH_URL => BASE_URL . 'search/artists/%s';
-use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biography';
+use constant ARTIST_URL       => BASE_URL . 'artist/%s';
+use constant BIOGRAPHY_URL    => BASE_URL . 'artist/%s/biographyAjax';
 use constant RELATED_URL      => BASE_URL . 'artist/%s/related';
-use constant ALBUMREVIEW_URL  => BASE_URL . 'album/%s';
+use constant ALBUMREVIEW_URL  => BASE_URL . 'album/%s/reviewAjax';
 use constant ALBUMCREDITS_URL => BASE_URL . ALBUMREVIEW_URL . '/credits';
 
 my $log = logger('plugin.musicartistinfo');
@@ -30,7 +31,9 @@ sub getBiography {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getBiographyCB = sub {
-		my $url = _getBioUrl(shift);
+		my $args = shift;
+		my $url = _getBioUrl($args);
+		my $referer = $args->{url};
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -40,7 +43,7 @@ sub getBiography {
 
 				main::DEBUGLOG && $log->is_debug && $tree->dump;
 
-				if ( my $bio = $tree->look_down('_tag', 'section', 'class', 'biography') ) {
+				if ( my $bio = $tree->look_down('_tag', 'div', 'id', 'biography') ) {
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found biography - parsing');
 
 					$bio = _cleanupLinksAndImages($bio);
@@ -55,12 +58,9 @@ sub getBiography {
 					$result->{bio} || $log->warn('Failed to find biography for ' . $url);
 				}
 
-				my $author = $tree->look_down('_tag', 'h2', 'class', 'headline');
-				$result->{author} = $author->as_trimmed_text if $author;
-
 				return $result;
 			}
-		} );
+		}, ['referer', $referer] );
 	};
 
 	if ( $args->{url} || $args->{id} ) {
@@ -123,7 +123,7 @@ sub getArtistDetails {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getArtistDetailsCB = sub {
-		my $url = _getBioUrl(shift);
+		my $url = _getArtistUrl(shift);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -131,9 +131,9 @@ sub getArtistDetails {
 				my $tree   = shift;
 				my $result = [];
 
-				my $details = $tree->look_down('_tag', 'div', 'class', 'sidebar');
+				my $details = $tree->look_down('_tag', 'div', 'id', 'basicInfoMeta');
 
-				foreach ( 'active-dates', 'birth', 'genre', 'styles', 'aliases', 'member-of' ) {
+				foreach ( 'activeDates', 'birth', 'genre', 'styles', 'group-members', 'aliases', 'member-of' ) {
 					if ( my $item = $details->look_down('_tag', 'div', 'class', $_) ) {
 						my $title = $item->look_down('_tag', 'h4');
 						my $value = $item->look_down('_tag', 'div', 'class', undef);
@@ -153,7 +153,7 @@ sub getArtistDetails {
 							my $values = [];
 							foreach ( $value->look_down('_tag', 'a') ) {
 								push @$values, {
-									HTML::Entities::decode($_->as_trimmed_text) => $_->attr('href')
+									HTML::Entities::decode(Encode::decode('utf8', $_->as_trimmed_text)) => $_->attr('href')
 								};
 							}
 
@@ -289,7 +289,7 @@ sub searchArtists {
 			my $tree   = shift;
 			my $result = [];
 
-			my $results = $tree->look_down("_tag" => "ul", "class" => "search-results");
+			my $results = $tree->look_down("_tag" => "div", "id" => "resultsContainer");
 
 			return $result unless $results;
 
@@ -310,7 +310,9 @@ sub getAlbumReview {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumReviewCB = sub {
-		my $url = _getAlbumReviewUrl(shift);
+		my $args = shift;
+		my $url = _getAlbumReviewUrl($args);
+		my $referer = $args->{url};
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -320,37 +322,7 @@ sub getAlbumReview {
 
 				main::DEBUGLOG && $log->is_debug && $tree->dump;
 
-				if ( my $review = $tree->look_down('_tag', 'section', 'id', 'review-read-more') ) {
-					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
-
-					$review = _cleanupLinksAndImages($review->look_down('_tag', 'div', 'class', 'text'));
-
-					$result->{review} = _decodeHTML($review->as_HTML);
-					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map {
-						$_->as_trimmed_text;
-					} $review->content_list) );
-				}
-
-				# fall back to stripped down version in JSON format
-				if ( !$result->{review} && (my $review = $tree->look_down('_tag', 'script', 'type', 'application/ld+json')) ) {
-					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
-
-					$review = $review->as_HTML;
-					$review =~ s/.*?<script.*?>(.*)<\/script.*/$1/sig;
-
-					$review = eval { from_json($review) };
-
-					$log->error("Failed to parse $url: $@") if $@;
-
-					if ($review && ref $review) {
-						$result->{review} = $result->{reviewText} = $review->{review}->{reviewBody};
-						$result->{author} = $review->{review}->{name};
-						$result->{image} = $review->{image};
-					}
-				}
-
-				if ( !$result->{review} && (my $review = $tree->look_down('_tag', 'div', 'itemprop', 'reviewBody')) ) {
-
+				if ( my $review = $tree->look_down('_tag', 'div', 'id', 'review') ) {
 					main::DEBUGLOG && $log->is_debug && $log->debug('Found reviewBody - parsing');
 
 					$review = _cleanupLinksAndImages($review);
@@ -359,25 +331,11 @@ sub getAlbumReview {
 					$result->{reviewText} = Encode::decode( 'utf8', join('\n\n', map {
 						$_->as_trimmed_text;
 					} $review->content_list) );
-
-					$result->{review} || $log->warn('Failed to find album review for ' . $url);
-				}
-
-				if (!$result->{author}) {
-					my $author = $tree->look_down('_tag', 'h4', 'class', 'review-author headline') || $tree->look_down('_tag', 'h3', 'class', 'review-author headline');
-					$result->{author} = $author->as_trimmed_text if $author;
-				}
-
-				if (!$result->{image}) {
-					my $cover = $tree->look_down('_tag', 'div', 'class', 'album-contain');
-					if ( $cover && (my $img = $cover->look_down('_tag', 'img')) ) {
-						$result->{image} = _makeLinkAbsolute($img->attr('src'));
-					}
 				}
 
 				return $result;
 			}
-		} );
+		}, ['referer', $referer] );
 	};
 
 	if ( $args->{url} || $args->{id} ) {
@@ -619,7 +577,7 @@ sub searchAlbums {
 			my $tree   = shift;
 			my $result = [];
 
-			if ( my $results = $tree->look_down("_tag" => "ul", "class" => "search-results") ) {
+			if ( my $results = $tree->look_down("_tag" => "div", "class" => "album") ) {
 				foreach ($results->content_list) {
 					my $title  = $_->look_down('_tag', 'div', 'class', 'title') || next;
 					my $url    = $title->look_down('_tag', 'a') || next;
@@ -655,11 +613,9 @@ sub _cleanupLinksAndImages {
 		$_->attr('target', 'allmusic');
 	}
 
-	foreach ( $tree->look_down('_tag', 'img', 'class', 'lazy') ) {
-		my $src = $_->attr('data-original') || next;
-		$_->attr('src', _makeLinkAbsolute($src));
-		$_->attr('data-original', '');
+	foreach ( $tree->look_down('_tag', 'img', 'loading', 'lazy') ) {
 		$_->attr('onerror', "this.style.display='none'");
+		$_->attr('style', 'display:block;margin:"10px 0;');
 	}
 
 	return $tree;
@@ -697,12 +653,16 @@ sub _parseArtistInfo {
 	return $artistInfo;
 }
 
+sub _getArtistUrl {
+	return $_[0]->{url} ? $_[0]->{url} : sprintf(ARTIST_URL, $_[0]->{id});
+}
+
 sub _getBioUrl {
-	return $_[0]->{url} ? ($_[0]->{url} . '/biography') : sprintf(BIOGRAPHY_URL, $_[0]->{id});
+	return $_[0]->{url} ? ($_[0]->{url} . '/biographyAjax') : sprintf(BIOGRAPHY_URL, $_[0]->{id});
 }
 
 sub _getAlbumReviewUrl {
-	return $_[0]->{url} ? $_[0]->{url} : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
+	return $_[0]->{url} ? ($_[0]->{url} . '/reviewAjax') : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
 }
 
 sub _getIdFromUrl {
@@ -718,7 +678,7 @@ sub _decodeHTML {
 }
 
 sub _get {
-	my ( $client, $cb, $args ) = @_;
+	my ( $client, $cb, $args, $headers ) = @_;
 
 	main::INFOLOG && $log->info('Getting ' . $args->{url});
 
@@ -779,7 +739,7 @@ sub _get {
 			expires => 86400,		# set expiration, as allmusic doesn't provide it
 			timeout => 15,
 		},
-	)->get($url);
+	)->get($url, $headers ? @$headers : undef);
 }
 
 1;
