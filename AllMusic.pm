@@ -78,9 +78,8 @@ sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getArtistPhotosCB = sub {
-		my $url = _getBioUrl(shift);
+		my $url = _getArtistUrl(shift);
 
-		$url =~ s|/biography.*||;
 		_get( $client, $cb, {
 			url     => $url,
 			parseCB => sub {
@@ -88,18 +87,24 @@ sub getArtistPhotos {
 
 				my $result = [];
 
-				if ($tree->as_HTML =~ /imageGallery.*?(\[.*?\])/) {
-					my $imageGallery = eval { from_json($1) };
+				if ( my $imageContainer = $tree->look_down('_tag', 'aside') ) {
+					my $images = eval {
+						my ($script) = map { /(\[.*\])/sg; $1; } grep { $_ } $imageContainer->look_down('_tag', 'script')->content_list;
+						from_json($script);
+					};
 
-					if (!$@ && ref $imageGallery && ref $imageGallery eq 'ARRAY' && scalar @$imageGallery) {
+					if ( $@ ) {
+						return { error => $@ };
+					}
+					elsif ( $images && ref $images ) {
 						$result = [ map {
 							{
-								author => $_->{author} || 'AllMusic.com',
-								url    => $_->{url},
-								width  => $_->{width},
-								height => $_->{height}
+								author => $_->{author} || $_->{copyrightOwner} || 'AllMusic.com',
+								url    => _makeLinkAbsolute($_->{zoomURL} || $_->{url}),
+								height => $_->{zoomURL} ? undef : $_->{height},
+								width  => $_->{zoomURL} ? undef : $_->{width},
 							}
-						} @$imageGallery ];
+						} @$images ];
 					}
 				}
 
@@ -384,7 +389,10 @@ sub getAlbumDetails {
 								foreach ( $item->look_down('_tag', 'div', 'class', undef) ) {
 									push @values, $_->as_trimmed_text;
 								}
-								$value = join(', ', @values) if scalar @values;
+								$value = join(' & ', @values) if scalar @values;
+							}
+							elsif ($values) {
+								$value = $values->look_down('_tag', 'div', 'class', undef)->as_trimmed_text;
 							}
 							elsif ($value) {
 								$value = $value->as_trimmed_text;
@@ -397,6 +405,7 @@ sub getAlbumDetails {
 					}
 				}
 
+=pod
 				if ( my $item = $tree->look_down('_tag', 'section', 'class', 'moods') ) {
 					my $title = $item->look_down('_tag', 'h4');
 					my $value = $item->look_down('_tag', 'div', 'class', undef);
@@ -414,6 +423,7 @@ sub getAlbumDetails {
 						$title->as_trimmed_text => ref $value eq 'ARRAY' ? $value : $value->as_trimmed_text,
 					} if $title && $value;
 				}
+=cut
 
 				return {
 					items => $result
@@ -435,9 +445,6 @@ sub getAlbumDetails {
 sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
 
-	return $cb->();
-
-=pod
 	my $getAlbumCoverCB = sub {
 		my $url = _getAlbumDetailsUrl(shift);
 
@@ -449,31 +456,26 @@ sub getAlbumCovers {
 
 				#main::DEBUGLOG && $log->is_debug && $tree->dump;
 
-				if ( my $cover = $tree->look_down('_tag', 'img', 'class', 'media-gallery-image') ) {
+				if ( my $cover = $tree->look_down('_tag', 'aside') ) {
 					#main::DEBUGLOG && $log->is_debug && $cover->dump;
-					my $img = eval { from_json( $cover->attr('data-lightbox') ) };
+
+					my $images = eval {
+						my ($script) = map { /(\[.*\])/sg; $1; } grep { $_ } $cover->look_down('_tag', 'script')->content_list;
+						from_json($script);
+					};
 
 					if ( $@ ) {
-						# sometimes we don't have a data-lightbox - use the image shown instead
-						if ($img = $cover->attr('src')) {
-							my ($size) = $img =~ /(?:jpe?g|png)_(\d+)/i;
-							$result->{images} = [ {
-								author => 'AllMusic.com',
-								url    => $img,
-								width  => $size,
-							} ];
-						}
-						else {
-							$result->{error} = $@;
-						}
+						$result->{error} = $@;
 					}
-					elsif ( $img && $img->{image} ) {
-						$result->{images} = [ {
-							author => $img->{image}->{author} || 'AllMusic.com',
-							url    => _makeLinkAbsolute($img->{image}->{url}),
-							height => $img->{image}->{height},
-							width  => $img->{image}->{width},
-						} ];
+					elsif ( $images && ref $images ) {
+						$result->{images} = [ map {
+							{
+								author => $_->{author} || $_->{copyrightOwner} || 'AllMusic.com',
+								url    => _makeLinkAbsolute($_->{zoomURL} || $_->{url}),
+								height => $_->{zoomURL} ? undef : $_->{height},
+								width  => $_->{zoomURL} ? undef : $_->{width},
+							}
+						} @$images ];
 					}
 				}
 
@@ -494,7 +496,6 @@ sub getAlbumCovers {
 			$getAlbumCoverCB->( shift );
 		}, $args);
 	}
-=cut
 }
 
 sub getAlbumCredits {
