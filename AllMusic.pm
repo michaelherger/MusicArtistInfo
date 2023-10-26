@@ -33,7 +33,7 @@ sub getBiography {
 
 	my $getBiographyCB = sub {
 		my $args = shift;
-		my $url = _getBioUrl($args);
+		my $url = _getBioUrl($args) || return _nothingFound($client, $cb);
 		my $referer = $args->{url};
 
 		_get( $client, $cb, {
@@ -78,7 +78,7 @@ sub getArtistPhotos {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getArtistPhotosCB = sub {
-		my $url = _getArtistUrl(shift);
+		my $url = _getArtistUrl(shift) || return _nothingFound($client, $cb);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -129,7 +129,7 @@ sub getArtistDetails {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getArtistDetailsCB = sub {
-		my $url = _getArtistUrl(shift);
+		my $url = _getArtistUrl(shift) || return _nothingFound($client, $cb);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -201,7 +201,7 @@ sub getRelatedArtists {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getRelatedArtistsCB = sub {
-		my $url = $_[0]->{url} ? ($_[0]->{url} . '/relatedArtistsAjax') : sprintf(RELATED_URL, $_[0]->{id});
+		my $url = _getSomeUrl(shift, '/relatedArtistsAjax', RELATED_URL) || return _nothingFound($client, $cb);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -316,7 +316,7 @@ sub getAlbumReview {
 
 	my $getAlbumReviewCB = sub {
 		my $args = shift;
-		my $url = _getAlbumReviewUrl($args);
+		my $url = _getAlbumReviewUrl($args) || return _nothingFound($client, $cb);
 		my $referer = $args->{url};
 
 		_get( $client, $cb, {
@@ -357,7 +357,7 @@ sub getAlbumDetails {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumDetailsCB = sub {
-		my $url = _getAlbumDetailsUrl(shift);
+		my $url = _getAlbumDetailsUrl(shift) || return _nothingFound($client, $cb);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -446,7 +446,7 @@ sub getAlbumCovers {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumCoverCB = sub {
-		my $url = _getAlbumDetailsUrl(shift);
+		my $url = _getAlbumDetailsUrl(shift) || return _nothingFound($client, $cb);
 
 		_get( $client, $cb, {
 			url     => $url,
@@ -502,7 +502,7 @@ sub getAlbumCredits {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $getAlbumDetailsCB = sub {
-		my $url = $_[0]->{url} ? ($_[0]->{url} . '/creditsAjax') : sprintf(ALBUMCREDITS_URL, $_[0]->{id});
+		my $url = _getSomeUrl(shift, '/creditsAjax', ALBUMCREDITS_URL) || return _nothingFound($client, $cb);
 		my $referer = $url;
 		$referer =~ s|/creditsAjax||;
 
@@ -670,20 +670,20 @@ sub _parseArtistInfo {
 	return $artistInfo;
 }
 
-sub _getArtistUrl {
-	return $_[0]->{url} ? $_[0]->{url} : sprintf(ARTIST_URL, $_[0]->{id});
-}
+sub _getArtistUrl { _getSomeUrl(shift, '', ARTIST_URL) }
 
-sub _getBioUrl {
-	return $_[0]->{url} ? ($_[0]->{url} . '/biographyAjax') : sprintf(BIOGRAPHY_URL, $_[0]->{id});
-}
+sub _getBioUrl { _getSomeUrl(shift, '/biographyAjax', BIOGRAPHY_URL) }
 
-sub _getAlbumReviewUrl {
-	return $_[0]->{url} ? ($_[0]->{url} . '/reviewAjax') : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
-}
+sub _getAlbumReviewUrl { _getSomeUrl(shift, '/reviewAjax', ALBUMREVIEW_URL) }
 
-sub _getAlbumDetailsUrl {
-	return $_[0]->{url} ? $_[0]->{url} : sprintf(ALBUMREVIEW_URL, $_[0]->{id});
+sub _getAlbumDetailsUrl { _getSomeUrl(shift, '', ALBUMREVIEW_URL) }
+
+sub _getSomeUrl {
+	my ($data, $suffix, $template) = @_;
+	return unless $data->{url} || $data->{id};
+	return $data->{url}
+		? ($data->{url} . ($suffix || ''))
+		: sprintf($template, $data->{id});
 }
 
 sub _getIdFromUrl {
@@ -696,6 +696,11 @@ sub _decodeHTML {
 		'utf8',
 		HTML::Entities::decode(shift)
 	);
+}
+
+sub _nothingFound {
+	my ($client, $cb) = @_;
+	$cb->({ error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND') })
 }
 
 sub _get {
