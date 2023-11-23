@@ -118,6 +118,12 @@ sub getSongLyricsCLI {
 
 	main::INFOLOG && $log->is_info && $log->info("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 
+	if ( $args->{track} && (my $lyrics = $args->{track}->lyrics) ) {
+		_renderLyricsResponse($lyrics, $request, $args);
+		$request->setStatusDone();
+		return;
+	}
+
 	if (my $lyrics = _getCachedLyrics($args) || _getLocalLyrics($args)) {
 		_renderLyricsResponse($lyrics, $request, $args);
 		$request->setStatusDone();
@@ -374,22 +380,23 @@ sub _getLocalLyrics {
 	return $lyrics;
 }
 
-sub _renderLyrics {
-	my ($item, $args) = @_;
-	$item ||= {};
-	$args ||= {};
+# TODO - is this ever being called?...
+# sub _renderLyrics {
+# 	my ($item, $args) = @_;
+# 	$item ||= {};
+# 	$args ||= {};
 
-	my $title  = $args->{title} || $item->{song};
-	my $artist = $args->{artist} || $item->{artist};
+# 	my $title  = $args->{title} || $item->{song};
+# 	my $artist = $args->{artist} || $item->{artist};
 
-	my $lyrics = $title if $title;
-	$lyrics .= ' - ' if $lyrics && $artist;
-	$lyrics .= $artist if $artist;
-	$lyrics .= "\n\n" if $lyrics;
-	$lyrics .= $item->{lyrics} if $item->{lyrics};
+# 	my $lyrics = $title if $title;
+# 	$lyrics .= ' - ' if $lyrics && $artist;
+# 	$lyrics .= $artist if $artist;
+# 	$lyrics .= "\n\n" if $lyrics;
+# 	$lyrics .= $item->{lyrics} if $item->{lyrics};
 
-	return $lyrics;
-}
+# 	return $lyrics;
+# }
 
 sub _renderLyricsResponse {
 	my ($lyrics, $request, $args) = @_;
@@ -399,6 +406,7 @@ sub _renderLyricsResponse {
 	$lyrics =~ s/\\n/\n/g;
 	$lyrics =~ s/\r\n/\n/g;
 	$lyrics =~ s/\n\r/\n/g;
+	$lyrics =~ s/\r/\n/g;
 
 	$request->addResult('lyrics', $lyrics) if $lyrics;
 	$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;
