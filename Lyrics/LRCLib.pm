@@ -24,7 +24,7 @@ sub getLyrics {
 				return $cb->({
 					song => $args->{title},
 					artist => $args->{artist},
-					lyrics => $result->{syncedLyrics}) || $result->{plainLyrics},
+					lyrics => $result->{syncedLyrics} || $result->{plainLyrics},
 				});
 			}
 
