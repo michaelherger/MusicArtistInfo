@@ -24,14 +24,14 @@ sub getLyrics {
 				return $cb->({
 					song => $args->{title},
 					artist => $args->{artist},
-					lyrics => ($prefs->get('getLyricsWithSyncTimestamps') && $result->{syncedLyrics}) || $result->{plainLyrics}
+					lyrics => $result->{syncedLyrics}) || $result->{plainLyrics},
 				});
 			}
 
 			$cb->();
 		},{
 			timeout => 5,
-			wantError => 1,
+			ignoreError => [404]
 		}
 	);
 

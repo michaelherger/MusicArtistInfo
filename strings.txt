@@ -218,10 +218,6 @@ PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC
 	FR	Si vous spécifiez un dossier pour les paroles de chansons, les textes téléchargés y seront stockés pour optimiser les consultations ultérieures.
 	NL	Als je een map kiest voor songteksten, dan worden de songteksten opgeslagen in de cache.
 
-PLUGIN_MUSICARTISTINFO_LYRICS_WITH_TIMESTAMP
-	DE	Verwende Synchronisationsinformationen wenn für Songtext verfügbar
-	EN	Return lyrics with sync timestamps if available
-
 PLUGIN_MUSICARTISTINFO_IMPORTER
 	DE	Importer Einstellungen
 	EN	Importer settings

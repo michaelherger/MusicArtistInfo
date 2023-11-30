@@ -2,7 +2,7 @@ package Plugins::MusicArtistInfo::Parser::LRC;
 
 use strict;
 
-use File::Slurp;
+use File::Slurp qw(read_file);
 
 use Slim::Utils::Log;
 
@@ -20,22 +20,26 @@ sub parse {
 		return;
 	}
 
+	return $class->strip(scalar read_file($path))
+}
+
+sub strip {
+	my ($class, $content, $keepTimestamps) = @_;
+
 	# only show empty lines if they come in line, but not at the top of the file
 	my $textFound = 0;
-	my $content = join('', grep {
+	return join("\n", grep {
 		$textFound ||= /\w/;
 		$textFound;
 	} map {
 		# remove some metadata
 		s/\[(?:ar|al|ti|au|length|by|offset|re|ve):.*?\]//g;
 		# remove timestamps
-		s/^\[\d+.*?\]//g;
+		s/^\[\d+.*?\]//g unless $keepTimestamps;
 		# Enhanced LRC format is an extension of Simple LRC Format developed by the designer of A2 Media Player
 		s/<\d+:\d+\.\d+>//g;
 		$_;
-	} File::Slurp::read_file($path));
-
-	return $content;
+	} split($/, $content));
 }
 
 

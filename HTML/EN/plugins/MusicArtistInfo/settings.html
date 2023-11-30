@@ -57,11 +57,6 @@
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_lyricsFolder" id="pref_lyricsFolder" value="[% prefs.pref_lyricsFolder %]" size="40">
 		[% END %]
-
-		[% WRAPPER settingGroup title="" desc="" %]
-			<input type="checkbox" [% IF prefs.pref_getLyricsWithSyncTimestamps %]checked [% END %] class="stdedit" name="pref_getLyricsWithSyncTimestamps" id="pref_getLyricsWithSyncTimestamps" value="1" />
-			<label for="pref_getLyricsWithSyncTimestamps" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_LYRICS_WITH_TIMESTAMP" | string %]</label>
-		[% END %]
 	[% END %]
 
 	[% IF noImageProxy; WRAPPER setting title="" desc="" %]

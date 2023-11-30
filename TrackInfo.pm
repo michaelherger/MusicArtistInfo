@@ -312,18 +312,7 @@ sub _getLocalLyrics {
 	my ($args) = @_;
 
 	my $track = $args->{track};
-	my $url;
-
-	if ($track) {
-		if (my $lyrics = $track->lyrics) {
-			return $lyrics;
-		}
-
-		$args->{title} ||= $track->title;
-		$args->{artist} ||= $track->artistName;
-		$url = $track->url;
-	}
-
+	my $url = $track->url if $track;
 	$url ||= $args->{url};
 	$url =~ s/^tmp:/file:/ if $url;
 
@@ -336,16 +325,15 @@ sub _getLocalLyrics {
 		$filePath =~ s/\.\w{2,4}$/.lrc/;
 
 		# try .lrc files first
-		$lyrics = Plugins::MusicArtistInfo::Parser::LRC->parse($filePath)
-		    || Plugins::MusicArtistInfo::Parser::LRC->parse($filePath2);
-
-		return $lyrics if $lyrics;
+		my @files = ($filePath, $filePath2);
 
 		# text files second
 		$filePath =~ s/\.lrc$/.txt/;
 		$filePath2 =~ s/\.lrc$/.txt/;
 
-		foreach my $file ($filePath, $filePath2) {
+		push @files, $filePath, $filePath2;
+
+		foreach my $file (@files) {
 			if (-r $file) {
 				$lyrics = File::Slurp::read_file($file);
 				if ($lyrics) {
@@ -423,6 +411,8 @@ sub _renderLyricsResponse {
 	$lyrics =~ s/\r\n/\n/g;
 	$lyrics =~ s/\n\r/\n/g;
 	$lyrics =~ s/\r/\n/g;
+
+	$lyrics = Plugins::MusicArtistInfo::Parser::LRC->strip($lyrics, $request->getParam('timestamps'));
 
 	$request->addResult('lyrics', $lyrics) if $lyrics;
 	$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND')) unless $lyrics;

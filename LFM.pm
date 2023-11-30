@@ -150,6 +150,7 @@ sub _getArtistPhotos {
 		},{
 			cache => 1,
 			expires => 86400,	# force caching
+			ignoreError => [404],
 		}
 	);
 }
