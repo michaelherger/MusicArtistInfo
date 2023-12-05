@@ -219,42 +219,45 @@ sub _fetchLyrics {
 			$cb->($results);
 		}
 		else {
-			main::INFOLOG && $log->is_info && $log->info('Failed lookup on LRCLib - falling back to ChartLyrics');
-			require Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
-			Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, sub {
-				my $results = shift;
+			if ($results && keys %$results && !$results->{error}) {
+				$cb->($results);
+			}
+			else {
+				Plugins::MusicArtistInfo::Lyrics::LRCLib->searchLyrics($args, sub {
+					my $results = shift;
 
-				if ($results && keys %$results && !$results->{error}) {
-					$cb->($results);
-				}
-				else {
-					main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
-					require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
+					if ($results && keys %$results && !$results->{error}) {
+						$cb->($results);
+					}
+					else {
+						main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
+						require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
 
-					Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
-						$results = shift;
+						Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
+							$results = shift;
 
-						if ($results && keys %$results && !$results->{error}) {
-							$cb->($results);
-						}
-						else {
-							main::INFOLOG && $log->is_info && $log->info('Failed lookup on AZLyrics - falling back to Genius');
-							require Plugins::MusicArtistInfo::Lyrics::Genius;
+							if ($results && keys %$results && !$results->{error}) {
+								$cb->($results);
+							}
+							else {
+								main::INFOLOG && $log->is_info && $log->info('Failed lookup on AZLyrics - falling back to Genius');
+								require Plugins::MusicArtistInfo::Lyrics::Genius;
 
-							Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
-								$results = shift;
+								Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
+									$results = shift;
 
-								if ($results && keys %$results && !$results->{error}) {
-									$cb->($results);
-								}
-								else {
-									$ecb->($results);
-								}
-							});
-						}
-					});
-				}
-			});
+									if ($results && keys %$results && !$results->{error}) {
+										$cb->($results);
+									}
+									else {
+										$ecb->($results);
+									}
+								});
+							}
+						});
+					}
+				});
+			}
 		}
 	});
 }
