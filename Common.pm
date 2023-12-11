@@ -131,6 +131,10 @@ sub fileInFolder {
 sub getLocalnameVariants {
 	my ($name) = @_;
 
+	# Remove wildcards and other stuff potentially conflicting with file system limitations
+	# For whatever reason those aren't removed by S::U::Misc::cleanupFilename()
+	$name =~ s/[:?*]//g;
+
 	my @candidates = map {
 		(
 			$_,
