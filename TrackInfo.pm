@@ -116,6 +116,13 @@ sub getSongLyricsCLI {
 		}
 	}
 
+	if (!defined $args->{title} || !defined $args->{artist}) {
+		main::INFOLOG && $log->is_info && $log->info("Don't look up lyrics, as we lack track title ('$args->{title}') or artist name ('$args->{artist}').");
+		$request->addResult('error', 'Track or artist information is missing');
+		$request->setStatusDone();
+		return;
+	}
+
 	main::INFOLOG && $log->is_info && $log->info("Getting lyrics for " . $args->{title} . ' by ' . $args->{artist});
 
 	if ( $args->{track} && (my $lyrics = $args->{track}->lyrics) ) {
@@ -230,27 +237,39 @@ sub _fetchLyrics {
 						$cb->($results);
 					}
 					else {
-						main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
-						require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
+						main::INFOLOG && $log->is_info && $log->info('Failed lookup on LRCLib - falling back to ChartLyrics');
+						require Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
 
-						Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
-							$results = shift;
+						Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, sub {
+							my $results = shift;
 
 							if ($results && keys %$results && !$results->{error}) {
 								$cb->($results);
 							}
 							else {
-								main::INFOLOG && $log->is_info && $log->info('Failed lookup on AZLyrics - falling back to Genius');
-								require Plugins::MusicArtistInfo::Lyrics::Genius;
+								main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
+								require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
 
-								Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
+								Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
 									$results = shift;
 
 									if ($results && keys %$results && !$results->{error}) {
 										$cb->($results);
 									}
 									else {
-										$ecb->($results);
+										main::INFOLOG && $log->is_info && $log->info('Failed lookup on AZLyrics - falling back to Genius');
+										require Plugins::MusicArtistInfo::Lyrics::Genius;
+
+										Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
+											$results = shift;
+
+											if ($results && keys %$results && !$results->{error}) {
+												$cb->($results);
+											}
+											else {
+												$ecb->($results);
+											}
+										});
 									}
 								});
 							}
