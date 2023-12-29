@@ -52,9 +52,14 @@ sub getBiography {
 					$result->{bio} = _decodeHTML($bio->as_HTML);
 					$result->{bio} =~ s/\bh3\b/h4/ig;
 					$result->{bio} =~ s/"headline"//g;
-					$result->{bioText} = Encode::decode( 'utf8', join('\n\n', map {
+
+					$result->{bioText} = join('\n\n', map {
 						$_->as_trimmed_text;
-					} $bio->content_list) );
+					} $bio->content_list);
+
+					eval {
+						$result->{bioText} = Encode::decode( 'utf8', $result->{bioText} );
+					} unless Slim::Utils::Unicode::looks_like_utf8($result->{bioText});
 
 					$result->{bio} || $log->warn('Failed to find biography for ' . $url);
 				}
@@ -692,10 +697,14 @@ sub _getIdFromUrl {
 }
 
 sub _decodeHTML {
-	return Encode::decode(
-		'utf8',
-		HTML::Entities::decode(shift)
-	);
+	my $content = HTML::Entities::decode(shift);
+
+	eval {
+		$content = Encode::encode('utf8', $content);
+	} unless Slim::Utils::Unicode::looks_like_utf8($content);
+
+	return $content;
+
 }
 
 sub _nothingFound {
