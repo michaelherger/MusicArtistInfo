@@ -57,9 +57,9 @@ sub getBiography {
 						$_->as_trimmed_text;
 					} $bio->content_list);
 
-					eval {
-						$result->{bioText} = Encode::decode( 'utf8', $result->{bioText} );
-					} unless Slim::Utils::Unicode::looks_like_utf8($result->{bioText});
+					if (Slim::Utils::Unicode::looks_like_utf8($result->{bioText})) {
+						$result->{bioText} = Encode::encode( 'utf8', $result->{bioText} );
+					};
 
 					$result->{bio} || $log->warn('Failed to find biography for ' . $url);
 				}
@@ -699,12 +699,11 @@ sub _getIdFromUrl {
 sub _decodeHTML {
 	my $content = HTML::Entities::decode(shift);
 
-	eval {
-		$content = Encode::encode('utf8', $content);
-	} unless Slim::Utils::Unicode::looks_like_utf8($content);
+	if (Slim::Utils::Unicode::looks_like_utf8($content)) {
+		$content = Encode::decode('utf8', $content);
+	}
 
 	return $content;
-
 }
 
 sub _nothingFound {
