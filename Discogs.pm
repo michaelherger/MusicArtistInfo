@@ -12,6 +12,12 @@ use constant BASE_URL => 'https://api.discogs.com/';
 my $log   = logger('plugin.musicartistinfo');
 my $cache = Slim::Utils::Cache->new();
 
+my $bucket;
+if (main::SCANNER) {
+	require Algorithm::TokenBucket;
+	$bucket = Algorithm::TokenBucket->new(60/60, 50, 60);
+}
+
 if (!main::SCANNER) {
 	require Slim::Utils::Strings;
 
@@ -272,12 +278,32 @@ sub getArtist {
 sub _call {
 	my ( $resource, $args, $cb ) = @_;
 
+	if ($bucket) {
+		# throttle lookups if needed
+		until ($bucket->conform(10)) {
+			main::SCANNER
+				? sleep(1)
+				: main::idle();
+		}
+	};
+
 	Plugins::MusicArtistInfo::Common->call(
 		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args) ),
-		$cb,
+		sub {
+			# sync available requests from Discogs with internal rate limiter
+			if ($bucket) {
+				my $headers = $_[1];
+
+				while ($bucket->get_token_count > $headers->{'x-discogs-ratelimit-remaining'}) {
+					$bucket->count(1);
+				}
+			}
+
+			$cb->(@_);
+		},
 		{
 			cache   => 1,
-			expires => 86400,	# force caching - discogs doesn't set the appropriate headers
+			expires => '1y',	# force caching - discogs doesn't set the appropriate headers
 			headers => Plugins::MusicArtistInfo::Common->getHeaders('discogs')
 		}
 	);

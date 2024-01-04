@@ -202,13 +202,14 @@ sub call {
 
 		main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($result));
 
-		$cb->($result);
+		$cb->($result, $response->headers);
 	};
 
 	if (main::SCANNER) {
 		my $cacheKey = "mai_$url";
 
 		if (my $cached = $cache->get($cacheKey)) {
+			$cached->header('x-discogs-ratelimit-remaining' => 999) if defined $cached->header('x-discogs-ratelimit-remaining');
 			return $cb2->($cached);
 		}
 
@@ -219,9 +220,9 @@ sub call {
 		# our sometimes outdated HTML::Parser seems to trip over some headers - ignore them...
 		$ua->parse_head($url =~ /last\.fm/ ? 0 : 1);
 
-		my $response = $ua->get($url);
+		my $response = $ua->get($url, %headers);
 
-		$cache->set($cacheKey, $response, '1d');
+		$cache->set($cacheKey, $response, $params->{expires} || '1d') if $response->code == 200;
 
 		$cb2->($response);
 	}
@@ -303,5 +304,5 @@ sub getHeaders {
 1;
 
 __DATA__
-eyJBdXRob3JpemF0aW9uIjoiRGlzY29ncyB0b2tlbj1nclB1Z2NNUGRlTXpiZnlNbm1XUHpyeVd6SEltUlhoc1p0ZXN4SHREIn0
+eyJBdXRob3JpemF0aW9uIjoiRGlzY29ncyBrZXk9aFd3c2RBamFQQmhIQVVqZlJ2RnosIHNlY3JldD1ZVWFtamJPVnJUdlpDQnZJVHRkc3NKZ2hGU1VkbllReCJ9
 YXBpX2tleT1jNmFiYzUxZTg0N2I5MWFiYTBkZTJlZGUzMzg3NWUyNA

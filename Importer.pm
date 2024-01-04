@@ -25,7 +25,7 @@ my $serverprefs = preferences('server');
 sub initPlugin {
 	my $class = shift;
 
-	return unless $prefs->get('runImporter') && ($serverprefs->get('precacheArtwork') || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt'));
+	return unless $prefs->get('runImporter') && ($serverprefs->get('precacheArtwork') || $prefs->get('lookupArtistPictures') || $prefs->get('lookupCoverArt') || $prefs->get('replaceOnlineGenres'));
 
 	Slim::Music::Import->addImporter($class, {
 		'type'         => 'post',
@@ -42,6 +42,7 @@ sub startScan {
 	my $class = shift;
 
 	$class->_scanAlbumCovers();
+	$class->_scanAlbumGenre() if CAN_ONLINE_LIBRARY && $prefs->get('replaceOnlineGenres');
 
 	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
 		require Plugins::MusicArtistInfo::Importer2;
@@ -243,6 +244,84 @@ sub _setAlbumCover {
 		}
 	}
 }
+
+sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
+	my $class = shift;
+
+	require Plugins::MusicArtistInfo::Discogs;
+
+	my $extIdCondition = join(' OR ', map {
+		"albums.extid LIKE '$_%'";
+	} @{GENRE_REPLACE_ID()});
+
+	my $dbh = Slim::Schema->dbh or return;
+	my $sth = $dbh->prepare_cached("SELECT COUNT(1) FROM albums WHERE $extIdCondition;");
+	$sth->execute();
+	my ($count) = $sth->fetchrow_array;
+	$sth->finish;
+
+	my $progress = Slim::Utils::Progress->new({
+		'type'  => 'importer',
+		'name'  => 'plugin_musicartistinfo_genre_replacement',
+		'total' => $count,
+		'bar'   => 1,
+	});
+
+	my $sql = qq(SELECT albums.id, albums.title, contributors.name
+					FROM albums JOIN contributors ON contributors.id = albums.contributor
+					WHERE $extIdCondition;);
+
+	my ($albumId, $title, $name);
+
+	$sth = $dbh->prepare_cached($sql);
+	$sth->execute();
+	$sth->bind_columns(\$albumId, \$title, \$name);
+
+	my $mappings = {};
+	my $selectSQL = q(SELECT tracks.id
+							FROM tracks
+							WHERE tracks.album = ? AND tracks.extid IS NOT NULL;);
+
+	my $trackId;
+	my $tracks_sth = $dbh->prepare_cached($selectSQL);
+	$tracks_sth->bind_columns(\$trackId);
+
+	my $started = Time::HiRes::time();
+
+	while ( $sth->fetch ) {
+		utf8::decode($title);
+		utf8::decode($name);
+
+		$progress->update(sprintf('%s - %s', $title, $name));
+		Slim::Schema->forceCommit;
+
+		my $albumInfo;
+
+		Plugins::MusicArtistInfo::Discogs->getAlbum(undef, sub {
+			$albumInfo = shift || {};
+		},{
+			artist => $name,
+			album  => $title
+		});
+
+		if (my $genreNames = $albumInfo->{genre}) {
+			$tracks_sth->execute($albumId);
+
+			while ($tracks_sth->fetch) {
+				foreach (@$genreNames) {
+					Slim::Schema::Genre->add($_, $trackId + 0);
+				}
+			}
+		}
+	}
+
+	if ($progress) {
+		$progress->final($count) ;
+		$log->error(sprintf('    finished in %.3f seconds', $progress->duration));
+	}
+
+	Slim::Schema->forceCommit;
+} }
 
 sub _cleanupEmbeddedImagesFolder {
 	require Plugins::MusicArtistInfo::LocalArtwork;
