@@ -8,7 +8,6 @@ use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
-use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
@@ -57,17 +56,7 @@ sub getAlbumMenu {
 
 	my $pt = [$args];
 
-	my $items = [ {
-		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMDETAILS'),
-		type => 'link',
-		url  => \&getAlbumInfo,
-		passthrough => $pt,
-	},{
-		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMCREDITS'),
-		type => 'link',
-		url  => \&getAlbumCredits,
-		passthrough => $pt,
-	} ];
+	my $items = [];
 
 	if ( !$params->{isButton} ) {
 		unshift @$items, {
@@ -104,7 +93,7 @@ sub getAlbumReview {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::AllMusic->getAlbumReview($client,
+	Plugins::MusicArtistInfo::LFM->getAlbumReview($client,
 		sub {
 			my $review = shift;
 			my $items = [];
@@ -177,7 +166,7 @@ sub getAlbumCovers {
 
 		if ( !scalar @$items ) {
 			$items = [{
-				name => $covers->{lfm}->{error} || $covers->{allmusic}->{error} || $covers->{discogs}->{error}  || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
+				name => $covers->{lfm}->{error} || $covers->{discogs}->{error}  || cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'),
 				type => 'text'
 			}];
 		}
@@ -240,12 +229,11 @@ sub getAlbumCoversCLI {
 		my $covers = shift;
 
 		# only continue once we have results from all services.
-		return unless $covers->{lfm} && $covers->{allmusic} && $covers->{discogs} && $covers->{musicbrainz};
+		return unless $covers->{lfm} && $covers->{discogs} && $covers->{musicbrainz};
 
 		my $i = 0;
-		if ( $covers->{lfm}->{images} || $covers->{allmusic}->{images} || $covers->{discogs}->{images} || $covers->{musicbrainz}->{images} ) {
+		if ( $covers->{lfm}->{images} || $covers->{discogs}->{images} || $covers->{musicbrainz}->{images} ) {
 			my @covers;
-			push @covers, @{$covers->{allmusic}->{images}} if ref $covers->{allmusic}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{lfm}->{images}} if ref $covers->{lfm}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{discogs}->{images}} if ref $covers->{discogs}->{images} eq 'ARRAY';
 			push @covers, @{$covers->{musicbrainz}->{images}} if ref $covers->{musicbrainz}->{images} eq 'ARRAY';
@@ -297,11 +285,6 @@ sub getAlbumCoversCLI {
 		$results->{discogs} = {};
 	}
 
-	Plugins::MusicArtistInfo::AllMusic->getAlbumCovers($client, sub {
-		$results->{allmusic} = shift || {};
-		$getAlbumCoversCb->($results);
-	}, $args);
-
 	Plugins::MusicArtistInfo::MusicBrainz->getAlbumCovers($client, sub {
 		$results->{musicbrainz} = shift || {};
 		$getAlbumCoversCb->($results);
@@ -311,110 +294,6 @@ sub getAlbumCoversCLI {
 		$results->{lfm} = shift || {};
 		$getAlbumCoversCb->($results);
 	}, $args);
-}
-
-sub getAlbumInfo {
-	my ($client, $cb, $params, $args) = @_;
-
-	Plugins::MusicArtistInfo::AllMusic->getAlbumDetails($client,
-		sub {
-			my $details = shift;
-			my $items = [];
-
-			if ($details->{error}) {
-				$items = [{
-					name => $details->{error},
-					type => 'text'
-				}]
-			}
-			elsif ( $details->{items} ) {
-				my $colon = cstring($client, 'COLON');
-
-				$items = [ map {
-					my ($k, $v) = each %{$_};
-
-					ref $v eq 'ARRAY' ? {
-						name  => $k,
-						type  => 'outline',
-						items => [ map {
-							my $item = {
-								name => $_,
-								type => 'text'
-							};
-
-							if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCaseArticles($_, 1, 1) )) ) {
-								$item->{type} = 'link';
-								$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
-								$item->{passthrough} = [{
-									searchTags => ["genre_id:" . $genre->id]
-								}];
-							}
-
-							$item;
-						} @$v ],
-					}:{
-						name => "$k$colon $v",
-						type => 'text'
-					}
-				} @{$details->{items}} ];
-
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
-			}
-
-			$cb->($items);
-		},
-		$args,
-	);
-}
-
-sub getAlbumCredits {
-	my ($client, $cb, $params, $args) = @_;
-
-	Plugins::MusicArtistInfo::AllMusic->getAlbumCredits($client,
-		sub {
-			my $credits = shift || {};
-
-			my $items = [];
-
-			if ($credits->{error}) {
-				$items = [{
-					name => $credits->{error},
-					type => 'text'
-				}]
-			}
-			elsif ( $credits->{items} ) {
-				$items = [ map {
-					my $name = $_->{name};
-
-					if ($_->{credit}) {
-						$name .= cstring($client, 'COLON') . ' ' . $_->{credit};
-					}
-
-					my $item = {
-						name => $name,
-						type => 'text',
-					};
-
-					if ($_->{url} || $_->{id}) {
-						$item->{url} = \&Plugins::MusicArtistInfo::ArtistInfo::getArtistMenu;
-						$item->{passthrough} = [{
-							url => $_->{url},
-							id  => $_->{id},
-							name => $_->{name}
-						}];
-						$item->{type} = 'link';
-					}
-
-					$item;
-				} @{$credits->{items}} ] if $credits->{items};
-
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
-			}
-
-			$cb->($items);
-		},
-		$args,
-	);
 }
 
 sub getAlbumReviewCLI {

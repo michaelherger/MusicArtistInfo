@@ -16,7 +16,7 @@ sub name {
 
 sub prefs {
 	return ($prefs, qw(browseArtistPictures runImporter lookupArtistPictures lookupCoverArt reviewFolder artistImageFolder lyricsFolder bioFolder
-		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres));
+		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder));
 }
 
 sub page {

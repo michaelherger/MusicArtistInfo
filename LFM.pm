@@ -48,15 +48,21 @@ sub getLargestPhotoFromList {
 	return $url;
 }
 
-sub getBiography {
-	my ( $class, $client, $cb, $args ) = @_;
+sub _getArtistInfo {
+	my ( $cb, $args ) = @_;
 
 	_call({
 		method => 'artist.getInfo',
 		artist => $args->{artist},
 		lang   => $args->{lang} || 'en',
 		autocorrect => 1,
-	}, sub {
+	}, $cb);
+}
+
+sub getBiography {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	_getArtistInfo(sub {
 		my $artistInfo = shift;
 
 		if ( $artistInfo && ref $artistInfo && $artistInfo->{artist} && $artistInfo->{artist}->{bio} && (my $content = $artistInfo->{artist}->{bio}->{content})) {
@@ -68,7 +74,32 @@ sub getBiography {
 		else {
 			$cb->({ error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND') })
 		}
-	});
+	}, $args);
+}
+
+sub getRelatedArtists {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	_getArtistInfo(sub {
+		my $artistInfo = shift;
+
+		if ( $artistInfo && ref $artistInfo && $artistInfo->{artist} && $artistInfo->{artist}->{similar} && (my $similar = $artistInfo->{artist}->{similar}->{artist})) {
+			my $artists = [ map {
+				{
+					name => $_->{name},
+					# image => $class->getLargestPhotoFromList($_->{image}, 'extralarge'),
+					url => $_->{url},
+				}
+			} @$similar ];
+
+			$cb->({
+				items => $artists,
+			});
+		}
+		else {
+			$cb->({ error => cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND') })
+		}
+	}, $args);
 }
 
 sub getArtistPhotos {
@@ -226,6 +257,30 @@ sub getAlbumCovers {
 		}
 
 		if ( !$result->{images} && !main::SCANNER ) {
+			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+		}
+
+		$cb->($result);
+	}, $args);
+}
+
+sub getAlbumReview {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	$class->getAlbum(sub {
+		my $albumInfo = shift;
+		my $result = {};
+
+		if ( $albumInfo && ref $albumInfo && $albumInfo->{album} && (my $review = $albumInfo->{album}->{wiki}) ) {
+			$result->{review} = $result->{reviewText} = $review->{content};
+
+			if ( my $image = $albumInfo->{album}->{image} ) {
+				my $url = $class->getLargestPhotoFromList($image, 'extralarge');
+				$result->{image} = $url if $url;
+			}
+		}
+
+		if ( !$result->{review} && !main::SCANNER ) {
 			$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 		}
 

@@ -12,11 +12,6 @@
 			<label for="pref_runImporter" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE" | string %]</label>
 		[% END %]
 
-		[% IF canOnlineLibrary; WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC" %]
-			<input type="checkbox" [% IF prefs.pref_replaceOnlineGenres %]checked [% END %] class="stdedit" name="pref_replaceOnlineGenres" id="pref_replaceOnlineGenres" value="1" />
-			<label for="pref_replaceOnlineGenres" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES" | string %]</label>
-		[% END; END %]
-
 		[% WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC" %]
 			<input type="checkbox" [% IF prefs.pref_lookupCoverArt %]checked [% END %] class="stdedit" name="pref_lookupCoverArt" id="pref_lookupCoverArt" value="1" />
 			<label for="pref_lookupCoverArt" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART" | string %]</label>

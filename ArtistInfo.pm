@@ -9,7 +9,6 @@ use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
-use Plugins::MusicArtistInfo::AllMusic;
 use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
@@ -89,11 +88,6 @@ sub getArtistMenu {
 	my $pt = [$args];
 
 	my $items = [ {
-		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_ARTISTDETAILS'),
-		type => 'link',
-		url  => \&getArtistInfo,
-		passthrough => $pt,
-	},{
 		name => cstring($client, 'PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS'),
 		type => 'link',
 		url  => \&getRelatedArtists,
@@ -151,39 +145,21 @@ sub getBiography {
 
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
 
-	# prefer AllMusic.com if language is EN - it's richer than Last.fm
-	if ($args->{lang} eq 'en') {
-		Plugins::MusicArtistInfo::AllMusic->getBiography($client, sub {
-			$cb->(_getBioItems(shift, $client, $params));
-		}, $args);
-	}
-	else {
-		Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
-			my $bio = shift;
+	Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
+		my $bio = shift;
 
-			if ($bio->{error} || !$bio->{bio}) {
-				# in case of error or lack of Bio, try to fall back to English
-				delete $args->{lang};
+		if ($bio->{error} || !$bio->{bio}) {
+			# in case of error or lack of Bio, try to fall back to English
+			delete $args->{lang};
 
-				Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
-					$bio = shift;
-
-					if ($bio->{error} || !$bio->{bio}) {
-						# fall back to AllMusic
-						Plugins::MusicArtistInfo::AllMusic->getBiography($client, sub {
-							$cb->(_getBioItems(shift, $client, $params));
-						}, $args);
-					}
-					else {
-						$cb->(_getBioItems($bio, $client, $params));
-					}
-				}, $args);
-			}
-			else {
-				$cb->(_getBioItems($bio, $client, $params));
-			}
-		}, $args);
-	}
+			Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
+				$cb->(_getBioItems($_[0], $client, $params));
+			}, $args);
+		}
+		else {
+			$cb->(_getBioItems($bio, $client, $params));
+		}
+	}, $args);
 }
 
 sub _getBioItems {
@@ -344,7 +320,7 @@ sub getArtistPhotosCLI {
 sub _getArtistPhotos {
 	my ($client, $artist, $artist_id, $cb, $services) = @_;
 
-	$services ||= [ 'local', 'allmusic', 'discogs', 'lfm'	];
+	$services ||= [ 'local', 'discogs', 'lfm'	];
 
 	my $results = {};
 
@@ -383,11 +359,6 @@ sub _getArtistPhotos {
 	my %services = map {
 		$_ => 1
 	} @$services;
-
-	Plugins::MusicArtistInfo::AllMusic->getArtistPhotos($client, sub {
-		$results->{allmusic} = shift;
-		$gotArtistPhotosCb->($results);
-	}, $args ) if $services{allmusic};
 
 	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
 		$results->{lfm} = shift || { photos => [] };
@@ -465,85 +436,10 @@ sub getArtistPhotoCLI {
 	$request->setStatusProcessing();
 }
 
-sub getArtistInfo {
-	my ($client, $cb, $params, $args) = @_;
-
-	Plugins::MusicArtistInfo::AllMusic->getArtistDetails($client,
-		sub {
-			my $details = shift;
-			my $items = [];
-
-			if ($details->{error}) {
-				$items = [{
-					name => $details->{error},
-					type => 'text'
-				}]
-			}
-			elsif ( $details->{items} ) {
-				my $colon = cstring($client, 'COLON');
-
-				$items = [ map {
-					my ($k, $v) = each %{$_};
-
-					ref $v eq 'ARRAY' ? {
-						name  => $k,
-						type  => 'outline',
-						items => [ map {
-							if (ref $_ eq 'HASH') {
-								my ($k, $v) = each %$_;
-								{
-									name => $k,
-									type => 'link',
-									url  => \&getArtistMenu,
-									passthrough => [{
-										url => $v,
-										name => $k
-									}]
-								}
-							}
-							else {
-								my $item = {
-									name => $_,
-									type => 'text'
-								};
-
-								if ( $k =~ /genre|style/i && (my ($genre) = Slim::Schema->rs('Genre')->search( namesearch => Slim::Utils::Text::ignoreCaseArticles($_, 1, 1) )) ) {
-									$item->{type} = 'link';
-									$item->{url}  = \&Slim::Menu::BrowseLibrary::_artists;
-									$item->{passthrough} = [{
-										searchTags => ["genre_id:" . $genre->id]
-									}];
-								}
-								elsif ( $k =~ /also known as/i ) {
-									$item->{type} = 'link';
-									$item->{url}  = \&_getSearchItem;
-									$item->{passthrough} = [{
-										search => $_
-									}];
-								}
-
-								$item;
-							}
-						} @$v ],
-					}:{
-						name => "$k$colon $v",
-						type => 'text'
-					}
-				} @{$details->{items}} ];
-
-				main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($items));
-			}
-
-			$cb->($items);
-		},
-		$args,
-	);
-}
-
 sub getRelatedArtists {
 	my ($client, $cb, $params, $args) = @_;
 
-	Plugins::MusicArtistInfo::AllMusic->getRelatedArtists($client,
+	Plugins::MusicArtistInfo::LFM->getRelatedArtists($client,
 		sub {
 			my $relations = shift;
 			my $items = [];
@@ -556,23 +452,14 @@ sub getRelatedArtists {
 			}
 			elsif ( $relations->{items} ) {
 				$items = [ map {
-					my ($k, $v) = each %{$_};
-
 					{
-						name  => $k,
-						type  => 'outline',
-						items => [ map {
-							{
-								name => $_->{name},
-								type => 'link',
-								url  => \&getArtistMenu,
-								passthrough => [{
-									url => $_->{url},
-									id  => $_->{id},
-									name => $_->{name}
-								}]
-							 }
-						} @$v ],
+						name => $_->{name},
+						type => 'link',
+						url  => \&getArtistMenu,
+						passthrough => [{
+							url => $_->{url},
+							name => $_->{name}
+						}]
 					}
 				} @{$relations->{items}} ];
 			}
@@ -849,7 +736,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 		$cb->($url);
 	# we don't use discogs here, as we easily get rate limited
-	}, [ 'allmusic', 'lfm' ]);
+	}, [ 'lfm' ]);
 
 	return;
 } }
