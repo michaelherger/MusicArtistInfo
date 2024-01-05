@@ -54,6 +54,7 @@ sub cleanupAlbumName {
 	$album =~ s/[\s\W]{2,}$//;
 	$album =~ s/\s*$//;
 	$album =~ s/^\s*//;
+	$album =~ s/(\s)\s+/$1/g;
 
 	main::INFOLOG && $log->info("Album name cleaned up:  '$album'");
 

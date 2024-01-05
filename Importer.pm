@@ -286,8 +286,6 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 	my $tracks_sth = $dbh->prepare_cached($selectSQL);
 	$tracks_sth->bind_columns(\$trackId);
 
-	my $started = Time::HiRes::time();
-
 	while ( $sth->fetch ) {
 		utf8::decode($title);
 		utf8::decode($name);

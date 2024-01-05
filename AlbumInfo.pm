@@ -12,6 +12,7 @@ use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::MusicBrainz;
+use Plugins::MusicArtistInfo::Wikipedia;
 
 *_cleanupAlbumName = \&Plugins::MusicArtistInfo::Common::cleanupAlbumName;
 
@@ -93,7 +94,8 @@ sub getAlbumReview {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::LFM->getAlbumReview($client,
+	Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client,
+	# Plugins::MusicArtistInfo::LFM->getAlbumReview($client,
 		sub {
 			my $review = shift;
 			my $items = [];
