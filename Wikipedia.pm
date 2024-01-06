@@ -15,7 +15,7 @@ use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY);
 use constant MIN_REVIEW_SIZE => 50;
 use constant PAGE_URL => 'https://%s.wikipedia.org/wiki/%s';
 # https://www.mediawiki.org/wiki/API:Search
-use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=snippet';                 # params: language, query string
+use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=snippet|categorysnippet';                 # params: language, query string
 # https://www.mediawiki.org/wiki/API:Get_the_contents_of_a_page#Method_3:_Use_the_TextExtracts_API
 use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&exsentences=10&formatversion=2&format=json&pageids=%s'; # params: language, page ID
 
@@ -52,11 +52,11 @@ sub getAlbumReview {
 						|| $_->{snippet} =~ /\Q$args->{album}\E/i && $_->{title} =~ /album/i
 						|| lc($_->{title}) eq lc($args->{album}) && length($args->{album}) > 20
 					);
+			} grep {
+				# fortunately "album" matches in all supported languages...
+				$_->{categorysnippet} =~ /album/i;
 			} map {
-				$_->{snippet} = HTML::FormatText->format_string(
-					$_->{snippet},
-					leftmargin => 0,
-				);
+				$_->{snippet} = _removeMarkup($_->{snippet});
 				$_;
 			} @$candidates;
 
@@ -72,6 +72,13 @@ sub getAlbumReview {
 			cache => 1,
 			expires => 86400,	# force caching - wikipedia doesn't want to cache by default
 		}
+	);
+}
+
+sub _removeMarkup {
+	HTML::FormatText->format_string(
+		$_[0],
+		leftmargin => 0,
 	);
 }
 
