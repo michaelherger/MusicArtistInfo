@@ -313,7 +313,7 @@ sub getAlbumReviewCLI {
 	my $args;
 	my $artist = $request->getParam('artist');
 	my $album  = $request->getParam('album');
-	my $language = $request->getParam('language');
+	my $lang   = $request->getParam('lang');
 
 	if ($artist && $album) {
 		$args = {
@@ -325,7 +325,7 @@ sub getAlbumReviewCLI {
 		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
 	}
 
-	$args->{language} = $language if $language;
+	$args->{lang} = $lang if $lang;
 
 	if ( !($args && $args->{artist} && $args->{album}) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));

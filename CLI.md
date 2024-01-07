@@ -15,7 +15,7 @@ Reference
 ----
 
 ```
-musicartistinfo albumreview [artist:abba album:gold | album_id:123] [language:german]
+musicartistinfo albumreview [artist:abba album:gold | album_id:123] [lang:german]
 ```
 
 Get an album's review. Use the `album_id` for local tracks. Or try your luck submitting the album title

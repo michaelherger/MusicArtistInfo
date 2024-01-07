@@ -16,7 +16,7 @@ use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY);
 use constant MIN_REVIEW_SIZE => 50;
 use constant PAGE_URL => 'https://%s.wikipedia.org/wiki/%s';
 # https://www.mediawiki.org/wiki/API:Search
-use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=snippet|categorysnippet';                 # params: language, query string
+use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=snippet|categorysnippet'; # params: language, query string
 # https://www.mediawiki.org/wiki/API:Get_the_contents_of_a_page#Method_3:_Use_the_TextExtracts_API
 use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&exsentences=10&formatversion=2&format=json&pageids=%s'; # params: language, page ID
 
@@ -38,7 +38,7 @@ sub getAlbumReview {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(SEARCH_URL, $args->{language} || _language($client), uri_escape_utf8($args->{album} . ' album ' . $args->{artist})),
+		sprintf(SEARCH_URL, $args->{lang} || _language($client), uri_escape_utf8($args->{album} . ' album ' . $args->{artist})),
 		sub {
 			my $searchResults = shift;
 
@@ -66,15 +66,15 @@ sub getAlbumReview {
 
 			$candidate ||= {};
 
-			if (!$candidate->{pageid} && !$args->{language} && _language($client) ne 'en' && $prefs->get('fallBackToEnglish')) {
-				$args->{language} = 'en';
+			if (!$candidate->{pageid} && !$args->{lang} && _language($client) ne 'en' && $prefs->get('fallBackToEnglish')) {
+				$args->{lang} = 'en';
 				return $class->getAlbumReview($client, $cb, $args);
 			}
 
 			$class->getPage($client, $cb, {
 				title => $candidate->{title},
 				id => $candidate->{pageid},
-				language => $args->{language},
+				lang => $args->{lang},
 			});
 		},{
 			cache => 1,
@@ -100,7 +100,7 @@ sub getPage {
 	}
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(FETCH_URL, $args->{language} || _language($client), uri_escape_utf8($args->{id})),
+		sprintf(FETCH_URL, $args->{lang} || _language($client), uri_escape_utf8($args->{id})),
 		sub {
 			my $fetchResults = shift;
 
