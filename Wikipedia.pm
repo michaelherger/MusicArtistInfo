@@ -59,6 +59,7 @@ sub getAlbumReview {
 				$_->{categorysnippet} =~ /album/i;
 			} map {
 				$_->{snippet} = _removeMarkup($_->{snippet});
+				$_->{categorysnippet} = _removeMarkup($_->{categorysnippet});
 				$_;
 			} @$candidates;
 
@@ -71,7 +72,63 @@ sub getAlbumReview {
 				return $class->getAlbumReview($client, $cb, $args);
 			}
 
-			$class->getPage($client, $cb, {
+			$class->getPage($client, sub {
+				my $review = shift;
+
+				$review->{review} = delete $review->{content};
+				$review->{reviewText} = delete $review->{contentText};
+
+				$cb->($review);
+			}, {
+				title => $candidate->{title},
+				id => $candidate->{pageid},
+				lang => $args->{lang},
+			});
+		},{
+			cache => 1,
+			expires => 86400,	# force caching - wikipedia doesn't want to cache by default
+		}
+	);
+}
+
+sub getBiography {
+	my ( $class, $client, $cb, $args ) = @_;
+
+	Plugins::MusicArtistInfo::Common->call(
+		sprintf(SEARCH_URL, $args->{lang} || _language($client), uri_escape_utf8($args->{artist})),
+		sub {
+			my $searchResults = shift;
+
+			my $candidates = eval('$searchResults->{query}->{search}') || [];
+
+			$log->warn($@) if $@;
+
+			my ($candidate) = grep {
+				$_->{title} =~ /^\Q$args->{artist}\E/i
+					|| Text::Levenshtein::distance(lc($_->{title}), lc($args->{artist})) < 10;
+			} map {
+				$_->{snippet} = _removeMarkup($_->{snippet});
+				$_->{categorysnippet} = _removeMarkup($_->{categorysnippet});
+				$_;
+			} @$candidates;
+
+			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($candidate ? $candidate : $candidates));
+
+			$candidate ||= {};
+
+			if (!$candidate->{pageid} && !$args->{lang} && _language($client) ne 'en' && $prefs->get('fallBackToEnglish')) {
+				$args->{lang} = 'en';
+				return $class->getAlbumReview($client, $cb, $args);
+			}
+
+			$class->getPage($client, sub {
+				my $bio = shift;
+
+				$bio->{bio} = delete $bio->{content};
+				$bio->{bioText} = delete $bio->{contentText};
+
+				$cb->($bio);
+			}, {
 				title => $candidate->{title},
 				id => $candidate->{pageid},
 				lang => $args->{lang},
@@ -106,24 +163,21 @@ sub getPage {
 
 			my $result = {};
 
-			if ( $fetchResults && ref $fetchResults && $fetchResults->{query} && (my $review = $fetchResults->{query}->{pages}) ) {
-				if (length($review->[0]->{extract}) > MIN_REVIEW_SIZE) {
-					$result->{review} = $review->[0]->{extract};
-					$result->{review} =~ s/\n//g;
-					$result->{review} = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/wikipedia.css" />' . $result->{review};
+			if ( $fetchResults && ref $fetchResults && $fetchResults->{query} && (my $content = $fetchResults->{query}->{pages}) ) {
+				if (length($content->[0]->{extract}) > MIN_REVIEW_SIZE) {
+					$result->{content} = $content->[0]->{extract};
+					$result->{content} =~ s/\n//g;
+					$result->{content} = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/wikipedia.css" />' . $result->{content};
 
-					$result->{reviewText} = HTML::FormatText->format_string(
-						$result->{review},
-						leftmargin => 0,
-					);
+					$result->{contentText} = _removeMarkup($result->{content});
 
 					my $slug = $args->{title};
 					$slug =~ s/ /_/g;
-					$result->{review} .= sprintf('<p><br><a href="%s" target="_blank">%s</a></p>', sprintf(PAGE_URL, _language($client), uri_escape_utf8($slug)), cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'));
+					$result->{content} .= sprintf('<p><br><a href="%s" target="_blank">%s</a></p>', sprintf(PAGE_URL, _language($client), uri_escape_utf8($slug)), cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'));
 				}
 			}
 
-			if ( !$result->{review} && !main::SCANNER ) {
+			if ( !$result->{content} && !main::SCANNER ) {
 				$result->{error} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 			}
 
