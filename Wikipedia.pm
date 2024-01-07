@@ -38,7 +38,7 @@ sub getAlbumReview {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(SEARCH_URL, $args->{lang} || _language($client), uri_escape_utf8($args->{album} . ' album ' . $args->{artist})),
+		sprintf(SEARCH_URL, $args->{lang} || _language($client), uri_escape_utf8('"' . $args->{album} . '" album "' . $args->{artist} . '"')),
 		sub {
 			my $searchResults = shift;
 
@@ -49,10 +49,13 @@ sub getAlbumReview {
 			my ($candidate) = sort {
 				_albumSort($a, $b, $args->{album}, $args->{artist})
 			} grep {
-				($_->{title} =~ /^\Q$args->{album}\E/i || $args->{album} =~ /^\Q$_->{title}\E/i) || Text::Levenshtein::distance(lc($_->{title}), lc($args->{album})) < 10
+				my $title = $_->{title};
+				$title =~ s/\s*\(album\)//ig;
+
+				($title =~ /^\Q$args->{album}\E/i || $args->{album} =~ /^\Q$title\E/i) || Text::Levenshtein::distance(lc($title), lc($args->{album})) < 10
 					&& ($_->{snippet} =~ /\Q$args->{artist}\E/i
 						|| $_->{snippet} =~ /\Q$args->{album}\E/i && $_->{title} =~ /album/i
-						|| lc($_->{title}) eq lc($args->{album}) && length($args->{album}) > 20
+						|| lc($title) eq lc($args->{album}) && length($args->{album}) > 20
 					);
 			} grep {
 				# fortunately "album" matches in all supported languages...
@@ -173,7 +176,10 @@ sub getPage {
 
 					my $slug = $args->{title};
 					$slug =~ s/ /_/g;
-					$result->{content} .= sprintf('<p><br><a href="%s" target="_blank">%s</a></p>', sprintf(PAGE_URL, _language($client), uri_escape_utf8($slug)), cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'));
+					$result->{content} .= sprintf('<p><br><a href="%s" target="_blank">%s</a></p>',
+						sprintf(PAGE_URL, $args->{lang} || _language($client), uri_escape_utf8($slug)),
+						cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE')
+					);
 				}
 			}
 

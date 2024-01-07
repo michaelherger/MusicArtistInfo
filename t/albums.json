@@ -1,0 +1,22 @@
+[
+	{
+		"title": "Jeff Wayne's Musical Version of The War of the Worlds (Vinyl VM95ML)",
+		"artist": "Jeff Wayne",
+		"expected": "https://en.wikipedia.org/wiki/Jeff_Wayne's_Musical_Version_of_The_War_of_the_Worlds"
+	},
+	{
+		"title": "Jimi Plays Monterey",
+		"artist": "Jimi Hendrix",
+		"expected": "https://en.wikipedia.org/wiki/Jimi_Plays_Monterey"
+	},
+	{
+		"title": "Quo",
+		"artist": "Status Quo",
+		"expected": "https://en.wikipedia.org/wiki/Quo_(Status_Quo_album)"
+	},
+	{
+		"title": "Famous Blue Raincoat: The Songs of Leonard Cohen",
+		"artist": "Jennifer Warnes",
+		"expected": "https://en.wikipedia.org/wiki/Famous_Blue_Raincoat_(album)"
+	}
+]
