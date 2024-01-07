@@ -15,11 +15,14 @@ Reference
 ----
 
 ```
-musicartistinfo albumreview [artist:abba album:gold | album_id:123]
+musicartistinfo albumreview [artist:abba album:gold | album_id:123] [language:german]
 ```
 
 Get an album's review. Use the `album_id` for local tracks. Or try your luck submitting the album title
 and artist name. They would then be used to do a text match with the sources.
+
+You can override the default language using an additional parameter. This would be useful if you were
+listening to non-english music while your LMS was configured to use English as it's UI language.
 
 ```
 musicartistinfo albumcovers [artist:abba album:gold | album_id:123 | mbid:abc]

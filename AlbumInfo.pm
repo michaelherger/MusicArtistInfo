@@ -95,7 +95,6 @@ sub getAlbumReview {
 	}
 
 	Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client,
-	# Plugins::MusicArtistInfo::LFM->getAlbumReview($client,
 		sub {
 			my $review = shift;
 			my $items = [];
@@ -314,6 +313,7 @@ sub getAlbumReviewCLI {
 	my $args;
 	my $artist = $request->getParam('artist');
 	my $album  = $request->getParam('album');
+	my $language = $request->getParam('language');
 
 	if ($artist && $album) {
 		$args = {
@@ -324,6 +324,8 @@ sub getAlbumReviewCLI {
 	else {
 		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
 	}
+
+	$args->{language} = $language if $language;
 
 	if ( !($args && $args->{artist} && $args->{album}) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
