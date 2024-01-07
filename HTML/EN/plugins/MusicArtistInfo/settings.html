@@ -57,6 +57,11 @@
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER" desc="PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC" %]
 			<input type="text" class="stdedit selectFolder" name="pref_lyricsFolder" id="pref_lyricsFolder" value="[% prefs.pref_lyricsFolder %]" size="40">
 		[% END %]
+
+		[% WRAPPER settingGroup title="" desc="" %]
+			<input type="checkbox" [% IF prefs.pref_fallBackToEnglish %]checked [% END %] class="stdedit" name="pref_fallBackToEnglish" id="pref_fallBackToEnglish" value="1" />
+			<label for="pref_fallBackToEnglish" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK" | string %]</label>
+		[% END %]
 	[% END %]
 
 	[% IF noImageProxy; WRAPPER setting title="" desc="" %]

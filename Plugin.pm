@@ -40,6 +40,7 @@ sub initPlugin {
 		lookupArtistPictures => 1,
 		lookupCoverArt => 1,
 		lookupAlbumArtistPicturesOnly => 1,
+		fallBackToEnglish => 1,
 	});
 
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
