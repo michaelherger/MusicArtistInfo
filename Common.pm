@@ -43,7 +43,8 @@ sub cleanupAlbumName {
 
 	# remove stuff like "CD02", "1 of 2"
 	$album =~ s/\b(disc \d+ of \d+)\b//ig;
-	$album =~ s/\d+\/\d+//ig;
+	# would break Justin Timberlake's "The 20/20 Experience"
+	# $album =~ s/\d+\/\d+//ig;
 	$album =~ s/\b(cd\s*\d+|\d+ of \d+|disc \d+)\b//ig;
 	$album =~ s/- live\b//i;
 
