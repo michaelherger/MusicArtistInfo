@@ -34,7 +34,7 @@ foreach my $album (@$albums) {
 	$req->content(sprintf(BODY, $album->{artist}, $album->{title}, $album->{lang} || 'en'));
 	my $response = $ua->request($req);
 
-	# warn Dumper($response->decoded_content);
+	warn Dumper($response->decoded_content) unless $response->decoded_content =~ /\Q$album->{expected}\E/;
 	ok($response->decoded_content =~ /\Q$album->{expected}\E/, $album->{artist} . ' - ' . $album->{title});
 }
 

@@ -39,7 +39,7 @@ sub cleanupAlbumName {
 	main::INFOLOG && $log->info("Cleaning up album name: '$album'");
 
 	# remove everything between (), {} or []... But don't for PG's eponymous first four albums :-)
-	$album =~ s/(?<!^)[(\[{].*?[}\])]//g if $album !~ /Peter Gabriel .*\b[1-4]\b/i && $album !~ /beatles.*white album/i;
+	$album =~ s/(?<!^)[(\[{].*?[}\])]//g if $album !~ /Peter Gabriel .*\b(?:[1-4]|Car|Scratch|Melt|Security)\b/i && $album !~ /beatles.*white album/i;
 
 	# remove stuff like "CD02", "1 of 2"
 	$album =~ s/\b(disc \d+ of \d+)\b//ig;

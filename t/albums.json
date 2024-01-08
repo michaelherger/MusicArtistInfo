@@ -18,5 +18,32 @@
 		"title": "Famous Blue Raincoat: The Songs of Leonard Cohen",
 		"artist": "Jennifer Warnes",
 		"expected": "https://en.wikipedia.org/wiki/Famous_Blue_Raincoat_(album)"
+	},
+	{
+		"title": "Peter Gabriel (Car)",
+		"artist": "Peter Gabriel",
+		"expected": "https://en.wikipedia.org/wiki/Peter_Gabriel_(1977_album)"
+	},
+	{
+		"title": "Peter Gabriel (Scratch)",
+		"artist": "Peter Gabriel",
+		"expected": "https://en.wikipedia.org/wiki/Peter_Gabriel_(1978_album)"
+	},
+	{
+		"title": "Peter Gabriel (Melt)",
+		"artist": "Peter Gabriel",
+		"expected": "https://en.wikipedia.org/wiki/Peter_Gabriel_(1980_album)"
+	},
+	{
+		"title": "Peter Gabriel (Car)",
+		"artist": "Peter Gabriel",
+		"expected": "https://de.wikipedia.org/wiki/Peter_Gabriel_(Car)",
+		"lang": "de"
+	},
+	{
+		"title": "Peter Gabriel (Security)",
+		"artist": "Peter Gabriel",
+		"expected": "https://de.wikipedia.org/wiki/Peter_Gabriel_(Security)",
+		"lang": "de"
 	}
 ]
