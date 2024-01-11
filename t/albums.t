@@ -16,6 +16,11 @@ BEGIN {
 		open my $fh, "<", $file or die "could not open $file: $!";
 		<$fh>;
 	});
+
+	my @only = grep { $_->{only} } @$albums;
+	if (scalar @only) {
+		$albums = \@only;
+	}
 }
 
 use Test::Simple tests => scalar @$albums;
@@ -34,8 +39,16 @@ foreach my $album (@$albums) {
 	$req->content(sprintf(BODY, $album->{artist}, $album->{title}, $album->{lang} || 'en'));
 	my $response = $ua->request($req);
 
-	warn Dumper($response->decoded_content) unless $response->decoded_content =~ /\Q$album->{expected}\E/;
-	ok($response->decoded_content =~ /\Q$album->{expected}\E/, $album->{artist} . ' - ' . $album->{title});
+	if ($album->{failing}) {
+		warn Dumper($response->decoded_content) if $response->decoded_content =~ /\Q$album->{expected}\E/;
+		ok($response->decoded_content !~ /\Q$album->{expected}\E/, $album->{artist} . ' - ' . $album->{title});
+	}
+	else {
+		warn Dumper($response->decoded_content) if $response->decoded_content !~ /\Q$album->{expected}\E/;
+		ok($response->decoded_content =~ /\Q$album->{expected}\E/, $album->{artist} . ' - ' . $album->{title});
+	}
+
+	# last;
 }
 
 

@@ -1,5 +1,31 @@
 [
 	{
+		"title": "Magical Mystery Tour",
+		"artist": "The Beatles",
+		"expected": "https://en.wikipedia.org/wiki/Magical_Mystery_Tour"
+	},
+	{
+		"title": "Crystal Castles",
+		"artist": "Crystal Castles",
+		"expected": "https://en.wikipedia.org/wiki/Crystal_Castles_(album)"
+	},
+	{
+		"title": "Crystal Castles II",
+		"artist": "Crystal Castles",
+		"expected": "https://en.wikipedia.org/wiki/Crystal_Castles_II"
+	},
+	{
+		"title": "Crystal Castles III",
+		"artist": "Crystal Castles",
+		"expected": "https://en.wikipedia.org/wiki/III_(Crystal_Castles_album)",
+		"failing": true
+	},
+	{
+		"title": "III",
+		"artist": "Crystal Castles",
+		"expected": "https://en.wikipedia.org/wiki/III_(Crystal_Castles_album)"
+	},
+	{
 		"title": "The 20/20 Experience",
 		"artist": "Justin Timberlake",
 		"expected": "https://en.wikipedia.org/wiki/The_20%2F20_Experience"

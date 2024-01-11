@@ -23,15 +23,19 @@ use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 
-sub _albumSort {
-	my ($a, $b, $album, $artist) = @_;
-	return -1 if $a->{title} =~ /^\Q$album\E .*album/i;
-	return 1 if $b->{title} =~ /^\Q$album\E .*album/i;
-	return -1 if $a->{title} =~ /^\Q$album\E .*\Q$artist\E/i;
-	return 1 if $b->{title} =~ /^\Q$album\E .*\Q$artist\E/i;
-	return -1 if $a->{title} =~ /^\Q$album\E$/i;
-	return 1 if $b->{title} =~ /^\Q$album\E$/i;
-	return $a->{title} cmp $b->{title};
+sub _rank {
+	my $item = shift;
+	my ($condition, $value, $message);
+
+	my $condition = shift if scalar @_ == 3;
+	my ($value, $message) = @_;
+
+	if ($condition) {
+		main::INFOLOG && $log->is_info && $log->info($message);
+		$item->{ranking} += $value;
+	}
+
+	return $condition;
 }
 
 sub getAlbumReview {
@@ -47,22 +51,31 @@ sub getAlbumReview {
 			$log->warn($@) if $@;
 
 			my ($candidate) = sort {
-				_albumSort($a, $b, $args->{album}, $args->{artist})
+				$b->{ranking} <=> $a->{ranking}
 			} grep {
-				my $title = $_->{title};
-				$title =~ s/\s*\(album\)//ig;
-
-				($title =~ /^\Q$args->{album}\E/i || $args->{album} =~ /^\Q$title\E/i) || Text::Levenshtein::distance(lc($title), lc($args->{album})) < 10
-					&& ($_->{snippet} =~ /\Q$args->{artist}\E/i
-						|| $_->{snippet} =~ /\Q$args->{album}\E/i && $_->{title} =~ /album/i
-						|| lc($title) eq lc($args->{album}) && length($args->{album}) > 20
-					);
-			} grep {
-				# fortunately "album" matches in all supported languages...
-				$_->{categorysnippet} =~ /album/i;
+				$_->{ranking} > 5;
 			} map {
 				$_->{snippet} = _removeMarkup($_->{snippet});
 				$_->{categorysnippet} = _removeMarkup($_->{categorysnippet});
+
+				my $title = lc($_->{title});
+				$title =~ s/\s*\(.*album\)//ig;
+
+				$_->{ranking} = 0;
+
+				if (_rank($_, $title eq lc($args->{album}), 10, 'exact title match')) {}
+				elsif (_rank($_, ($title =~ /^\Q$args->{album}\E/i || $args->{album} =~ /^\Q$title\E/i), 7, 'partial title match')) {}
+				elsif (_rank($_, Text::Levenshtein::distance($title, lc($args->{album})) < 10, 5, 'levenshtein 10')) {}
+
+				if (_rank($_, lc($_->{snippet}) eq lc($args->{artist}), 5, 'artist match')) {}
+				elsif (_rank($_, $_->{snippet} =~ /^\Q$args->{artist}\E/i, 3, 'snippet starts with artist')) {}
+				elsif (_rank($_, $_->{snippet} =~ /\Q$args->{artist}\E/i, 2, 'snippet has artist')) {}
+
+				_rank($_, $_->{snippet} =~ /\Q$args->{album}\E/i && $_->{title} =~ /album/i, 1, 'snippet has album');
+				_rank($_, $title eq lc($args->{album}) && length($args->{album}) > 20, 5, 'matches a long album title');
+
+				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($_));
+
 				$_;
 			} @$candidates;
 
