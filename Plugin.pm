@@ -42,6 +42,7 @@ sub initPlugin {
 		lookupAlbumArtistPicturesOnly => 1,
 		fallBackToEnglish => 1,
 	});
+	$prefs->setChange(\&webPages, 'hidextramenusitems');
 
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
@@ -96,9 +97,8 @@ sub playerMenu {}
 sub webPages {
 	my $class = shift;
 
-	unless ($prefs->get('hidextramenusitems')) {
-		my $url = 'plugins/' . PLUGIN_TAG . '/missingartwork.html';
-
+	my $url = 'plugins/' . PLUGIN_TAG . '/missingartwork.html';
+	if (!$prefs->get('hidextramenusitems')) {
 		Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => $url } );
 		Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => "html/images/cover.png" });
 
@@ -114,9 +114,13 @@ sub webPages {
 				args   => \@_
 			} );
 		} );
+	} else {
+		Slim::Web::Pages->delPageLinks( 'plugins', 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK' );
+	}
 
-		$url = 'plugins/' . PLUGIN_TAG . '/smallartwork.html';
+	$url = 'plugins/' . PLUGIN_TAG . '/smallartwork.html';
 
+	if (!$prefs->get('hidextramenusitems')) {
 		Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => $url } );
 		Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => "html/images/cover.png" });
 
@@ -132,6 +136,8 @@ sub webPages {
 				args   => \@_
 			} );
 		} );
+	} else {
+		Slim::Web::Pages->delPageLinks( 'plugins', 'PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK' );
 	}
 }
 
