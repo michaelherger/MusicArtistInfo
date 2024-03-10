@@ -27,13 +27,13 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	description  => 'PLUGIN_MUSICARTISTINFO',
 	logGroups    => 'SCANNER',
 } );
+my $prefs = preferences('plugin.musicartistinfo');
 
 sub initPlugin {
 	my $class = shift;
 
 	$VERSION = $class->_pluginDataFor('version');
 
-	my $prefs = preferences('plugin.musicartistinfo');
 	$prefs->init({
 		browseArtistPictures => 1,
 		runImporter => 1,
@@ -42,6 +42,7 @@ sub initPlugin {
 		lookupAlbumArtistPicturesOnly => 1,
 		fallBackToEnglish => 1,
 	});
+	$prefs->setChange(\&webPages, 'hidextramenusitems');
 
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
@@ -97,40 +98,47 @@ sub webPages {
 	my $class = shift;
 
 	my $url = 'plugins/' . PLUGIN_TAG . '/missingartwork.html';
+	if (!$prefs->get('hidextramenusitems')) {
+		Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => $url } );
+		Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => "html/images/cover.png" });
 
-	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => $url } );
-	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK => "html/images/cover.png" });
+		Slim::Web::Pages->addPageFunction( $url, sub {
+			my $client = $_[0];
 
-	Slim::Web::Pages->addPageFunction( $url, sub {
-		my $client = $_[0];
-
-		Slim::Web::XMLBrowser->handleWebIndex( {
-			client => $client,
-			path   => 'missingartwork.html',
-			feed   => \&getMissingArtworkAlbums,
-			type   => 'link',
-			title  => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK'),
-			args   => \@_
+			Slim::Web::XMLBrowser->handleWebIndex( {
+				client => $client,
+				path   => 'missingartwork.html',
+				feed   => \&getMissingArtworkAlbums,
+				type   => 'link',
+				title  => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK'),
+				args   => \@_
+			} );
 		} );
-	} );
+	} else {
+		Slim::Web::Pages->delPageLinks( 'plugins', 'PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK' );
+	}
 
 	$url = 'plugins/' . PLUGIN_TAG . '/smallartwork.html';
 
-	Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => $url } );
-	Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => "html/images/cover.png" });
+	if (!$prefs->get('hidextramenusitems')) {
+		Slim::Web::Pages->addPageLinks( 'plugins', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => $url } );
+		Slim::Web::Pages->addPageLinks( 'icons', { PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK => "html/images/cover.png" });
 
-	Slim::Web::Pages->addPageFunction( $url, sub {
-		my $client = $_[0];
+		Slim::Web::Pages->addPageFunction( $url, sub {
+			my $client = $_[0];
 
-		Slim::Web::XMLBrowser->handleWebIndex( {
-			client => $client,
-			feed   => \&getSmallArtworkAlbums,
-			path   => 'smallartwork.html',
-			type   => 'link',
-			title  => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK'),
-			args   => \@_
+			Slim::Web::XMLBrowser->handleWebIndex( {
+				client => $client,
+				feed   => \&getSmallArtworkAlbums,
+				path   => 'smallartwork.html',
+				type   => 'link',
+				title  => cstring($client, 'PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK'),
+				args   => \@_
+			} );
 		} );
-	} );
+	} else {
+		Slim::Web::Pages->delPageLinks( 'plugins', 'PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK' );
+	}
 }
 
 sub getMissingArtworkAlbums {

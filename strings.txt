@@ -289,6 +289,12 @@ PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	EN	Fall back to English content if your language isn't available.
 	FR	Afficher des informations en anglais lorsque le français n'est pas disponible.
 
+PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
+	EN	Hide Extra menu items
+
+PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
+	EN	Hide “Find albums“ items from the Extra menu.
+
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
 	EN	I'm sorry, but in order to profit from all the advanced features of this plugin (eg. artist pictures when browsing artists) you'll need to run Logitech Media Server 7.8 or later.
