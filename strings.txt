@@ -290,10 +290,12 @@ PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	FR	Afficher des informations en anglais lorsque le français n'est pas disponible.
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
+	DE	Zusätzliche Menüeinträge ausblenden
 	EN	Hide Extra menu items
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
-	EN	Hide “Find albums“ items from the Extra menu.
+	DE	"Alben suchen..." Einträge aus dem Extras Menü entfernen.
+	EN	Hide "Find albums" items from the Extra menu.
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
