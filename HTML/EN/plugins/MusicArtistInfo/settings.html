@@ -62,6 +62,11 @@
 			<input type="checkbox" [% IF prefs.pref_fallBackToEnglish %]checked [% END %] class="stdedit" name="pref_fallBackToEnglish" id="pref_fallBackToEnglish" value="1" />
 			<label for="pref_fallBackToEnglish" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK" | string %]</label>
 		[% END %]
+
+		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS" desc="PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC" %]
+			<input type="checkbox" [% IF prefs.pref_hidextramenusitems %]checked [% END %] class="stdedit" name="pref_hidextramenusitems" id="pref_hidextramenusitems" value="1" />
+		[% END %]
+
 	[% END %]
 
 	[% IF noImageProxy; WRAPPER setting title="" desc="" %]

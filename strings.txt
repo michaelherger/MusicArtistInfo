@@ -179,7 +179,7 @@ PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER
 PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Albumkritiken angeben, so werden darin gespeicherte Texte verwendet. Verwenden Sie Dateinamen im Stil %ARTIST/%ALBUM.txt (html, nfo, z.B. 'Peter Gabriel/So.html'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for album reviews, this will be used as an additional source for textual content. Use filenames like %ARTIST/%ALBUM.txt (html, nfo, eg. 'Peter Gabriel/So.html'). If a file is found in this folder, then no online-source will be used.
-	FR	Si vous spécifiez un dossier pour les critiques d'albums, les critiques qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST/%ALBUM.txt (html, nfo, par exemple "Peter Gabriel/So.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
+	FR	Si vous spécifiez un dossier pour les critiques d'albums, les fichiers qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST/%ALBUM.txt (html, nfo, par exemple "Peter Gabriel/So.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
 	NL	Als je een map gebruikt voor recensies, wordt deze gebruikt als een additionele bron voor recensies. Gebruik bestandsnamen als %ARTIST/%ALBUM.txt (html, nfo, bijv. 'Peter Gabriel/So.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
 PLUGIN_MUSICARTISTINFO_BIOS_FOLDER
@@ -191,7 +191,7 @@ PLUGIN_MUSICARTISTINFO_BIOS_FOLDER
 PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC
 	DE	Falls Sie einen Ordner für Biographien angeben, so werden darin gespeicherte Texte verwendet. Verwenden Sie Dateinamen im Stil %ARTIST.txt (html, nfo, z.B. 'Peter Gabriel.html'), wobei der Dateiname der Schreibweise in ihren Musikdateien entsprechen muss.
 	EN	If you decide to use a folder for biographies, this will be used as an additional source for textual content. Use filenames like %ARTIST.txt (html, nfo, eg. 'Peter Gabriel.html'). If a file is found in this folder, then no online-source will be used.
-	FR	Si vous spécifiez un dossier pour les biographies d'artistes, les biographies qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST.txt (html, nfo, par exemple "Peter Gabriel.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
+	FR	Si vous spécifiez un dossier pour les biographies d'artistes, les fichiers qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST.txt (html, nfo, par exemple "Peter Gabriel.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
 	NL	Als je een map gebruikt voor biografieën van artiesten, wordt deze gebruikt als een additionele bron voor biografieën. Gebruik bestandsnamen als %ARTIST.txt (html, nfo, bijv. 'Peter Gabriel.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
@@ -257,7 +257,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER
 	DE	Speichere Platzhalter-Datei ("artist.missing") falls Interpreten-Bilder heruntergeladen werden sollen, aber nicht gefunden werden.
 	EN	Store placeholder file ("artist.missing") if artist pictures are to be downloaded, but cannot be found.
-	FR	Enregistrer un fichier "artiste.missing" pour les artistes dont la photo a été recherchée mais pas trouvée.
+	FR	Enregistrer un fichier "artist.missing" pour les artistes dont la photo a été recherchée mais pas trouvée.
 	NL	Maak een bestand ("artist.missing") aan als de foto van de artiest dient te worden gedownload maar niet kan worden gevonden.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
@@ -287,7 +287,12 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	DE	Englische Inhalte anzeigen, wenn Deutsch nicht verfügbar ist.
 	EN	Fall back to English content if your language isn't available.
-	FR	Afficher des informations en anglais lorsque le français n'est pas disponible.
+
+PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
+	EN	Hide Extra menu items
+
+PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
+	EN	Hide “Find albums“ items from the Extra menu. Requires a server restart.
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
@@ -316,7 +321,6 @@ PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
 PLUGIN_MUSICARTISTINFO_READ_MORE
 	DE	Ganzen Artikel auf Wikipedia lesen...
 	EN	Read full article on Wikipedia...
-	FR	Lire l'article complet sur Wikipedia...
 
 # language codes to be used in Last.fm lookups - only these available, otherwise fall back to English
 PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE
