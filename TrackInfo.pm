@@ -290,6 +290,8 @@ sub _cacheLyrics {
 		my $encodedLyrics = $lyrics;
 		utf8::encode($encodedLyrics);
 
+		$lyricsFile =~ s/\.txt$/.lrc/ if $encodedLyrics =~ /^\[\d+:\d+\.\d+\]/gm;
+
 		write_file($lyricsFile, { err_mode => 'carp' }, $encodedLyrics) || $log->error("Failed to write lyrics to $lyricsFile");
 	}
 }
@@ -298,9 +300,12 @@ sub _getCachedLyrics {
 	my ($args) = @_;
 
 	if (my $lyricsFile = _getLyricsCacheFile($args)) {
-		main::DEBUGLOG && $log->is_debug && $log->debug("Trying to get lyrics from $lyricsFile");
+		$lyricsFile =~ s/\.txt$/.lrc/ if !-f $lyricsFile;
+
+		main::INFOLOG && $log->is_info && $log->info("Trying to get lyrics from $lyricsFile");
 
 		if (-f $lyricsFile) {
+			main::INFOLOG && $log->is_info && $log->info("Found cached lyrics!");
 			my $lyrics = read_file($lyricsFile);
 			utf8::decode($lyrics);
 			return $lyrics;
