@@ -4,6 +4,7 @@
 	<creator>Michael Herger</creator>
 	<defaultState>enabled</defaultState>
 	<description>PLUGIN_MUSICARTISTINFO_DESC</description>
+	<category>information</category>
 	<email>slim@herger.net</email>
 	<homepageURL>http://www.herger.net/MusicArtistInfo</homepageURL>
 	<optionsURL>plugins/MusicArtistInfo/settings.html</optionsURL>
