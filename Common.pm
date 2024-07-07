@@ -210,7 +210,8 @@ sub call {
 	if (main::SCANNER) {
 		my $cacheKey = "mai_$url";
 
-		if (my $cached = $cache->get($cacheKey)) {
+		my $cached = $cache->get($cacheKey);
+		if ($cached && ref $cached && ref $cached eq 'HTTP::Response') {
 			$cached->header('x-discogs-ratelimit-remaining' => 999) if defined $cached->header('x-discogs-ratelimit-remaining');
 			return $cb2->($cached);
 		}

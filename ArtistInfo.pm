@@ -805,7 +805,7 @@ sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + $retry, \&_hijackArtistsMenu);
 	}
 	else {
-		Slim::Web::XMLBrowser::wipeCaches() if Slim::Utils::Versions->compareVersions($::VERSION, '7.9.0') >= 0;
+		Slim::Web::XMLBrowser::wipeCaches() if main::WEBUI && Slim::Utils::Versions->compareVersions($::VERSION, '7.9.0') >= 0;
 	}
 } }
 
