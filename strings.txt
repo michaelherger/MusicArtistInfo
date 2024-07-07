@@ -288,16 +288,19 @@ PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	DE	Englische Inhalte anzeigen, wenn Deutsch nicht verfügbar ist.
 	EN	Fall back to English content if your language isn't available.
 	FR	Afficher des informations en anglais lorsque le français n'est pas disponible.
+	NL	Toon Engelse informatie als jouw taal niet beschikbaar is.
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
 	DE	Zusätzliche Menüeinträge ausblenden
 	EN	Hide Extra menu items
 	FR	Masquer les éléments du menu "Extras"
+	NL	Verberg menu items "Extra's"
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
 	DE	"Alben suchen..." Einträge aus dem Extras Menü entfernen.
 	EN	Hide "Find albums" items from the Extra menu.
 	FR	Masquer les éléments "Rechercher les albums..." du menu "Extras".
+	NL	Verberg "Vind albums" items in het "Extra's" menu
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	DE	Tut mir Leid, aber um alle Möglichkeiten dieses Plugins auszureizen (z.B. Interpreten-Bilder beim durchsuchen deiner Interpreten-Liste) benötigst du mindestens Logitech Media Server 7.8.
@@ -327,6 +330,7 @@ PLUGIN_MUSICARTISTINFO_READ_MORE
 	DE	Ganzen Artikel auf Wikipedia lesen...
 	EN	Read full article on Wikipedia...
 	FR	Lire l'article complet sur Wikipedia...
+	NL	Lees het volledige artikel op Wikipedia...
 
 # language codes to be used in Last.fm lookups - only these available, otherwise fall back to English
 PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE
