@@ -228,11 +228,11 @@ PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC
 	NL	Als je een map gebruikt voor biografieën van artiesten, wordt deze gebruikt als een additionele bron voor biografieën. Gebruik bestandsnamen als %ARTIST.txt (html, nfo, bijv. 'Peter Gabriel.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
-	DE	Speichern der heruntergeladenen Bilder ist nicht möglich! Bitte stellen Sie sicher, dass der angegebene Ordner existiert und von Logitech Media Server beschreibbar ist!
-	EN	Pictures can't be saved in the defined folder. Please make sure the folder does exist and is writable by Logitech Media Server!
-	FR	L'enregistrement des images téléchargées n'est pas possible ! Assurez-vous que le dossier spécifié existe et qu'il est accessible en écriture pour Logitech Media Server !
-	HU	A képek nem menthetők a megadott mappába. Kérjük, ellenőrizze, hogy a mappa létezik-e, és a Logitech Media Server írható-e!
-	NL	Foto's kunnen niet worden opgeslagen in deze map. Zorg ervoor dat de map bestaat en beschrijfbaar is door Logitech Media Server!
+	DE	Speichern der heruntergeladenen Bilder ist nicht möglich! Bitte stellen Sie sicher, dass der angegebene Ordner existiert und von Lyrion Music Server beschreibbar ist!
+	EN	Pictures can't be saved in the defined folder. Please make sure the folder does exist and is writable by Lyrion Music Server!
+	FR	L'enregistrement des images téléchargées n'est pas possible ! Assurez-vous que le dossier spécifié existe et qu'il est accessible en écriture pour Lyrion Music Server !
+	HU	A képek nem menthetők a megadott mappába. Kérjük, ellenőrizze, hogy a mappa létezik-e, és a Lyrion Music Server írható-e!
+	NL	Foto's kunnen niet worden opgeslagen in deze map. Zorg ervoor dat de map bestaat en beschrijfbaar is door Lyrion Music Server!
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	DE	Bilder nicht anzeigen

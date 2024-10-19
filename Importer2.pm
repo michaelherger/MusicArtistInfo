@@ -73,11 +73,15 @@ sub _scanArtistPhotos {
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
 	my $sql = sprintf('SELECT contributors.id, contributors.name %s FROM contributors ', CAN_ONLINE_LIBRARY ? ', contributors.extid' : '');
 
+	my $roles = Slim::Schema::Contributor->can('getUserDefinedRolesToInclude')
+		? Slim::Schema->artistOnlyRoles( Slim::Schema::Contributor->getUserDefinedRolesToInclude() )
+		: Slim::Schema->artistOnlyRoles();
+
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
 		$sql   .= 'LEFT JOIN contributor_album ON contributor_album.contributor = contributors.id ';
 		$sql   .= 'LEFT JOIN albums ON contributor_album.album = albums.id ' if $va;
-		$sql   .= 'WHERE (contributor_album.role IS NULL OR contributor_album.role IN (' . join( ',', @{Slim::Schema->artistOnlyRoles || []} ) . ')) ';
+		$sql   .= 'WHERE (contributor_album.role IS NULL OR contributor_album.role IN (' . join( ',', @{$roles || []} ) . ')) ';
 		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0) ' if $va;
 		$sql   .= 'AND contributors.extid IS NOT NULL AND contributors.extid != "" ' if IS_ONLINE_LIBRARY_SCAN;
 		$sql   .= 'GROUP BY contributors.id';
