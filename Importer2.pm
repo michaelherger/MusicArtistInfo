@@ -73,8 +73,8 @@ sub _scanArtistPhotos {
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
 	my $sql = sprintf('SELECT contributors.id, contributors.name %s FROM contributors ', CAN_ONLINE_LIBRARY ? ', contributors.extid' : '');
 
-	my $roles = Slim::Schema::Contributor->can('getUserDefinedRolesToInclude')
-		? Slim::Schema->artistOnlyRoles( Slim::Schema::Contributor->getUserDefinedRolesToInclude() )
+	my $roles = Slim::Schema::Contributor->can('activeContributorRoles')
+		? [ map { Slim::Schema::Contributor->typeToRole($_) } Slim::Schema::Contributor->activeContributorRoles() ]
 		: Slim::Schema->artistOnlyRoles();
 
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
