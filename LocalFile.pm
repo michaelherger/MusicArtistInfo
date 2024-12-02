@@ -293,7 +293,7 @@ sub getLocalFileWeblinksCLI {
 		$i++;
 	}
 	else {
-		my $web_root = 'http://' . Slim::Utils::IPDetect::IP() . ':' . preferences('server')->get('httpport');
+		my $web_root = Slim::Utils::Network::serverURL();
 
 		foreach (@$files) {
 			my $file = Slim::Utils::Unicode::utf8decode_locale($_->{file});

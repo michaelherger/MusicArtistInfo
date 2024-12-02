@@ -363,12 +363,12 @@ sub _getArtistPhotos {
 	Plugins::MusicArtistInfo::LFM->getArtistPhotos($client, sub {
 		$results->{lfm} = shift || { photos => [] };
 		$gotArtistPhotosCb->($results);
-	}, $args ) if $services{lfm};
+	}, $args ) if delete $services{lfm};
 
 	Plugins::MusicArtistInfo::Discogs->getArtistPhotos($client, sub {
 		$results->{discogs} = shift || { photos => [] };
 		$gotArtistPhotosCb->($results);
-	}, $args ) if $services{discogs};
+	}, $args ) if delete $services{discogs};
 
 	if ($services{'local'}) {
 		if (CAN_IMAGEPROXY) {
@@ -389,7 +389,11 @@ sub _getArtistPhotos {
 		}
 	}
 
-	$gotArtistPhotosCb->($results);
+	# make sure we call the callback for all defined services
+	foreach (keys %services) {
+		$results->{$_} ||= { photos => [] };
+		$gotArtistPhotosCb->($results);
+	}
 }
 
 sub getArtistPhotoCLI {
