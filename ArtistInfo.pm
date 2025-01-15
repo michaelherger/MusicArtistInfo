@@ -99,7 +99,19 @@ sub getArtistMenu {
 		passthrough => $pt,
 	} ];
 
-	if ($client) {
+	# if we have an artist ID, we can browse the library
+	if ($client && $args->{artist_id}) {
+		push @$items, {
+			name => cstring($client, 'BROWSE'),
+			type => 'link',
+			url  => \&Slim::Menu::BrowseLibrary::_albumsOrReleases,
+			passthrough => [{
+				searchTags => [ 'artist_id:'. $args->{artist_id} ]
+			}],
+		};
+	}
+	# if we don't have an ID, but have a name, we can search
+	elsif ($client) {
 		push @$items, {
 			name => cstring($client, 'BROWSE'),
 			type => 'link',
