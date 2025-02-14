@@ -12,6 +12,7 @@ use Slim::Utils::Log;
 use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
+use Plugins::MusicArtistInfo::API;
 
 my $log   = logger('plugin.musicartistinfo');
 my $prefs;
@@ -734,15 +735,12 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		return Slim::Utils::Misc::fileURLFromPath($local);
 	}
 
-	_getArtistPhotos(undef, $artist, ($artist_id && $artist_id ne $artist) ? $artist_id : undef, sub {
-		my $photos = shift;
+	Plugins::MusicArtistInfo::API->getArtistPhoto(undef, sub {
+		my $photo = shift || {};
 
-		if (!$photos || !ref $photos || !scalar @$photos) {
+		if (!$photo->{url}) {
 			$log->warn(string('PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
-			$photos = [];
 		}
-
-		my $photo = $photos->[0];
 
 		my $url = $photo->{url} || Slim::Utils::Misc::fileURLFromPath(
 			Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
@@ -751,8 +749,9 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		main::INFOLOG && $log->is_info && $log->info("Got artwork for '$artist': $url");
 
 		$cb->($url);
-	# we don't use discogs here, as we easily get rate limited
-	}, [ 'lfm' ]);
+	}, {
+		artist => $artist
+	});
 
 	return;
 } }

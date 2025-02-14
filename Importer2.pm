@@ -15,7 +15,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY);
-use Plugins::MusicArtistInfo::LFM;
+use Plugins::MusicArtistInfo::API;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
 use constant MAX_IMAGE_SIZE => 3072 * 3072;
@@ -185,7 +185,7 @@ sub _getArtistPhotoURL {
 			$done++;
 		}
 		elsif (!$done && $ua) {		# only defined if $prefs->get('lookupArtistPictures')
-			Plugins::MusicArtistInfo::LFM->getArtistPhoto(undef, sub {
+			Plugins::MusicArtistInfo::API->getArtistPhoto(undef, sub {
 				_precacheArtistImage($artist, @_);
 			}, {
 				artist => $artist->{name}
@@ -285,21 +285,6 @@ sub _precacheArtistImage {
 		}
 
 		return unless $precacheArtwork && -f $file;
-
-=pod	(disabled) check for image resolution: we've seen some crashes on Windows (only)
-		require Slim::Utils::GDResizer;
-		my ($width, $height) = Slim::Utils::GDResizer->getSize($file);
-
-		if ( !$width || !$height || $width * $height > MAX_IMAGE_SIZE * MAX_IMAGE_SIZE ) {
-			$log->error(sprintf("Image for %s is too large to be processed (%sx%s).", $artist->{name}, $width, $height));
-			if ($imageFolder) {
-				$log->error(sprintf('You can download %s manually, resize it to be less than %sx%s, and save it as "%s".', $img->{url}, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE, $file));
-			}
-			unlink $file;
-			$cache->remove($cacheKey);
-			return;
-		}
-=cut
 
 		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 
