@@ -71,7 +71,7 @@ sub _scanArtistPhotos {
 
 	# Find distinct artists to check for artwork
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
-	my $sql = sprintf('SELECT contributors.id, contributors.name %s FROM contributors ', CAN_ONLINE_LIBRARY ? ', contributors.extid' : '');
+	my $sql = sprintf('SELECT contributors.id, contributors.musicbrainz_id, contributors.name %s FROM contributors ', CAN_ONLINE_LIBRARY ? ', contributors.extid' : '');
 
 	my $roles = Slim::Schema::Contributor->can('activeContributorRoles')
 		? [ map { Slim::Schema::Contributor->typeToRole($_) } Slim::Schema::Contributor->activeContributorRoles() ]
@@ -188,7 +188,8 @@ sub _getArtistPhotoURL {
 			Plugins::MusicArtistInfo::API->getArtistPhoto(undef, sub {
 				_precacheArtistImage($artist, @_);
 			}, {
-				artist => $artist->{name}
+				artist => $artist->{name},
+				mbid   => $artist->{musicbrainz_id},
 			});
 			$done++;
 		}

@@ -16,8 +16,11 @@ my $prefs = preferences('plugin.musicartistinfo');
 sub getArtistPhoto {
 	my ( $class, $client, $cb, $args ) = @_;
 
+	my $query = uri_escape_utf8($args->{artist});
+	$query .= '?mbid=' . $args->{mbid} if $args->{mbid};
+
 	Plugins::MusicArtistInfo::Common->call(
-		ARTISTIMAGESEARCH_URL . uri_escape_utf8($args->{artist}),
+		ARTISTIMAGESEARCH_URL . $query,
 		sub {
 			my ($result) = @_;
 

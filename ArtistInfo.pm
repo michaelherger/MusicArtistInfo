@@ -693,7 +693,7 @@ sub _getArtistFromArtistId {
 
 	main::INFOLOG && $artist && $log->info("Got artist name from artist ID: '$artist'");
 
-	return $artist;
+	return wantarray ? ($artist, $artistObj->musicbrainz_id) : $artist;
 }
 
 sub _getArtistFromAlbumId {
@@ -721,9 +721,10 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
 	) unless $artist_id;
 
-	my $artist = _getArtistFromArtistId($artist_id) || $artist_id;
+	my ($artist, $mbid) = _getArtistFromArtistId($artist_id);
+	$artist ||= $artist_id;
 
-	main::INFOLOG && $log->info("Artist ID is '$artist_id'");
+	main::INFOLOG && $log->info("Artist ID is '$artist_id', name '$artist', musicbrainz ID '$mbid'");
 
 	# try local artwork first
 	if ( my $local = Plugins::MusicArtistInfo::LocalArtwork->getArtistPhoto({
@@ -750,7 +751,8 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 
 		$cb->($url);
 	}, {
-		artist => $artist
+		artist => $artist,
+		mbid  => $mbid,
 	});
 
 	return;
