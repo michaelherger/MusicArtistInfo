@@ -7,7 +7,7 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-use constant ARTISTIMAGESEARCH_URL => 'https://mai-api.nixda.ch/api/artistPicture/';
+use constant ARTISTIMAGESEARCH_URL => 'https://mai-api.nixda.ch/artist/%s/picture';
 
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.musicartistinfo');
@@ -16,11 +16,10 @@ my $prefs = preferences('plugin.musicartistinfo');
 sub getArtistPhoto {
 	my ( $class, $client, $cb, $args ) = @_;
 
-	my $query = uri_escape_utf8($args->{artist});
-	$query .= '?mbid=' . $args->{mbid} if $args->{mbid};
+	my $query = '?mbid=' . $args->{mbid} if $args->{mbid};
 
 	Plugins::MusicArtistInfo::Common->call(
-		ARTISTIMAGESEARCH_URL . $query,
+		sprintf(ARTISTIMAGESEARCH_URL, uri_escape_utf8($args->{artist})) . $query,
 		sub {
 			my ($result) = @_;
 
