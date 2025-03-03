@@ -9,7 +9,7 @@ use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
-use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::API;
@@ -768,14 +768,14 @@ sub _getSearchItem {
 
 # this is an ugly hack to manipulate the main artist menu to inject artist artwork
 my $retry = 0.5;
-sub _hijackArtistsMenu { if (CAN_IMAGEPROXY) {
+sub _hijackArtistsMenu { if (CAN_IMAGEPROXY && !CAN_LMS_ARTIST_ARTWORK) {
 	main::DEBUGLOG && $log->is_debug && $prefs->get('browseArtistPictures') && $log->debug('Trying to redirect Artists menu...');
 
 	foreach my $node ( @{ Slim::Menu::BrowseLibrary->_getNodeList() } ) {
 		next unless $node->{id} =~ /^myMusicArtists/;
 
 		if ( $prefs->get('browseArtistPictures') && !$node->{mainCB} ) {
-			main::DEBUGLOG && $log->debug('BrowseLibrary menu is ready - hijack the Artists menu: ' . $node->{id});
+			main::INFOLOG && $log->info('BrowseLibrary menu is ready - hijack the Artists menu: ' . $node->{id});
 
 			Slim::Menu::BrowseLibrary->deregisterNode($node->{id});
 

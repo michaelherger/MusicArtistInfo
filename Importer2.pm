@@ -14,7 +14,7 @@ use Slim::Utils::ImageResizer;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY);
+use Plugins::MusicArtistInfo::Common qw(CAN_LMS_ARTIST_ARTWORK CAN_ONLINE_LIBRARY);
 use Plugins::MusicArtistInfo::API;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
@@ -72,6 +72,12 @@ sub _scanArtistPhotos {
 	# Find distinct artists to check for artwork
 	# unfortunately we can't just use an "artists" CLI query, as that code is not loaded in scanner mode
 	my $sql = sprintf('SELECT contributors.id, contributors.musicbrainz_id, contributors.name %s FROM contributors ', CAN_ONLINE_LIBRARY ? ', contributors.extid' : '');
+	my (@where, $group);
+
+	if (CAN_LMS_ARTIST_ARTWORK) {
+		# during a rescan with LMS 9.1 we might already have a picture for an artist
+		push @where, '(contributors.picture IS NULL OR contributors.picture = "")';
+	}
 
 	my $roles = Slim::Schema::Contributor->can('activeContributorRoles')
 		? [ map { Slim::Schema::Contributor->typeToRole($_) } Slim::Schema::Contributor->activeContributorRoles() ]
@@ -81,14 +87,17 @@ sub _scanArtistPhotos {
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
 		$sql   .= 'LEFT JOIN contributor_album ON contributor_album.contributor = contributors.id ';
 		$sql   .= 'LEFT JOIN albums ON contributor_album.album = albums.id ' if $va;
-		$sql   .= 'WHERE (contributor_album.role IS NULL OR contributor_album.role IN (' . join( ',', @{$roles || []} ) . ')) ';
-		$sql   .= 'AND (albums.compilation IS NULL OR albums.compilation = 0) ' if $va;
-		$sql   .= 'AND contributors.extid IS NOT NULL AND contributors.extid != "" ' if IS_ONLINE_LIBRARY_SCAN;
-		$sql   .= 'GROUP BY contributors.id';
+		push @where, '(contributor_album.role IS NULL OR contributor_album.role IN (' . join( ',', @{$roles || []} ) . '))';
+		push @where, '(albums.compilation IS NULL OR albums.compilation = 0)' if $va;
+		push @where, 'contributors.extid IS NOT NULL AND contributors.extid != ""' if IS_ONLINE_LIBRARY_SCAN;
+		$group .= 'GROUP BY contributors.id';
 	}
 	elsif (IS_ONLINE_LIBRARY_SCAN) {
-		$sql .= 'WHERE contributors.extid IS NOT NULL';
+		push @where, 'contributors.extid IS NOT NULL';
 	}
+
+	$sql .= 'WHERE ' . join(' AND ', @where) if @where;
+	$sql .= " $group";
 
 	my $dbh = Slim::Schema->dbh;
 
@@ -146,19 +155,22 @@ sub _getArtistPhotoURL {
 		my $idMatchKey = 'mai_id_map_' . lc(Slim::Utils::Text::ignoreCaseArticles($artist->{name}, 1));
 
 		$imgProxyCache ||= Slim::Utils::DbArtworkCache->new(undef, 'imgproxy', time() + 86400 * 90);	# expire in three months - IDs might change
-		$testSpec      ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
 
-		my $done = 0;
+		if (!CAN_LMS_ARTIST_ARTWORK) {
+			$testSpec ||= (Slim::Music::Artwork::getResizeSpecs())[-1];
 
-		# we need to manually remove stale cache entries - or they'll stick around for weeks, blowing up the image proxy cache
-		if ($isWipeDb && (my $cachedId = $cache->get($idMatchKey))) {
-			foreach (Slim::Music::Artwork::getResizeSpecs()) {
-				$imgProxyCache->remove("imageproxy/mai/artist/$cachedId/image_$_");
+			# we need to manually remove stale cache entries - or they'll stick around for weeks, blowing up the image proxy cache
+			if ($isWipeDb && (my $cachedId = $cache->get($idMatchKey))) {
+				foreach (Slim::Music::Artwork::getResizeSpecs()) {
+					$imgProxyCache->remove("imageproxy/mai/artist/$cachedId/image_$_");
+				}
 			}
 		}
 
+		my $done = 0;
+
 		# online only scan - no need to update if cached image exists
-		if (IS_ONLINE_LIBRARY_SCAN && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
+		if (IS_ONLINE_LIBRARY_SCAN && !CAN_LMS_ARTIST_ARTWORK && $imgProxyCache->get("imageproxy/mai/artist/$artist_id/image_$testSpec") ) {
 			main::INFOLOG && $log->is_info && $log->info('Pre-cached image already exists for ' . $artist->{name});
 			$done++;
 		}
@@ -285,6 +297,7 @@ sub _precacheArtistImage {
 			}
 		}
 
+		return if CAN_LMS_ARTIST_ARTWORK;
 		return unless $precacheArtwork && -f $file;
 
 		Slim::Utils::ImageResizer->resize($file, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
@@ -292,7 +305,7 @@ sub _precacheArtistImage {
 		$file =~ s/\.(?:jpe?g|gif|png)$/\.missing/i if $imageFolder;
 		unlink $file;
 	}
-	elsif ( $precacheArtwork ) {
+	elsif ( !CAN_LMS_ARTIST_ARTWORK && $precacheArtwork ) {
 		$img ||= Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto();
 		$img = Slim::Utils::Misc::pathFromFileURL($img) if Slim::Music::Info::isFileURL($img);
 

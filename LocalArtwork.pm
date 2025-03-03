@@ -13,10 +13,13 @@ use Slim::Utils::Log;
 use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
+use Plugins::MusicArtistInfo::Common qw( CAN_LMS_ARTIST_ARTWORK );
+
 *_imageInFolder = \&Plugins::MusicArtistInfo::Common::imageInFolder;
 
 my $log   = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
+my $serverprefs = preferences('server');
 my $cache = Slim::Utils::Cache->new;
 my ($defaultArtistImg, $fallbackArtistImg, $checkFallbackArtistImg, $imageCacheDir);
 
@@ -31,7 +34,6 @@ $ignoreList{'#snapshot'} = 1;
 $ignoreList{'@eaDir'} = 1;
 
 sub init {
-	my $serverprefs = preferences('server');
 	$imageCacheDir = catdir($serverprefs->get('cachedir'), 'mai_embedded');
 	mkdir $imageCacheDir unless -d $imageCacheDir;
 
@@ -261,17 +263,18 @@ sub getArtistPhoto {
 
 	my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($artist);
 
-	if ($imageFolder) {
+	foreach my $imageFolder ($prefs->get('artistImageFolder'), $serverprefs->get('artfolder')) {
 		$img = _imageInFolder($imageFolder, @$candidates);
+		last if $img;
+	}
 
-		# don't look up generic artists like "no artist" or "various artists" etc.
-		if (!$img) {
-			my $vaString = Slim::Music::Info::variousArtistString();
-			my $noArtistString = Slim::Utils::Strings::string('NO_ARTIST');
+	# don't look up generic artists like "no artist" or "various artists" etc.
+	if (!$img) {
+		my $vaString = Slim::Music::Info::variousArtistString();
+		my $noArtistString = Slim::Utils::Strings::string('NO_ARTIST');
 
-			if ( $artist =~ /^(?:no artist|Various Artist|Various$|va$|\Q$vaString\E|\Q$noArtistString\E)/i ) {
-				$img = $class->defaultArtistPhoto();
-			}
+		if ( $artist =~ /^(?:no artist|Various Artist|Various$|va$|\Q$vaString\E|\Q$noArtistString\E)/i ) {
+			$img = $class->defaultArtistPhoto();
 		}
 	}
 
