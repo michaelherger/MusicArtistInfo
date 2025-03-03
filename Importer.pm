@@ -11,7 +11,7 @@ use Slim::Music::Import;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY);
+use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK);
 use Plugins::MusicArtistInfo::LFM;
 
 use constant GENRE_REPLACE_ID => ['spotify', 'wimp'];
@@ -45,6 +45,11 @@ sub startScan {
 	$class->_scanAlbumGenre() if CAN_ONLINE_LIBRARY && $prefs->get('replaceOnlineGenres');
 
 	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
+		if (CAN_LMS_ARTIST_ARTWORK && (my $artworkFolder = $prefs->get('artistImageFolder'))) {
+			require Slim::Music::ContributorPictureScan;
+			Slim::Music::ContributorPictureScan->addArtworkFolder($artworkFolder);
+		}
+
 		require Plugins::MusicArtistInfo::Importer2;
 		Plugins::MusicArtistInfo::Importer2->startScan(@_);
 	}
