@@ -1,6 +1,7 @@
 package Plugins::MusicArtistInfo::ArtistInfo;
 
 use strict;
+use HTTP::Status qw(RC_MOVED_PERMANENTLY);
 
 use Slim::Menu::ArtistInfo;
 use Slim::Menu::AlbumInfo;
@@ -15,7 +16,7 @@ use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::API;
 
 my $log   = logger('plugin.musicartistinfo');
-my $prefs;
+my $prefs = Slim::Utils::Prefs::preferences('plugin.musicartistinfo');
 
 sub init {
 #                                                                |requires Client
@@ -46,8 +47,14 @@ sub init {
 		func => \&trackInfoHandler,
 	) );
 
-	if (CAN_IMAGEPROXY) {
-		require Slim::Web::HTTP;
+	# some clients might still be calling us - redirect to LMS' artist artwork handler
+	if (CAN_LMS_ARTIST_ARTWORK) {
+		Slim::Web::Pages->addRawFunction(
+			qr/imageproxy\/mai\/artist\/.+\/image/,
+			\&_artworkRedirect,
+		);
+	}
+	elsif (CAN_IMAGEPROXY) {
 		require Slim::Web::ImageProxy;
 		require Plugins::MusicArtistInfo::LocalArtwork;
 
@@ -61,7 +68,6 @@ sub init {
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 2, \&_hijackArtistsMenu);
 		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 15, \&_hijackArtistsMenu);
 
-		$prefs = Slim::Utils::Prefs::preferences('plugin.musicartistinfo');
 		$prefs->setChange(\&_hijackArtistsMenu, 'browseArtistPictures');
 	}
 }
@@ -693,7 +699,13 @@ sub _getArtistFromArtistId {
 
 	main::INFOLOG && $artist && $log->info("Got artist name from artist ID: '$artist'");
 
-	return wantarray ? ($artist, $artistObj->musicbrainz_id) : $artist;
+	my @responseList;
+	if (wantarray) {
+		@responseList = ($artist, $artistObj->id);
+		push @responseList, $artistObj->pictureid if CAN_LMS_ARTIST_ARTWORK
+	}
+
+	return wantarray ? @responseList : $artist;
 }
 
 sub _getArtistFromAlbumId {
@@ -711,6 +723,19 @@ sub _getArtistFromAlbumId {
 		return $artist;
 	}
 }
+
+sub _artworkRedirect { if (CAN_LMS_ARTIST_ARTWORK) {
+	my ($httpClient, $response) = @_;
+
+	my ($artistId, $spec) = $response->request->uri->path =~ m|imageproxy/mai/artist/(.+)/image(_.*)|;
+
+	my (undef, undef, $pictureId) = _getArtistFromArtistId($artistId);
+
+	$response->code(RC_MOVED_PERMANENTLY);
+	$response->header('Location' => "/contributor/$pictureId/image$spec");
+	$response->header('Connection' => 'close');
+	return Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \"" );
+} }
 
 sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	my ($url, $spec, $cb) = @_;
