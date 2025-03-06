@@ -221,6 +221,8 @@ sub getBiographyCLI {
 		sub {
 			my $items = shift || [];
 
+			my (undef, undef, $portraitId) = _getArtistFromArtistId($artist_id || $artist) if CAN_LMS_ARTIST_ARTWORK;
+
 			if ( !$items || !ref $items || ref $items ne 'ARRAY' || !scalar @$items ) {
 				main::INFOLOG && $log->is_info && $log->info("No Biography found: " . Data::Dump::dump($items));
 				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
@@ -236,6 +238,8 @@ sub getBiographyCLI {
 				$request->addResult('artist_id', $artist_id) if $artist_id;
 				$request->addResult('artist', $artist) if $artist;
 			}
+
+			$request->addResult('portraitid', $portraitId) if $portraitId;
 
 			$request->setStatusDone();
 		},{
@@ -702,7 +706,7 @@ sub _getArtistFromArtistId {
 	my @responseList;
 	if (wantarray) {
 		@responseList = ($artist, $artistObj->id);
-		push @responseList, $artistObj->pictureid if CAN_LMS_ARTIST_ARTWORK
+		push @responseList, $artistObj->portraitid if CAN_LMS_ARTIST_ARTWORK;
 	}
 
 	return wantarray ? @responseList : $artist;
@@ -729,10 +733,12 @@ sub _artworkRedirect { if (CAN_LMS_ARTIST_ARTWORK) {
 
 	my ($artistId, $spec) = $response->request->uri->path =~ m|imageproxy/mai/artist/(.+)/image(_.*)|;
 
-	my (undef, undef, $pictureId) = _getArtistFromArtistId($artistId);
+	my (undef, undef, $portraitId) = _getArtistFromArtistId($artistId);
+
+	$portraitId ||= 0;
 
 	$response->code(RC_MOVED_PERMANENTLY);
-	$response->header('Location' => "/contributor/$pictureId/image$spec");
+	$response->header('Location' => "/contributor/$portraitId/image$spec");
 	$response->header('Connection' => 'close');
 	return Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \"" );
 } }

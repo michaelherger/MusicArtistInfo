@@ -76,7 +76,7 @@ sub _scanArtistPhotos {
 
 	if (CAN_LMS_ARTIST_ARTWORK) {
 		# during a rescan with LMS 9.1 we might already have a picture for an artist
-		push @where, '(contributors.picture IS NULL OR contributors.picture = "")';
+		push @where, '(contributors.portrait IS NULL OR contributors.portrait = "")';
 	}
 
 	my $roles = Slim::Schema::Contributor->can('activeContributorRoles')
