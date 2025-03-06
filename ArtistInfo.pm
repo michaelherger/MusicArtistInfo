@@ -48,27 +48,35 @@ sub init {
 	) );
 
 	# some clients might still be calling us - redirect to LMS' artist artwork handler
-	if (CAN_LMS_ARTIST_ARTWORK) {
-		Slim::Web::Pages->addRawFunction(
-			qr/imageproxy\/mai\/artist\/.+\/image/,
-			\&_artworkRedirect,
-		);
-	}
-	elsif (CAN_IMAGEPROXY) {
+	if (CAN_IMAGEPROXY) {
 		require Slim::Web::ImageProxy;
 		require Plugins::MusicArtistInfo::LocalArtwork;
 
-		Slim::Web::ImageProxy->registerHandler(
-			match => qr/mai\/artist\/.+/,
-			func  => \&_artworkUrl,
-		);
+		if (CAN_LMS_ARTIST_ARTWORK) {
+			Slim::Web::Pages->addRawFunction(
+				qr/imageproxy\/mai\/artist\/.+\/image/,
+				\&_artworkRedirect,
+			);
 
-		# dirty re-direct of the Artists menu - delay, as some items might not have registered yet
-		require Slim::Utils::Timers;
-		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 2, \&_hijackArtistsMenu);
-		Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 15, \&_hijackArtistsMenu);
+			# we'll redirect to this guy if the LMS internal image handler fails
+			Slim::Web::ImageProxy->registerHandler(
+				match => qr/mai\/_artist\/.+/,
+				func  => \&_artworkUrl,
+			);
+		}
+		else {
+			Slim::Web::ImageProxy->registerHandler(
+				match => qr/mai\/artist\/.+/,
+				func  => \&_artworkUrl,
+			);
 
-		$prefs->setChange(\&_hijackArtistsMenu, 'browseArtistPictures');
+			# dirty re-direct of the Artists menu - delay, as some items might not have registered yet
+			require Slim::Utils::Timers;
+			Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 2, \&_hijackArtistsMenu);
+			Slim::Utils::Timers::setTimer(undef, Time::HiRes::time() + 15, \&_hijackArtistsMenu);
+
+			$prefs->setChange(\&_hijackArtistsMenu, 'browseArtistPictures');
+		}
 	}
 }
 
@@ -731,22 +739,29 @@ sub _getArtistFromAlbumId {
 sub _artworkRedirect { if (CAN_LMS_ARTIST_ARTWORK) {
 	my ($httpClient, $response) = @_;
 
-	my ($artistId, $spec) = $response->request->uri->path =~ m|imageproxy/mai/artist/(.+)/image(_.*)|;
+	my $path = $response->request->uri->path;
+	my ($artistId, $spec) = $path =~ m|imageproxy/mai/artist/(.+)/image(_.*)?|;
 
 	my (undef, undef, $portraitId) = _getArtistFromArtistId($artistId);
 
-	$portraitId ||= 0;
-
 	$response->code(RC_MOVED_PERMANENTLY);
-	$response->header('Location' => "/contributor/$portraitId/image$spec");
+
+	if ($portraitId) {
+		$response->header('Location' => "/contributor/$portraitId/image$spec");
+	}
+	else {
+		$path =~ s|/artist/|/_artist/|;
+		$response->header('Location' => $path);
+	}
+
 	$response->header('Connection' => 'close');
 	return Slim::Web::HTTP::addHTTPResponse( $httpClient, $response, \"" );
 } }
 
-sub _artworkUrl { if (CAN_IMAGEPROXY) {
+sub _artworkUrl {
 	my ($url, $spec, $cb) = @_;
 
-	my ($artist_id) = $url =~ m|mai/artist/(.+)|i;
+	my ($artist_id) = $url =~ m|mai/_?artist/(.+)|i;
 
 	return Slim::Utils::Misc::fileURLFromPath(
 		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
@@ -787,7 +802,7 @@ sub _artworkUrl { if (CAN_IMAGEPROXY) {
 	});
 
 	return;
-} }
+}
 
 sub _getSearchItem {
 	my ($client, $cb, $params, $args) = @_;
