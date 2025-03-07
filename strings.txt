@@ -174,9 +174,9 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	DA	Søg efter billede af kunstner
-	DE	Interpretenbilder suchen
-	EN	Artist Picture Lookup
-	FR	Recherche des photos d'artistes
+	DE	Interpretenbilder online suchen
+	EN	Artist Picture Online Lookup
+	FR	Recherche des photos d'artistes en ligne
 	HU	Művész képkeresés
 	NL	Foto's van artiesten opzoeken
 
