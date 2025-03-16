@@ -5,7 +5,7 @@ use base qw(Slim::Web::Settings);
 
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_ONLINE_LIBRARY);
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_ONLINE_LIBRARY CAN_LMS_ARTIST_ARTWORK);
 
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
@@ -15,8 +15,13 @@ sub name {
 }
 
 sub prefs {
-	return ($prefs, qw(browseArtistPictures runImporter lookupArtistPictures lookupCoverArt reviewFolder artistImageFolder lyricsFolder bioFolder
+	my @prefs = ($prefs, qw(runImporter lookupArtistPictures lookupCoverArt reviewFolder artistImageFolder lyricsFolder bioFolder
 		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres fallBackToEnglish hidextramenusitems));
+
+	# we'll leave the artist picture handling to LMS, if possible
+	push @prefs, 'browseArtistPictures' if !CAN_LMS_ARTIST_ARTWORK;
+
+	return @prefs;
 }
 
 sub page {
@@ -38,6 +43,7 @@ sub handler {
 	}
 
 	$paramRef->{noImageProxy} = !CAN_IMAGEPROXY;
+	$paramRef->{canLMSArtistArtwork} = CAN_LMS_ARTIST_ARTWORK;
 	$paramRef->{canOnlineLibrary} = CAN_ONLINE_LIBRARY;
 	$paramRef->{artfolder} = $serverprefs->get('artfolder');
 

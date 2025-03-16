@@ -44,12 +44,12 @@ sub startScan {
 	$class->_scanAlbumCovers();
 	$class->_scanAlbumGenre() if CAN_ONLINE_LIBRARY && $prefs->get('replaceOnlineGenres');
 
-	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
-		if (CAN_LMS_ARTIST_ARTWORK && (my $artworkFolder = $prefs->get('artistImageFolder'))) {
-			require Slim::Music::ContributorPictureScan;
-			Slim::Music::ContributorPictureScan->addArtworkFolder($artworkFolder);
-		}
+	if (CAN_LMS_ARTIST_ARTWORK && (my $artworkFolder = $prefs->get('artistImageFolder'))) {
+		require Slim::Music::ContributorPictureScan;
+		Slim::Music::ContributorPictureScan->addArtworkFolder($artworkFolder);
+	}
 
+	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
 		require Plugins::MusicArtistInfo::Importer2;
 		Plugins::MusicArtistInfo::Importer2->startScan(@_);
 	}
