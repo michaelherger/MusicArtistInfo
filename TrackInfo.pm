@@ -323,6 +323,7 @@ sub _getLyricsCacheFile {
 
 		if (-w $lyricsFolder) {
 			my $artistDir = catdir($lyricsFolder, @{Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist})}[0]);
+			$artistDir =~ s/\.$//;
 			mkdir $artistDir if $create && ! -d $artistDir;
 
 			my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{title});

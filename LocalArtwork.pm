@@ -259,8 +259,6 @@ sub getArtistPhoto {
 	}
 
 	my $img;
-	my $imageFolder = $prefs->get('artistImageFolder');
-
 	my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($artist);
 
 	foreach my $imageFolder ($prefs->get('artistImageFolder'), $serverprefs->get('artfolder')) {

@@ -176,6 +176,7 @@ sub _getInfoFileFromFolder {
 
 	my $file;
 	foreach my $folder ( @$folders ) {
+		$folder =~ s/\.$//;
 		$file = Plugins::MusicArtistInfo::Common::fileInFolder($folder, $extensions, @$candidates);
 		last if $file;
 	}
