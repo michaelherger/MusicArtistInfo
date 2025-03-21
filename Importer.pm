@@ -33,7 +33,12 @@ sub initPlugin {
 		'use'          => 1,
 	});
 
-	$class->_initCacheFolder();
+	$class->_initCacheFolder(_cacheFolder(), $serverprefs->get('artfolder'));
+
+	if (CAN_LMS_ARTIST_ARTWORK && (my $artworkFolder = $prefs->get('artistImageFolder'))) {
+		require Slim::Music::ContributorPictureScan;
+		Slim::Music::ContributorPictureScan->addArtworkFolder($artworkFolder);
+	}
 
 	return 1;
 }
@@ -43,11 +48,6 @@ sub startScan {
 
 	$class->_scanAlbumCovers();
 	$class->_scanAlbumGenre() if CAN_ONLINE_LIBRARY && $prefs->get('replaceOnlineGenres');
-
-	if (CAN_LMS_ARTIST_ARTWORK && (my $artworkFolder = $prefs->get('artistImageFolder'))) {
-		require Slim::Music::ContributorPictureScan;
-		Slim::Music::ContributorPictureScan->addArtworkFolder($artworkFolder);
-	}
 
 	if (CAN_IMAGEPROXY && $prefs->get('lookupArtistPictures')) {
 		require Plugins::MusicArtistInfo::Importer2;
@@ -357,18 +357,17 @@ sub filename {
 }
 
 sub _initCacheFolder {
-	# purge cached files
-	$imageFolder = $serverprefs->get('artfolder');
+	my ($class, $cacheDir, $imageFolder) = @_;
 
 	my $useCustomFolder = $imageFolder && -d $imageFolder && -w _;
 	require File::Copy if $useCustomFolder;
 
-	my $cacheDir = _cacheFolder();
+	# purge cached files
 	mkdir $cacheDir unless -d $cacheDir;
 
 	opendir my ($dirh), $cacheDir;
 
-	# cleanup of temporary coverart folder
+	# cleanup of temporary picture folder
 	if ($dirh) {
 		for ( readdir $dirh ) {
 			my $file = catdir($cacheDir, $_);
@@ -383,6 +382,7 @@ sub _initCacheFolder {
 				my $target = catdir($imageFolder, $_);
 				# move files from temporary cache folder to user's artfolder (if possible)
 				File::Copy::move($file, $target) unless -f $target;
+				unlink $file;
 			}
 		}
 

@@ -35,6 +35,8 @@ my ($i, $ua, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwor
 sub startScan {
 	my $class = shift;
 
+	Plugins::MusicArtistInfo::Importer->_initCacheFolder(_cacheFolder(), $prefs->get('artistImageFolder'));
+
 	if (CAN_ONLINE_LIBRARY && !scalar keys %artistPictureImporterHandlers) {
 		foreach my $importerClass (Slim::Utils::PluginManager->enabledPlugins) {
 			eval {
@@ -57,7 +59,9 @@ sub startScan {
 	$imageFolder = $prefs->get('artistImageFolder');
 	if ( !($imageFolder && -d $imageFolder && -w _) ) {
 		$imageFolder && $log->error('Artist Image Folder either does not exist or is not writable: ' . $imageFolder);
-		$imageFolder = undef;
+		$imageFolder = _cacheFolder();
+		# if user doesn't care about artwork folder, then he doesn't care about artwork. Only download smaller size.
+		$max = 500;
 	}
 
 	# only run scanner if we want to show artist pictures and pre-cache or at least download pictures
@@ -123,8 +127,6 @@ sub _scanArtistPhotos {
 	}
 
 	$ua = Plugins::MusicArtistInfo::Common->getUA() if $prefs->get('lookupArtistPictures');
-
-	$max = 500 unless $imageFolder;
 
 	while ( _getArtistPhotoURL({
 		sth      => $sth,
@@ -323,6 +325,10 @@ sub _precacheArtistImage {
 
 		Slim::Utils::ImageResizer->resize($img, "imageproxy/mai/artist/$artist_id/image_", $specs, undef, $imgProxyCache );
 	}
+}
+
+sub _cacheFolder {
+	catdir($serverprefs->get('cachedir'), 'mai_portraits');
 }
 
 1;
