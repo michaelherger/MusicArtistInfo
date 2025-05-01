@@ -713,7 +713,7 @@ sub _getArtistFromArtistId {
 
 	my @responseList;
 	if (wantarray) {
-		@responseList = ($artist, $artistObj->id);
+		@responseList = ($artist, $artistObj->musicbrainz_id);
 		push @responseList, $artistObj->portraitid if CAN_LMS_ARTIST_ARTWORK;
 	}
 
