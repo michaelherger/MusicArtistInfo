@@ -7,7 +7,7 @@ use Slim::Utils::Cache;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-use constant ARTISTIMAGESEARCH_URL => 'https://mai-api.nixda.ch/artist/%s/picture';
+use constant ARTISTIMAGESEARCH_URL => 'https://api.lms-community.org/music/artist/%s/picture';
 # use constant ARTISTIMAGESEARCH_URL => 'http://localhost:8787/artist/%s/picture';
 
 my $cache = Slim::Utils::Cache->new();
