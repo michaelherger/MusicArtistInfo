@@ -64,6 +64,11 @@ sub startScan {
 		$max = 500;
 	}
 
+	if (main::SCANNER && !$serverprefs->get('artfolder')) {
+		# in scanner mode prefs are read-only - we can temporarily overwrite it for the artist picture scan to pick up the right folder
+		$serverprefs->set('artfolder', $imageFolder);
+	}
+
 	# only run scanner if we want to show artist pictures and pre-cache or at least download pictures
 	return unless $prefs->get('browseArtistPictures') && ( $precacheArtwork || $prefs->get('lookupArtistPictures') );
 
@@ -269,6 +274,10 @@ sub _precacheArtistImage {
 
 		if (my $cached = $imgProxyCache->get($url)) {
 			File::Slurp::write_file($file, { err_mode => 'carp' }, $cached->{data_ref});
+		}
+		elsif ($imageFolder && -f $file) {
+			# if the file already exists, we don't need to download it again
+			main::INFOLOG && $log->is_info && $log->info("File already exists: $file");
 		}
 		else {
 			my $response = $ua->get( $url, ':content_file' => $file );

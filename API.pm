@@ -15,7 +15,8 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverPrefs = preferences('server');
 
-my $xMAICfgString = _initXMAICfgString();
+my $xMAICfgString;
+my $version;
 
 if (!main::SCANNER) {
 	$prefs->setChange(\&_initXMAICfgString,
@@ -38,7 +39,8 @@ sub getArtistPhoto {
 	my $url = sprintf(ARTISTIMAGESEARCH_URL, uri_escape_utf8($args->{artist})) . $query;
 	my $cacheKey = "mai_artist_artwork_$url";
 
-	if (my $cached = $cache->get($cacheKey)) {
+	my $cached = $cache->get($cacheKey);
+	if (defined $cached) {
 		main::INFOLOG && $log->is_info && $log->info("Using cached artist picture: $cached");
 		return $cb->({ url => $cached });
 	}
@@ -54,9 +56,9 @@ sub getArtistPhoto {
 				$photo = {
 					url => $url,
 				};
-
-				$cache->set($cacheKey, $url, '60d');
 			}
+
+			$cache->set($cacheKey, $photo->{url}, $photo->{url} ? '60d' : '10d');
 
 			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($photo));
 
@@ -64,7 +66,7 @@ sub getArtistPhoto {
 		},{
 			cache => 1,
 			headers => {
-				'x-mai-cfg' => $xMAICfgString,
+				'x-mai-cfg' => _initXMAICfgString(),
 			},
 			# ignoreError => [404],
 		}
@@ -72,14 +74,17 @@ sub getArtistPhoto {
 }
 
 sub _initXMAICfgString {
-	return $xMAICfgString = sprintf('sc:%s,ba:%s,la:%s,ma:%s,ac:%s,pc:%s,ph:%s',
+	$version ||= (main::SCANNER && Slim::Utils::PluginManager->dataForPlugin('Plugins::MusicArtistInfo::Importer')->{version})
+	          || (!main::SCANNER && $Plugins::MusicArtistInfo::Plugin::VERSION) || 'unk';
+
+	return $xMAICfgString ||= sprintf('v:%s,sc:%s,ba:%s,la:%s,ma:%s,ac:%s,pc:%s',
+		$version,
 		main::SCANNER ? 1 : 0,
 		$prefs->get('browseArtistPictures') ? 1 : 0,
 		$prefs->get('lookupArtistPictures') ? 1 : 0,
 		$prefs->get('lookupAlbumArtistPicturesOnly') ? 1 : 0,
 		$prefs->get('artistImageFolder') ? 1 : 0,
 		$serverPrefs->get('precacheArtwork') ? 1 : 0,
-		$prefs->get('saveMissingArtistPicturePlaceholder') ? 1 : 0,
 	);
 }
 

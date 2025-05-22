@@ -3,8 +3,6 @@ package Plugins::MusicArtistInfo::Plugin;
 use strict;
 use base qw(Slim::Plugin::Base);
 
-use vars qw($VERSION);
-
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
@@ -28,6 +26,8 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	logGroups    => 'SCANNER',
 } );
 my $prefs = preferences('plugin.musicartistinfo');
+
+our $VERSION;
 
 sub initPlugin {
 	my $class = shift;
