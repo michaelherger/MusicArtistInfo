@@ -18,7 +18,7 @@ use constant PAGE_URL => 'https://%s.wikipedia.org/wiki/%s';
 # https://www.mediawiki.org/wiki/API:Search
 use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=snippet|categorysnippet'; # params: language, query string
 # https://www.mediawiki.org/wiki/API:Get_the_contents_of_a_page#Method_3:_Use_the_TextExtracts_API
-use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&exsentences=10&formatversion=2&format=json&pageids=%s'; # params: language, page ID
+use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&formatversion=2&format=json&pageids=%s'; # params: language, page ID
 
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
@@ -40,9 +40,10 @@ sub _rank {
 
 sub getAlbumReview {
 	my ( $class, $client, $cb, $args ) = @_;
+	my $lang = $args->{lang} || _language($client);
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(SEARCH_URL, $args->{lang} || _language($client), uri_escape_utf8('"' . $args->{album} . '" album "' . $args->{artist} . '"')),
+		sprintf(SEARCH_URL, $lang, uri_escape_utf8('"' . $args->{album} . '" album "' . $args->{artist} . '"')),
 		sub {
 			my $searchResults = shift;
 
@@ -83,7 +84,7 @@ sub getAlbumReview {
 
 			$candidate ||= {};
 
-			if (!$candidate->{pageid} && !$args->{lang} && _language($client) ne 'en' && $prefs->get('fallBackToEnglish')) {
+			if (!$candidate->{pageid} && $lang ne 'en' && $prefs->get('fallBackToEnglish')) {
 				$args->{lang} = 'en';
 				return $class->getAlbumReview($client, $cb, $args);
 			}

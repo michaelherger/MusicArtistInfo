@@ -94,33 +94,61 @@ sub getAlbumReview {
 		return;
 	}
 
-	Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client,
+	my $reviewCb = sub {
+		my $review = shift;
+		my $items = [];
+
+		if ($review->{error}) {
+			$items = [{
+				name => $review->{error},
+				type => 'text'
+			}]
+		}
+		elsif ($review->{review}) {
+			my $content = '';
+			if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
+				$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
+				$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
+				$content .= $review->{review};
+			}
+			else {
+				$content = $review->{author} . '\n\n' if $review->{author};
+				$content .= $review->{reviewText};
+			}
+
+			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+		}
+
+		$cb->($items);
+	};
+
+	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
+
+	Plugins::MusicArtistInfo::API->getAlbumReviewId($client,
 		sub {
-			my $review = shift;
-			my $items = [];
+			my $wikiData = shift;
 
-			if ($review->{error}) {
-				$items = [{
-					name => $review->{error},
-					type => 'text'
-				}]
+			# TODO - respect fallback language setting?
+			if ($wikiData && (my $pageData = $wikiData->{wikidata})) {
+				Plugins::MusicArtistInfo::Wikipedia->getPage($client, sub {
+					my $review = shift;
+
+					if ($review && $review->{content} && $review->{contentText}) {
+						$review->{review} = delete $review->{content};
+						$review->{reviewText} = delete $review->{contentText};
+						return $reviewCb->($review);
+					}
+
+					Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client, $reviewCb, $args);
+				}, {
+					title => $pageData->{title},
+					id => $pageData->{pageid},
+					lang => $pageData->{lang} || $args->{lang},
+				});
 			}
-			elsif ($review->{review}) {
-				my $content = '';
-				if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
-					$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
-					$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
-					$content .= $review->{review};
-				}
-				else {
-					$content = $review->{author} . '\n\n' if $review->{author};
-					$content .= $review->{reviewText};
-				}
-
-				$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+			else {
+				Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client, $reviewCb, $args);
 			}
-
-			$cb->($items);
 		},
 		$args,
 	);

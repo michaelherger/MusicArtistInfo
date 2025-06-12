@@ -32,7 +32,7 @@ sub searchLyrics {
 		sub {
 			my $items = shift;
 
-			if ($items && ref $items && $items->{error} && $items->{error} =~ /timed out/i) {
+			if ($items && ref $items && $items->{error} && $items->{error} =~ /timed out|403 forbidden/i) {
 				$nextTry = time + RETRY_AFTER;
 			}
 

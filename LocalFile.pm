@@ -151,6 +151,8 @@ sub _getInfoFileForTrackFromDb {
 		my $dir = dirname(Slim::Utils::Misc::pathFromFileURL($url));
 
 		next if $seen{$dir}++;
+		# don't search all of the music folder - it would be too slow
+		next if Slim::Utils::Misc::inMediaFolder($dir);
 
 		foreach ( @{_findTextFiles($dir)} ) {
 			$files{catdir($_->{path}, $_->{file})}++

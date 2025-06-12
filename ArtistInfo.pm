@@ -172,7 +172,7 @@ sub getBiography {
 
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
 
-	Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
+	my $bioCb = sub {
 		my $bio = shift;
 
 		if ($bio->{error} || !$bio->{bio}) {
@@ -186,7 +186,36 @@ sub getBiography {
 		else {
 			$cb->(_getBioItems($bio, $client, $params));
 		}
-	}, $args);
+	};
+
+	Plugins::MusicArtistInfo::API->getArtistBioId($client,
+		sub {
+			my $wikiData = shift;
+
+			# TODO - respect fallback language setting?
+			if ($wikiData && (my $pageData = $wikiData->{wikidata})) {
+				Plugins::MusicArtistInfo::Wikipedia->getPage($client, sub {
+					my $bio = shift;
+
+					if ($bio && $bio->{content} && $bio->{contentText}) {
+						$bio->{bio} = delete $bio->{content};
+						$bio->{bioText} = delete $bio->{contentText};
+						return $bioCb->($bio);
+					}
+
+					Plugins::MusicArtistInfo::LFM->getBiography($client, $bioCb, $args);
+				}, {
+					title => $pageData->{title},
+					id => $pageData->{pageid},
+					lang => $pageData->{lang} || $args->{lang},
+				});
+			}
+			else {
+				Plugins::MusicArtistInfo::LFM->getBiography($client, $bioCb, $args);
+			}
+		},
+		$args,
+	);
 }
 
 sub _getBioItems {
