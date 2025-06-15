@@ -36,7 +36,7 @@ if (!main::SCANNER) {
 }
 
 sub getArtistPhoto {
-	my ( $class, $client, $cb, $args ) = @_;
+	my ( $class, $cb, $args ) = @_;
 
 	my $query = '?mbid=' . $args->{mbid} if $args->{mbid};
 	my $url = sprintf(ARTISTIMAGESEARCH_URL, uri_escape_utf8($args->{artist})) . $query;
@@ -77,7 +77,7 @@ sub getArtistPhoto {
 }
 
 sub getArtistBioId {
-	my ( $class, $client, $cb, $args ) = @_;
+	my ( $class, $cb, $args ) = @_;
 
 	my @queryParams;
 	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
@@ -113,7 +113,7 @@ sub getArtistBioId {
 }
 
 sub getAlbumReviewId {
-	my ( $class, $client, $cb, $args ) = @_;
+	my ( $class, $cb, $args ) = @_;
 
 	my @queryParams;
 	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};

@@ -124,7 +124,7 @@ sub getAlbumReview {
 
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
 
-	Plugins::MusicArtistInfo::API->getAlbumReviewId($client,
+	Plugins::MusicArtistInfo::API->getAlbumReviewId(
 		sub {
 			my $wikiData = shift;
 

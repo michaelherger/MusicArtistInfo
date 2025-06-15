@@ -188,7 +188,7 @@ sub getBiography {
 		}
 	};
 
-	Plugins::MusicArtistInfo::API->getArtistBioId($client,
+	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {
 			my $wikiData = shift;
 
@@ -811,7 +811,7 @@ sub _artworkUrl {
 		return Slim::Utils::Misc::fileURLFromPath($local);
 	}
 
-	Plugins::MusicArtistInfo::API->getArtistPhoto(undef, sub {
+	Plugins::MusicArtistInfo::API->getArtistPhoto(sub {
 		my $photo = shift || {};
 
 		if (!$photo->{url}) {

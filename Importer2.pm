@@ -204,7 +204,7 @@ sub _getArtistPhotoURL {
 			$done++;
 		}
 		elsif (!$done && $ua) {		# only defined if $prefs->get('lookupArtistPictures')
-			Plugins::MusicArtistInfo::API->getArtistPhoto(undef, sub {
+			Plugins::MusicArtistInfo::API->getArtistPhoto(sub {
 				_precacheArtistImage($artist, @_);
 			}, {
 				artist => $artist->{name},
