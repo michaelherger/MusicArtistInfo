@@ -183,17 +183,16 @@ sub getPage {
 			if ( $fetchResults && ref $fetchResults && $fetchResults->{query} && (my $content = $fetchResults->{query}->{pages}) ) {
 				if (length($content->[0]->{extract}) > MIN_REVIEW_SIZE) {
 					$result->{content} = $content->[0]->{extract};
-					$result->{content} =~ s/\n//g;
-					$result->{content} = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/wikipedia.css" />' . $result->{content};
+
+					# sometimes we'd receive partial content which had been stripped out by the wikipedia API - let's remove from there on
+					my $deadEndFound;
+					$result->{content} = join('', grep {
+						$deadEndFound ||= $_ =~ /data-mw-anchor=\\?"(?:Track_listing|Notes|Locations|Technical|Charts|References|Discography|Filmography|See_also|Explanatory_footnotes|Further_reading|Accolades)/i;
+						!$deadEndFound;
+					} split(/\n/, $result->{content}));
 
 					$result->{contentText} = _removeMarkup($result->{content});
-
-					my $slug = $args->{title};
-					$slug =~ s/ /_/g;
-					$result->{content} .= sprintf('<p><br><a href="%s" target="_blank">%s</a></p>',
-						sprintf(PAGE_URL, $args->{lang} || _language($client), uri_escape_utf8($slug)),
-						cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE')
-					);
+					$result->{content} = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/wikipedia.css" />' . $result->{content};
 				}
 			}
 

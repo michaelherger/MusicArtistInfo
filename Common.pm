@@ -9,6 +9,7 @@ use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+use Slim::Utils::Strings qw(cstring);
 
 BEGIN {
 	use Slim::Music::Artwork;
@@ -152,6 +153,34 @@ sub getLocalnameVariants {
 	my %seen;
 	return [ grep { !$seen{$_}++ } @candidates ];
 }
+
+sub getExternalLinks {
+	my ($client, $data) = @_;
+
+	return '' unless $data && ref $data eq 'HASH';
+
+	my $linkList = '';
+	foreach my $id (sort { $a cmp $b } keys %$data) {
+		my $url = $data->{$id};
+		next unless $url && $url =~ m{^(https?://)};
+
+		# make sure we don't have a trailing slash
+		$url =~ s{/$}{};
+
+		# for some legacy reasons, we use 'url' as a key for the main Wikipedia URL
+		$id = 'wikipedia' if $id eq 'url';
+
+		my $label = 'PLUGIN_MUSICARTISTINFO_' . uc($id);
+		my $label = Slim::Utils::Strings::stringExists($label)
+			? cstring($client, $label)
+			: ucfirst($id);
+
+		$linkList .= '<li><a href="' . $url . '" target="_blank">' . $label . '</a></li>';
+	}
+
+	return $linkList ? sprintf("<h4>%s</h4><ul>%s</ul>", cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'), $linkList) : '';
+}
+
 
 sub call {
 	my ($class, $url, $cb, $params) = @_;

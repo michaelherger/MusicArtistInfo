@@ -190,15 +190,15 @@ sub getBiography {
 
 	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {
-			my $wikiData = shift;
+			my $bioData = shift;
 
 			# TODO - respect fallback language setting?
-			if ($wikiData && (my $pageData = $wikiData->{wikidata})) {
+			if ($bioData && (my $pageData = $bioData->{wikidata})) {
 				Plugins::MusicArtistInfo::Wikipedia->getPage($client, sub {
 					my $bio = shift;
 
 					if ($bio && $bio->{content} && $bio->{contentText}) {
-						$bio->{bio} = delete $bio->{content};
+						$bio->{bio} = (delete $bio->{content}) . Plugins::MusicArtistInfo::Common::getExternalLinks($client, $bioData);
 						$bio->{bioText} = delete $bio->{contentText};
 						return $bioCb->($bio);
 					}

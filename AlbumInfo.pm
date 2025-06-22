@@ -126,15 +126,15 @@ sub getAlbumReview {
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(
 		sub {
-			my $wikiData = shift;
+			my $reviewData = shift;
 
 			# TODO - respect fallback language setting?
-			if ($wikiData && (my $pageData = $wikiData->{wikidata})) {
+			if ($reviewData && (my $pageData = $reviewData->{wikidata})) {
 				Plugins::MusicArtistInfo::Wikipedia->getPage($client, sub {
 					my $review = shift;
 
 					if ($review && $review->{content} && $review->{contentText}) {
-						$review->{review} = delete $review->{content};
+						$review->{review} = (delete $review->{content}) . Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData);
 						$review->{reviewText} = delete $review->{contentText};
 						return $reviewCb->($review);
 					}
