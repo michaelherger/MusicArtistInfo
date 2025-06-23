@@ -94,39 +94,46 @@ sub getAlbumReview {
 		return;
 	}
 
-	my $reviewCb = sub {
-		my $review = shift;
-		my $items = [];
-
-		if ($review->{error}) {
-			$items = [{
-				name => $review->{error},
-				type => 'text'
-			}]
-		}
-		elsif ($review->{review}) {
-			my $content = '';
-			if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
-				$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
-				$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
-				$content .= $review->{review};
-			}
-			else {
-				$content = $review->{author} . '\n\n' if $review->{author};
-				$content .= $review->{reviewText};
-			}
-
-			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
-		}
-
-		$cb->($items);
-	};
-
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(
 		sub {
 			my $reviewData = shift;
+
+			my $reviewCb = sub {
+				my $review = shift;
+				my $items = [];
+
+				$reviewData->{url} ||= $review->{url} if $review->{url};
+
+				if ($review->{error}) {
+					if (keys %$reviewData && Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params)) {
+						$review->{error} = sprintf("<p>%s</p>\n%s", $review->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData));
+					}
+
+					$items = [{
+						name => $review->{error},
+						type => 'text'
+					}]
+				}
+				elsif ($review->{review}) {
+					my $content = '';
+					if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
+						$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
+						$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
+						$content .= $review->{review};
+						$content .= Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData) if keys %$reviewData;
+					}
+					else {
+						$content = $review->{author} . '\n\n' if $review->{author};
+						$content .= $review->{reviewText};
+					}
+
+					$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+				}
+
+				$cb->($items);
+			};
 
 			# TODO - respect fallback language setting?
 			if ($reviewData && (my $pageData = $reviewData->{wikidata})) {
@@ -134,7 +141,7 @@ sub getAlbumReview {
 					my $review = shift;
 
 					if ($review && $review->{content} && $review->{contentText}) {
-						$review->{review} = (delete $review->{content}) . Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData);
+						$review->{review} = delete $review->{content};
 						$review->{reviewText} = delete $review->{contentText};
 						return $reviewCb->($review);
 					}

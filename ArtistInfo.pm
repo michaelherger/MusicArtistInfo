@@ -172,25 +172,25 @@ sub getBiography {
 
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
 
-	my $bioCb = sub {
-		my $bio = shift;
-
-		if ($bio->{error} || !$bio->{bio}) {
-			# in case of error or lack of Bio, try to fall back to English
-			delete $args->{lang};
-
-			Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
-				$cb->(_getBioItems($_[0], $client, $params));
-			}, $args);
-		}
-		else {
-			$cb->(_getBioItems($bio, $client, $params));
-		}
-	};
-
 	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {
 			my $bioData = shift;
+
+			my $bioCb = sub {
+				my $bio = shift;
+
+				if ($bio->{error} || !$bio->{bio}) {
+					# in case of error or lack of Bio, try to fall back to English
+					delete $args->{lang};
+
+					Plugins::MusicArtistInfo::LFM->getBiography($client, sub {
+						$cb->(_getBioItems($_[0], $client, $params, $bioData));
+					}, $args);
+				}
+				else {
+					$cb->(_getBioItems($bio, $client, $params, $bioData));
+				}
+			};
 
 			# TODO - respect fallback language setting?
 			if ($bioData && (my $pageData = $bioData->{wikidata})) {
@@ -198,7 +198,7 @@ sub getBiography {
 					my $bio = shift;
 
 					if ($bio && $bio->{content} && $bio->{contentText}) {
-						$bio->{bio} = (delete $bio->{content}) . Plugins::MusicArtistInfo::Common::getExternalLinks($client, $bioData);
+						$bio->{bio} = delete $bio->{content};
 						$bio->{bioText} = delete $bio->{contentText};
 						return $bioCb->($bio);
 					}
@@ -219,10 +219,15 @@ sub getBiography {
 }
 
 sub _getBioItems {
-	my ($bio, $client, $params) = @_;
+	my ($bio, $client, $params, $args) = @_;
+
 	my $items = [];
 
 	if ($bio->{error}) {
+		if (keys %$args && Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params)) {
+			$bio->{error} = sprintf("<p>%s</p>\n%s", $bio->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $args));
+		}
+
 		$items = [{
 			name => $bio->{error},
 			type => 'text'
@@ -233,6 +238,7 @@ sub _getBioItems {
 		if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
 			$content = '<h4>' . $bio->{author} . '</h4>' if $bio->{author};
 			$content .= $bio->{bio};
+			$content .= Plugins::MusicArtistInfo::Common::getExternalLinks($client, $args) if keys %$args;
 		}
 		else {
 			$content = $bio->{author} . '\n\n' if $bio->{author};
