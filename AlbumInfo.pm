@@ -52,6 +52,7 @@ sub getAlbumMenu {
 	$args->{artist} ||= $args2->{artist};
 	$args->{album}  = _cleanupAlbumName($args->{album});
 	$args->{album_id} = $args2->{album_id};
+	$args->{mbid}   = $args2->{mbid} if $args2->{mbid};
 
 	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
 
@@ -349,11 +350,13 @@ sub getAlbumReviewCLI {
 	my $artist = $request->getParam('artist');
 	my $album  = $request->getParam('album');
 	my $lang   = $request->getParam('lang');
+	my $mbid   = $request->getParam('mbid');
 
 	if ($artist && $album) {
 		$args = {
 			album  => _cleanupAlbumName($album),
-			artist => $artist
+			artist => $artist,
+			mbid   => $mbid,
 		};
 	}
 	else {
@@ -461,6 +464,7 @@ sub _getAlbumFromAlbumId {
 				artist => $album->contributor->name,
 				album  => _cleanupAlbumName($album->title),
 				album_id => $album->id,
+				mbid   => $album->musicbrainz_id,
 			};
 		}
 	}
@@ -479,9 +483,10 @@ sub _getAlbumFromSongURL {
 	if ( $url ) {
 		my $track = Slim::Schema->objectForUrl($url);
 
-		my ($artist, $album, $album_id);
+		my ($artist, $album, $album_id, $mbid);
 		$artist = $track->artist->name if (defined $track->artist);
 		$album  = $track->album->title if (defined $track->album);
+		$mbid   = $track->album->musicbrainz_id if (defined $track->album);
 		$album_id = $track->albumid      if (defined $track->album);
 
 		# We didn't get an artist - maybe it is some music service?
@@ -505,6 +510,7 @@ sub _getAlbumFromSongURL {
 				artist => $artist,
 				album  => _cleanupAlbumName($album),
 				album_id => $album_id,
+				mbid   => $mbid,
 			};
 		}
 	}

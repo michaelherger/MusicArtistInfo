@@ -86,17 +86,17 @@ sub getArtistMenu {
 	$params ||= {};
 	$args   ||= {};
 
-	$args->{artist} = $params->{'artist'} || $params->{'name'} || $args->{'name'};
+	my $artistInfo = _getArtistFromSongId($params->{'track_id'})
+		|| _getArtistFromArtistId($params->{'artist_id'})
+		|| _getArtistFromAlbumId($params->{'album_id'})
+		|| _getArtistFromSongURL($client);
 
-	$args->{artist} ||= _getArtistFromSongId($params->{'track_id'})
-			|| _getArtistFromArtistId($params->{'artist_id'})
-			|| _getArtistFromAlbumId($params->{'album_id'})
-			|| _getArtistFromSongURL($client);
+	$args->{artist} = $params->{'artist'} || $params->{'name'} || $args->{'name'} || $artistInfo->{artist};
 
 	# remove stuff in brackets, as this is often confusing additions - might want to make this optional?
 	$args->{artist} =~ s/\s*\[.*?\]\s*//g;
-
-	$args->{artist_id} ||= $params->{artist_id};
+	$args->{artist_id} ||= $params->{artist_id} || $artistInfo->{artist_id};
+	$args->{mbid} ||= $params->{mbid} || $artistInfo->{mbid};
 
 	main::DEBUGLOG && $log->debug("Getting artist menu for " . $args->{artist});
 
@@ -254,7 +254,7 @@ sub _getBioItems {
 sub getBiographyCLI {
 	my $request = shift;
 
-	my ($artist, $artist_id) = _checkRequest($request, ['biography']);
+	my ($artist, $artist_id, $mbid) = _checkRequest($request, ['biography']);
 
 	return unless $artist;
 
@@ -264,7 +264,8 @@ sub getBiographyCLI {
 		sub {
 			my $items = shift || [];
 
-			my (undef, undef, $portraitId) = _getArtistFromArtistId($artist_id || $artist) if CAN_LMS_ARTIST_ARTWORK;
+			my $artistInfo = _getArtistFromArtistId($artist_id || $artist);
+			my $portraitId = $artistInfo && $artistInfo->{portraitId};
 
 			if ( !$items || !ref $items || ref $items ne 'ARRAY' || !scalar @$items ) {
 				main::INFOLOG && $log->is_info && $log->info("No Biography found: " . Data::Dump::dump($items));
@@ -289,6 +290,7 @@ sub getBiographyCLI {
 			isWeb  => $request->getParam('html') || Plugins::MusicArtistInfo::Plugin->isWebBrowser($client),
 		},{
 			artist => $artist,
+			mbid => $mbid,
 		}
 	);
 }
@@ -305,9 +307,16 @@ sub _checkRequest {
 	$request->setStatusProcessing();
 
 	my $artist_id = $request->getParam('artist_id');
-	my $artist = $request->getParam('artist') || _getArtistFromArtistId($artist_id);
+	my $artist = $request->getParam('artist');
+	my $mbid = $request->getParam('mbid');
 
-	return ($artist, $artist_id) if $artist;
+	if (!$artist) {
+		my $artistInfo = _getArtistFromArtistId($artist_id);
+		$artist = $artistInfo->{artist};
+		$mbid ||= $artistInfo->{mbid};
+	}
+
+	return ($artist, $artist_id, $mbid) if $artist;
 
 	$request->addResult('error', cstring($request->client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 	$request->setStatusDone();
@@ -659,13 +668,17 @@ sub searchHandler {
 sub _objInfoHandler {
 	my ( $client, $artist, $url, $artist_id ) = @_;
 
-	($artist_id, $artist) = _getArtistFromSongURL($client, $url) if !$artist && $url;
+	my $artistInfo = _getArtistFromSongURL($client, $url) if !$artist && $url;
+
+	my $artist_id = $artistInfo->{artist_id};
+	my $artist 	= $artistInfo->{artist};
 
 	return unless $artist;
 
 	my $args = {
 		artist => $artist,
 		artist_id => $artist_id,
+		mbid   => $artistInfo->{mbid},
 	};
 
 	my $items = getArtistMenu($client, undef, $args);
@@ -679,11 +692,27 @@ sub _objInfoHandler {
 }
 
 
+sub _getArtistInfoFromObject {
+	my $artist = shift;
+
+	return {} unless $artist && ref $artist;
+
+	my $mbid = $artist->musicbrainz_id if $artist->can('musicbrainz_id');
+	my $portraitId = $artist->portraitid if CAN_LMS_ARTIST_ARTWORK;
+
+	return {
+		artist     => $artist->name,
+		artist_id  => $artist->id,
+		mbid       => $mbid,
+		portraitId => $portraitId,
+	};
+}
+
 sub _getArtistFromSongURL {
 	my $client = shift;
 	my $url    = shift;
 
-	return unless $client;
+	return {} unless $client;
 
 	if ( !$url ) {
 		my $track = Slim::Player::Playlist::track($client);
@@ -707,8 +736,14 @@ sub _getArtistFromSongURL {
 			main::DEBUGLOG && $artist && $log->debug("Got artist name from current remote track: '$artist'");
 		}
 
-		return wantarray ? ($artist, $id) : $artist;
+		my $artistInfo = _getArtistInfoFromObject($track->artist);
+		$artistInfo->{artist} ||= $artist;
+		$artistInfo->{artist_id} ||= $id;
+
+		return $artistInfo;
 	}
+
+	return {};
 }
 
 sub _getArtistFromSongId {
@@ -717,20 +752,23 @@ sub _getArtistFromSongId {
 	if (defined($trackId) && $trackId =~ /^\d+$/) {
 		my $track = Slim::Schema->resultset("Track")->find($trackId);
 
-		return unless $track;
+		return {} unless $track;
 
-		my $artist = $track->artist->name if $track->artist;
+		my $artistInfo = _getArtistInfoFromObject($track->artist);
+		my $artist = $artistInfo->{artist};
 
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from song ID: '$artist'");
 
-		return $artist;
+		return $artistInfo;
 	}
+
+	return {};
 }
 
 sub _getArtistFromArtistId {
 	my $artistId = shift;
 
-	return unless defined($artistId);
+	return {} unless defined($artistId);
 
 	my $artistObj;
 
@@ -740,19 +778,14 @@ sub _getArtistFromArtistId {
 
 	$artistObj ||= Slim::Schema->rs("Contributor")->search({ 'namesearch' => Slim::Utils::Text::ignoreCaseArticles($artistId) })->first;
 
-	return unless $artistObj;
+	return {} unless $artistObj;
 
-	my $artist = $artistObj->name;
+	my $artistInfo = _getArtistInfoFromObject($artistObj);
+	my $artist = $artistInfo->{artist};
 
 	main::INFOLOG && $artist && $log->info("Got artist name from artist ID: '$artist'");
 
-	my @responseList;
-	if (wantarray) {
-		@responseList = ($artist, $artistObj->musicbrainz_id);
-		push @responseList, $artistObj->portraitid if CAN_LMS_ARTIST_ARTWORK;
-	}
-
-	return wantarray ? @responseList : $artist;
+	return $artistInfo;
 }
 
 sub _getArtistFromAlbumId {
@@ -761,14 +794,17 @@ sub _getArtistFromAlbumId {
 	if (defined($albumId) && $albumId =~ /^\d+$/) {
 		my $album = Slim::Schema->resultset("Album")->find($albumId);
 
-		return unless $album;
+		return {} unless $album;
 
-		my $artist = $album->contributor->name;
+		my $artistInfo = _getArtistInfoFromObject($album->contributor);
+		my $artist = $artistInfo->{artist};
 
 		main::DEBUGLOG && $artist && $log->debug("Got artist name from album ID: '$artist'");
 
 		return $artist;
 	}
+
+	return {};
 }
 
 sub _artworkRedirect { if (CAN_LMS_ARTIST_ARTWORK) {
@@ -777,7 +813,8 @@ sub _artworkRedirect { if (CAN_LMS_ARTIST_ARTWORK) {
 	my $path = $response->request->uri->path;
 	my ($artistId, $spec) = $path =~ m|imageproxy/mai/artist/(.+)/image(_.*)?|;
 
-	my (undef, undef, $portraitId) = _getArtistFromArtistId($artistId);
+	my $artistInfo = _getArtistFromArtistId($artistId);
+	my $portraitId = $artistInfo->{portraitId};
 
 	$response->code(RC_MOVED_PERMANENTLY);
 
@@ -802,7 +839,10 @@ sub _artworkUrl {
 		Plugins::MusicArtistInfo::LocalArtwork->defaultArtistPhoto()
 	) unless $artist_id;
 
-	my ($artist, $mbid) = _getArtistFromArtistId($artist_id);
+	my $artistInfo = _getArtistFromArtistId($artist_id);
+	my $portraitId = $artistInfo->{portraitId};
+	my $artist ||= $artistInfo->{artist} || $artist_id;
+	my $mbid = $artistInfo->{mbid};
 	$artist ||= $artist_id;
 
 	main::INFOLOG && $log->info("Artist ID is '$artist_id', name '$artist', musicbrainz ID '$mbid'");

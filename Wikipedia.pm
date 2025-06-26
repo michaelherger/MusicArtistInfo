@@ -187,7 +187,7 @@ sub getPage {
 					# sometimes we'd receive partial content which had been stripped out by the wikipedia API - let's remove from there on
 					my $deadEndFound;
 					$result->{content} = join('', grep {
-						$deadEndFound ||= $_ =~ /data-mw-anchor=\\?"(?:Track_listing|Notes|Locations|Technical|Charts|References|Discography|Filmography|See_also|Explanatory_footnotes|Further_reading|Accolades|Einzelnachweise|Musikbeispiele|Auszeichnungen|Diskografie|Werbetestimonial|Filmmusik)/i;
+						$deadEndFound ||= $_ =~ /data-mw-anchor=\\?"(?:Track_listing|Notes|Scores|Locations|Technical|Charts|References|Discography|Filmography|See_also|Explanatory_footnotes|Further_reading|Accolades|Einzelnachweise|Musikbeispiele|Auszeichnungen|Diskografie|Werbetestimonial|Filmmusik)/i;
 						!$deadEndFound;
 					} split(/\n/, $result->{content}));
 
