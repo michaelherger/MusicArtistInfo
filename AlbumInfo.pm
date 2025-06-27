@@ -52,7 +52,7 @@ sub getAlbumMenu {
 	$args->{artist} ||= $args2->{artist};
 	$args->{album}  = _cleanupAlbumName($args->{album});
 	$args->{album_id} = $args2->{album_id};
-	$args->{mbid}   = $args2->{mbid} if $args2->{mbid};
+	$args->{mbid}   ||= $args2->{mbid} if $args2->{mbid};
 
 	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
 
@@ -405,13 +405,14 @@ sub getAlbumReviewCLI {
 sub _objInfoHandler {
 	my ( $client, $url, $obj, $remoteMeta ) = @_;
 
-	my ($album, $artist, $album_id);
+	my ($album, $artist, $album_id, $mbid);
 
 	if ( $obj && blessed $obj ) {
 		if ($obj->isa('Slim::Schema::Track')) {
 			$album  = $obj->albumname || $remoteMeta->{album};
 			$artist = $obj->artistName || $remoteMeta->{artist};
 			$album_id = $obj->albumid;
+			$mbid	= $obj->album->musicbrainz_id if $obj->album && $obj->album->can('musicbrainz_id');
 		}
 		elsif ($obj->isa('Slim::Schema::Album')) {
 			$album  = $obj->name || $remoteMeta->{name};
@@ -438,6 +439,7 @@ sub _objInfoHandler {
 			album  => $album,
 			artist => $artist,
 			album_id => $album_id,
+			mbid	 => $mbid,
 		}
 	};
 

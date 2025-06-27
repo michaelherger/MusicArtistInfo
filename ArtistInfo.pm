@@ -668,10 +668,11 @@ sub searchHandler {
 sub _objInfoHandler {
 	my ( $client, $artist, $url, $artist_id ) = @_;
 
-	my $artistInfo = _getArtistFromSongURL($client, $url) if !$artist && $url;
+	my $artistInfo = _getArtistFromArtistId($artist_id)
+		|| _getArtistFromSongURL($client, $url);
 
-	my $artist_id = $artistInfo->{artist_id};
-	my $artist 	= $artistInfo->{artist};
+	$artist_id ||= $artistInfo->{artist_id};
+	$artist 	||= $artistInfo->{artist};
 
 	return unless $artist;
 
