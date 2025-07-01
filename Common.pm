@@ -155,7 +155,7 @@ sub getLocalnameVariants {
 }
 
 sub getExternalLinks {
-	my ($client, $data) = @_;
+	my ($client, $data, $release_mbid) = @_;
 
 	return '' unless $data && ref $data eq 'HASH';
 
@@ -176,6 +176,12 @@ sub getExternalLinks {
 			: ucfirst($id);
 
 		$linkList .= '<li><a href="' . $url . '" target="_blank">' . $label . '</a></li>';
+	}
+
+	if ($release_mbid) {
+		# add MusicBrainz release link (we might only have the release group link)
+		my $mbUrl = 'https://musicbrainz.org/release/' . $release_mbid;
+		$linkList .= '<li><a href="' . $mbUrl . '" target="_blank">' . cstring($client, 'PLUGIN_MUSICARTISTINFO_MUSICBRAINZ_RELEASE') . '</a></li>';
 	}
 
 	return $linkList ? sprintf("<h4>%s</h4><ul>%s</ul>", cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'), $linkList) : '';

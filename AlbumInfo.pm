@@ -95,6 +95,7 @@ sub getAlbumReview {
 		return;
 	}
 
+	my $mbid = $args->{mbid};
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(
@@ -105,11 +106,11 @@ sub getAlbumReview {
 				my $review = shift;
 				my $items = [];
 
-				$reviewData->{url} ||= $review->{url} if $review->{url};
+				$reviewData->{url} ||= $review->{url} || {};
 
 				if ($review->{error}) {
 					if (keys %$reviewData && Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params)) {
-						$review->{error} = sprintf("<p>%s</p>\n%s", $review->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData));
+						$review->{error} = sprintf("<p>%s</p>\n%s", $review->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData, $mbid));
 					}
 
 					$items = [{
@@ -123,7 +124,7 @@ sub getAlbumReview {
 						$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
 						$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
 						$content .= $review->{review};
-						$content .= Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData) if keys %$reviewData;
+						$content .= Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData, $mbid);
 					}
 					else {
 						$content = $review->{author} . '\n\n' if $review->{author};
@@ -238,20 +239,20 @@ sub getAlbumCoversCLI {
 	my $args;
 	my $artist = $request->getParam('artist');
 	my $album  = $request->getParam('album');
+	my $mbid   = $request->getParam('mbid');
 
-	if (my $mbid   = $request->getParam('mbid')) {
-		$args = {
-			mbid => $mbid
-		};
+	if (my $album_id = $request->getParam('album_id')) {
+		$args = _getAlbumFromAlbumId($album_id);
+	}
+	elsif ($mbid ) {
+		$args = _getAlbumFromMusicBrainzId($mbid);
 	}
 	elsif ($artist && $album) {
 		$args = {
 			album  => _cleanupAlbumName($album),
-			artist => $artist
+			artist => $artist,
+			mbid   => $mbid,
 		};
-	}
-	else {
-		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
 	}
 
 	if ( !$args || (!($args->{artist} && $args->{album}) && !$args->{mbid}) ) {
@@ -352,24 +353,27 @@ sub getAlbumReviewCLI {
 	my $lang   = $request->getParam('lang');
 	my $mbid   = $request->getParam('mbid');
 
-	if ($artist && $album) {
+	if (my $album_id = $request->getParam('album_id')) {
+		$args = _getAlbumFromAlbumId($album_id);
+	}
+	elsif ($mbid) {
+		$args = _getAlbumFromMusicBrainzId($mbid);
+	}
+	elsif ($artist && $album) {
 		$args = {
 			album  => _cleanupAlbumName($album),
 			artist => $artist,
 			mbid   => $mbid,
 		};
 	}
-	else {
-		$args = _getAlbumFromAlbumId($request->getParam('album_id'));
-	}
-
-	$args->{lang} = $lang if $lang;
 
 	if ( !($args && $args->{artist} && $args->{album}) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		$request->setStatusDone();
 		return;
 	}
+
+	$args->{lang} = $lang if $lang;
 
 	getAlbumReview($client,
 		sub {
@@ -461,6 +465,25 @@ sub _getAlbumFromAlbumId {
 
 		if ($album) {
 			main::INFOLOG && $log->is_info && $log->info('Got Album/Artist from album ID: ' . $album->title . ' - ' . $album->contributor->name);
+
+			return {
+				artist => $album->contributor->name,
+				album  => _cleanupAlbumName($album->title),
+				album_id => $album->id,
+				mbid   => $album->musicbrainz_id,
+			};
+		}
+	}
+}
+
+sub _getAlbumFromMusicBrainzId {
+	my $mbid = shift;
+
+	if ($mbid) {
+		my $album = Slim::Schema->first("Album", { musicbrainz_id => $mbid });
+
+		if ($album) {
+			main::INFOLOG && $log->is_info && $log->info('Got Album/Artist from Musicbrainz ID: ' . $album->title . ' - ' . $album->contributor->name);
 
 			return {
 				artist => $album->contributor->name,
