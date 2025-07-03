@@ -353,19 +353,13 @@ sub getAlbumReviewCLI {
 	my $lang   = $request->getParam('lang');
 	my $mbid   = $request->getParam('mbid');
 
-	if (my $album_id = $request->getParam('album_id')) {
-		$args = _getAlbumFromAlbumId($album_id);
-	}
-	elsif ($mbid) {
-		$args = _getAlbumFromMusicBrainzId($mbid);
-	}
-	elsif ($artist && $album) {
-		$args = {
+	my $args = _getAlbumFromAlbumId($request->getParam('album_id'))
+		|| _getAlbumFromMusicBrainzId($mbid)
+		|| {
 			album  => _cleanupAlbumName($album),
 			artist => $artist,
 			mbid   => $mbid,
 		};
-	}
 
 	if ( !($args && $args->{artist} && $args->{album}) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
