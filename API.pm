@@ -11,6 +11,7 @@ use constant BASE_URL => 'https://api.lms-community.org/music';
 # use constant BASE_URL => 'http://127.0.0.1:8787/music';
 use constant ARTISTIMAGESEARCH_URL => BASE_URL . '/artist/%s/picture';
 use constant ALBUMREVIEW_URL => BASE_URL . '/album/%s/%s/review';
+use constant ALBUMGENRES_URL => BASE_URL . '/album/%s/%s/genres';
 use constant BIOGRAPHY_URL => BASE_URL . '/artist/%s/biography';
 
 my $cache = Slim::Utils::Cache->new();
@@ -115,11 +116,7 @@ sub getArtistBioId {
 sub getAlbumReviewId {
 	my ( $class, $cb, $args ) = @_;
 
-	my @queryParams;
-	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
-	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
-	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
-	my $url = sprintf(ALBUMREVIEW_URL, uri_escape_utf8($args->{album}), uri_escape_utf8($args->{artist})) . $query;
+	my $url = _prepareAlbumUrl(ALBUMREVIEW_URL, $args);
 	my $cacheKey = "mai_album_review_$url";
 
 	my $cached = $cache->get($cacheKey);
@@ -133,18 +130,52 @@ sub getAlbumReviewId {
 		sub {
 			my ($result) = @_;
 
-			$cache->set($cacheKey, $result, ($result && $result->{wikidata}) ? '1y' : '30d');
+			$cache->set($cacheKey, $result, '1y') if $result && $result->{wikidata};
 
 			main::INFOLOG && $log->is_info && $log->info("found album review: " . Data::Dump::dump($result));
 
 			$cb->($result);
 		},{
 			cache => 1,
+			expires => '30d',
 			headers => {
 				'x-mai-cfg' => _initXMAICfgString(),
 			},
 		}
 	);
+}
+
+sub getAlbumGenres {
+	my ( $class, $cb, $args ) = @_;
+
+	my $url = _prepareAlbumUrl(ALBUMGENRES_URL, $args);
+
+	Plugins::MusicArtistInfo::Common->call(
+		$url,
+		sub {
+			my ($result) = @_;
+
+			main::INFOLOG && $log->is_info && $log->info("found album genres: " . Data::Dump::dump($result));
+
+			$cb->($result);
+		},{
+			cache => 1,
+			expires => '30d',
+			headers => {
+				'x-mai-cfg' => _initXMAICfgString(),
+			},
+		}
+	);
+}
+
+sub _prepareAlbumUrl {
+	my ($url, $args) = @_;
+
+	my @queryParams;
+	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
+	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
+	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
+	return sprintf($url, uri_escape_utf8($args->{album}), uri_escape_utf8($args->{artist})) . $query;
 }
 
 sub _initXMAICfgString {

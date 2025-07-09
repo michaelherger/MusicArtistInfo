@@ -146,7 +146,6 @@ sub getMissingArtworkAlbums {
 
 	# Find distinct albums to check for artwork.
 	my $collate = Slim::Utils::OSDetect->getOS()->sqlHelperClass()->collate();
-	my $rs = Slim::Schema->search('Genre', undef, { 'order_by' => "me.namesort $collate" });
 
 	my $albums = Slim::Schema->search('Album', {
 		'me.artwork' => { '='  => undef },

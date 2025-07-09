@@ -11,10 +11,11 @@ use Slim::Music::Import;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
+use Plugins::MusicArtistInfo::API;
 use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK);
 use Plugins::MusicArtistInfo::LFM;
 
-use constant GENRE_REPLACE_ID => ['spotify', 'wimp'];
+use constant GENRE_REPLACE_ID => ['spotify', 'wimp', 'deezer', 'qobuz'];
 
 my ($i, $ua, $imageFolder, $filenameTemplate, $max, $cachedir);
 
@@ -298,16 +299,25 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 		$progress->update(sprintf('%s - %s', $title, $name));
 		Slim::Schema->forceCommit;
 
-		my $albumInfo;
-
-		Plugins::MusicArtistInfo::Discogs->getAlbum(undef, sub {
-			$albumInfo = shift || {};
-		},{
+		my $args = {
 			artist => $name,
-			album  => $title
-		});
+			album  => $title,
+		};
 
-		if (my $genreNames = $albumInfo->{genre}) {
+		my $genreNames = Plugins::MusicArtistInfo::API->getAlbumGenres(sub {
+			my $result = shift || {};
+			my $genres = $result->{genres} || [];
+
+			return [ splice(@$genres, 0, 2) ] if scalar @$genres;
+			return;
+		}, $args);
+
+		$genreNames ||= Plugins::MusicArtistInfo::Discogs->getAlbum(undef, sub {
+			my $albumInfo = shift || {};
+			return $albumInfo->{genre};
+		}, $args);
+
+		if ($genreNames) {
 			$tracks_sth->execute($albumId);
 
 			while ($tracks_sth->fetch) {
