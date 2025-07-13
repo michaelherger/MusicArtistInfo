@@ -174,7 +174,12 @@ sub _prepareAlbumUrl {
 	my @queryParams;
 	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
 	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
+
+	my ($service, $extid) = split /:album:/, $args->{extid} || '';
+	push @queryParams, $service . '=' . $extid if $service && $extid;
+
 	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
+
 	return sprintf($url, uri_escape_utf8($args->{album}), uri_escape_utf8($args->{artist})) . $query;
 }
 

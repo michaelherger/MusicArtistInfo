@@ -273,15 +273,15 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 		'bar'   => 1,
 	});
 
-	my $sql = qq(SELECT albums.id, albums.title, contributors.name
+	my $sql = qq(SELECT albums.id, albums.title, albums.extid, contributors.name
 					FROM albums JOIN contributors ON contributors.id = albums.contributor
 					WHERE $extIdCondition;);
 
-	my ($albumId, $title, $name);
+	my ($albumId, $title, $name, $extid);
 
 	$sth = $dbh->prepare_cached($sql);
 	$sth->execute();
-	$sth->bind_columns(\$albumId, \$title, \$name);
+	$sth->bind_columns(\$albumId, \$title, \$extid, \$name);
 
 	my $mappings = {};
 	my $selectSQL = q(SELECT tracks.id
@@ -302,6 +302,7 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 		my $args = {
 			artist => $name,
 			album  => $title,
+			extid  => $extid,
 		};
 
 		my $genreNames = Plugins::MusicArtistInfo::API->getAlbumGenres(sub {

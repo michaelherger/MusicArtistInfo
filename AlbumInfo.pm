@@ -53,6 +53,7 @@ sub getAlbumMenu {
 	$args->{album}  = _cleanupAlbumName($args->{album});
 	$args->{album_id} = $args2->{album_id};
 	$args->{mbid}   ||= $args2->{mbid} if $args2->{mbid};
+	$args->{extid}  ||= $args2->{extid} if $args2->{extid};
 
 	main::DEBUGLOG && $log->debug("Getting album menu for " . $args->{album} . ' by ' . $args->{artist});
 
@@ -403,7 +404,7 @@ sub getAlbumReviewCLI {
 sub _objInfoHandler {
 	my ( $client, $url, $obj, $remoteMeta ) = @_;
 
-	my ($album, $artist, $album_id, $mbid);
+	my ($album, $artist, $album_id, $mbid, $extid);
 
 	if ( $obj && blessed $obj ) {
 		if ($obj->isa('Slim::Schema::Track')) {
@@ -411,11 +412,14 @@ sub _objInfoHandler {
 			$artist = $obj->artistName || $remoteMeta->{artist};
 			$album_id = $obj->albumid;
 			$mbid	= $obj->album->musicbrainz_id if $obj->album && $obj->album->can('musicbrainz_id');
+			$extid  = $obj->album->extid if $obj->album;
 		}
 		elsif ($obj->isa('Slim::Schema::Album')) {
 			$album  = $obj->name || $remoteMeta->{name};
 			$artist = $obj->contributor->name || $remoteMeta->{artist};
 			$album_id = $obj->id || $remoteMeta->{id};
+			$mbid   = $obj->musicbrainz_id;
+			$extid  = $obj->extid;
 		}
 		else {
 			#warn Data::Dump::dump($obj);
@@ -438,6 +442,7 @@ sub _objInfoHandler {
 			artist => $artist,
 			album_id => $album_id,
 			mbid	 => $mbid,
+			extid	 => $extid,
 		}
 	};
 
@@ -465,6 +470,7 @@ sub _getAlbumFromAlbumId {
 				album  => _cleanupAlbumName($album->title),
 				album_id => $album->id,
 				mbid   => $album->musicbrainz_id,
+				extid  => $album->extid,
 			};
 		}
 	}
@@ -484,6 +490,7 @@ sub _getAlbumFromMusicBrainzId {
 				album  => _cleanupAlbumName($album->title),
 				album_id => $album->id,
 				mbid   => $album->musicbrainz_id,
+				extid  => $album->extid,
 			};
 		}
 	}
@@ -530,6 +537,7 @@ sub _getAlbumFromSongURL {
 				album  => _cleanupAlbumName($album),
 				album_id => $album_id,
 				mbid   => $mbid,
+				extid  => $track->album ? $track->album->extid : undef,
 			};
 		}
 	}
