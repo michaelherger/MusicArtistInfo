@@ -25,6 +25,9 @@
 		[% IF !noImageProxy; WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC" %]
 			<input type="checkbox" [% IF prefs.pref_lookupArtistPictures %]checked [% END %] class="stdedit" name="pref_lookupArtistPictures" id="pref_lookupArtistPictures" value="1" />
 			<label for="pref_lookupArtistPictures" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE" | string %]</label>
+			[% IF prefs.pref_lookupArtistPictures && !prefs.pref_artistImageFolder %]
+				<span style="color:red">([% "PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_MISSING" | string %])</span>
+			[% END %]
 		[% END; END %]
 
 		[% IF !noImageProxy; WRAPPER settingGroup title="" desc="" %]

@@ -332,6 +332,12 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	HU	Az előadóképek letöltése és előzetes gyorsítótárazása meglehetősen időigényes lehet, de jelentősen felgyorsítja a böngészést az előadók által.
 	NL	Downloaden en cachen van foto's van artiesten kan erg lang duren, maar zal het bladeren op artiest flink versnellen.
 
+PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_MISSING
+	DE	Falls Sie den Download von Interpretenbildern aktivieren, dann stellen Sie bitte sicher, dass unten ein Ordner für die Interpretenbilder definiert ist.
+	EN	If you enable artist artwork download, then please make sure you define a target folder where to save the images - see below.
+	FR	Si vous activez le téléchargement des photos d'artistes, veuillez vous assurer de définir un dossier cible où enregistrer les images (voir ci-dessous).
+	NL	Als je het downloaden van artiestenfoto's inschakelt, zorg er dan voor dat je een doelmap definieert waar de afbeeldingen worden opgeslagen (zie hieronder).
+
 PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	DA	Download kun billeder for hovedkunstneren, og ikke alle kunstnere (komponister, dirigenter, osv.)
 	DE	Bilder nur für die Haupt-Interpreten herunterladen, nicht aber für weitere Künstler wie Komponisten, Dirigenten etc.
