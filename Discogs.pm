@@ -303,7 +303,7 @@ sub _call {
 		},
 		{
 			cache   => 1,
-			expires => '1y',	# force caching - discogs doesn't set the appropriate headers
+			expires => '60d',	# force caching - discogs doesn't set the appropriate headers
 			headers => Plugins::MusicArtistInfo::Common->getHeaders('discogs')
 		}
 	);

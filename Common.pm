@@ -249,6 +249,9 @@ sub call {
 
 		my $cached = $cache->get($cacheKey);
 		if ($cached && ref $cached && ref $cached eq 'HTTP::Response') {
+			main::INFOLOG && $log->is_info && $log->info("Using cached response for $url");
+			main::DEBUGLOG && $log->is_debug && $log->debug(Data::Dump::dump($cached));
+
 			$cached->header('x-discogs-ratelimit-remaining' => 999) if defined $cached->header('x-discogs-ratelimit-remaining');
 			return $cb2->($cached);
 		}

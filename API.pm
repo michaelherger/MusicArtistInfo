@@ -62,13 +62,14 @@ sub getArtistPhoto {
 				};
 			}
 
-			$cache->set($cacheKey, $photo->{url}, $photo->{url} ? '60d' : '10d');
+			$cache->set($cacheKey, $photo->{url}, '1y') if $photo->{url};
 
 			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($photo));
 
 			$cb->($photo);
 		},{
 			cache => 1,
+			expires => '30d',
 			headers => {
 				'x-mai-cfg' => _initXMAICfgString(),
 			},
@@ -86,26 +87,18 @@ sub getArtistBioId {
 	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
 
 	my $url = sprintf(BIOGRAPHY_URL, uri_escape_utf8($args->{artist})) . $query;
-	my $cacheKey = "mai_biography_$url";
-
-	my $cached = $cache->get($cacheKey);
-	if (defined $cached) {
-		main::INFOLOG && $log->is_info && $log->info("Using cached album review: " . Data::Dump::dump($cached));
-		return $cb->($cached);
-	}
 
 	Plugins::MusicArtistInfo::Common->call(
 		$url,
 		sub {
 			my ($result) = @_;
 
-			$cache->set($cacheKey, $result, ($result && $result->{wikidata}) ? '1y' : '30d');
-
 			main::INFOLOG && $log->is_info && $log->info("found biography: " . Data::Dump::dump($result));
 
 			$cb->($result);
 		},{
 			cache => 1,
+			expires => '30d',
 			headers => {
 				'x-mai-cfg' => _initXMAICfgString(),
 			},
@@ -117,20 +110,11 @@ sub getAlbumReviewId {
 	my ( $class, $cb, $args ) = @_;
 
 	my $url = _prepareAlbumUrl(ALBUMREVIEW_URL, $args);
-	my $cacheKey = "mai_album_review_$url";
-
-	my $cached = $cache->get($cacheKey);
-	if (defined $cached) {
-		main::INFOLOG && $log->is_info && $log->info("Using cached album review: " . Data::Dump::dump($cached));
-		return $cb->($cached);
-	}
 
 	Plugins::MusicArtistInfo::Common->call(
 		$url,
 		sub {
 			my ($result) = @_;
-
-			$cache->set($cacheKey, $result, '1y') if $result && $result->{wikidata};
 
 			main::INFOLOG && $log->is_info && $log->info("found album review: " . Data::Dump::dump($result));
 
