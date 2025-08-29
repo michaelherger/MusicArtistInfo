@@ -16,7 +16,8 @@ sub name {
 
 sub prefs {
 	my @prefs = ($prefs, qw(runImporter lookupArtistPictures lookupCoverArt reviewFolder artistImageFolder lyricsFolder bioFolder
-		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres fallBackToEnglish hidextramenusitems));
+		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres useAIGeneratedContent fallBackToEnglish
+		hidextramenusitems));
 
 	# we'll leave the artist picture handling to LMS, if possible
 	push @prefs, 'browseArtistPictures' if !CAN_LMS_ARTIST_ARTWORK;

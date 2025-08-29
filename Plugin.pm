@@ -41,7 +41,9 @@ sub initPlugin {
 		lookupCoverArt => 1,
 		lookupAlbumArtistPicturesOnly => 1,
 		fallBackToEnglish => 1,
+		useAIGeneratedContent => 0,
 	});
+
 	$prefs->setChange(\&webPages, 'hidextramenusitems');
 
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);

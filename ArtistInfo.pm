@@ -174,10 +174,10 @@ sub getBiography {
 
 	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {
-			my $bioData = shift;
+			my $bioData = shift || {};
 
 			my $bioCb = sub {
-				my $bio = shift;
+				my $bio = shift || {};
 
 				if ($bio->{error} || !$bio->{bio}) {
 					# in case of error or lack of Bio, try to fall back to English
@@ -209,6 +209,41 @@ sub getBiography {
 					id => $pageData->{pageid},
 					lang => $pageData->{lang} || $args->{lang},
 				});
+			}
+			elsif ($bioData->{url} && $bioData->{url} =~ m/^https?:.*\.md$/i) {
+				Slim::Networking::SimpleAsyncHTTP->new(
+					sub {
+						my $http   = shift;
+						my $content = $http->content;
+
+						if ($@) {
+							$http->error($@ || 'Invalid response: ' . $http->content);
+							Plugins::MusicArtistInfo::LFM->getBiography($client, $bioCb, $args);
+							return;
+						}
+
+						utf8::decode($content);
+						$content .= "\n\n" . cstring($client, 'PLUGIN_MUSICARTISTINFO_GENAI_NOTE');
+
+						require Plugins::MusicArtistInfo::Parser::Markdown;
+						my $bio = {
+							bio => Plugins::MusicArtistInfo::Parser::Markdown->parseToHTML(\$content),
+							bioText => Plugins::MusicArtistInfo::Parser::Markdown->parse(\$content),
+						};
+
+						$bio->{bio} =~ s/\n+//g;
+
+						$bioCb->($bio);
+					},
+					sub {
+						$log->error("Failed to fetch MD biography " . $bioData->{url} . ": " . $_[0]->error);
+						Plugins::MusicArtistInfo::LFM->getBiography($client, $bioCb, $args);
+					},
+					{
+						cache => 1,
+						expires => 86400,	# force caching
+					}
+				)->get($bioData->{url});
 			}
 			else {
 				Plugins::MusicArtistInfo::LFM->getBiography($client, $bioCb, $args);

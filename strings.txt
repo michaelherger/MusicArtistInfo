@@ -260,6 +260,24 @@ PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC
 	HU	Ha úgy dönt, hogy egy mappát használ az életrajzokhoz, azt a szöveges tartalom további forrásaként fogja használni. Használjon olyan fájlneveket, mint a %ARTIST.txt (html, nfo, pl. 'Peter Gabriel.html'). Ha egy fájl található ebben a mappában, akkor a rendszer nem használ online forrást.
 	NL	Als je een map gebruikt voor biografieën van artiesten, wordt deze gebruikt als een additionele bron voor biografieën. Gebruik bestandsnamen als %ARTIST.txt (html, nfo, bijv. 'Peter Gabriel.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
 
+PLUGIN_MUSICARTISTINFO_GENAI
+	DE	KI verwenden, um Inhalte zu erstellen
+	EN	Generate content using AI
+	FR	Générer du contenu avec l'IA
+	NL	Inhoud genereren met
+
+PLUGIN_MUSICARTISTINFO_GENAI_DESC
+	DE	Sie können experimentelle Unterstützung aktivieren, um Biografien und Rezensionen mit Hilfe generativer KI zu erstellen. Diese Option würde verwendet werden, wenn keine Inhalte auf Wikipedia gefunden werden können. Die Qualität kann variieren!
+	EN	You can enable experimental support to generate biographies and reviews using generative AI. This option would be used if no content could be found on Wikipedia. Quality can vary!
+	FR	Vous pouvez activer la prise en charge expérimentale pour générer des biographies et des critiques à l'aide de l'IA générative. Cette option serait utilisée si aucun contenu ne pouvait être trouvé sur Wikipédia. La qualité peut varier !
+	NL	Je kunt experimentele ondersteuning inschakelen om biografieën en recensies te genereren met behulp van generatieve AI. Deze optie wordt gebruikt als er geen content op Wikipedia kan worden gevonden. De kwaliteit kan variëren!
+
+PLUGIN_MUSICARTISTINFO_GENAI_NOTE
+	DE	(Dieser Inhalt wurde mit generativer KI erstellt. Der Inhalt kann von der Realität abweichen oder komplett erfunden sein.)
+	EN	(This content was created using generative AI. It may not accurately reflect reality or may contain fictional elements.)
+	FR	(Ce contenu a été créé à l'aide d'une IA générative. Il peut ne pas refléter fidèlement la réalité ou contenir des éléments fictifs.)
+	NL	(Deze inhoud is gemaakt met behulp van generatieve AI. Het kan afwijken van de werkelijkheid of fictieve elementen bevatten.)
+
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
 	DA	Billederne kan ikke gemmes i den definerede mappe. Venligst check at mappen eksisterer og at Lyrion Music Server har skriverettigheder til mappen!
 	DE	Speichern der heruntergeladenen Bilder ist nicht möglich! Bitte stellen Sie sicher, dass der angegebene Ordner existiert und von Lyrion Music Server beschreibbar ist!

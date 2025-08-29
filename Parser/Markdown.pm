@@ -8,7 +8,7 @@ use Text::MultiMarkdown;
 
 sub parseToHTML {
 	my ($class, $path) = @_;
-	my $content = File::Slurp::read_file($path);
+	my $content = ref $path ? $$path : File::Slurp::read_file($path);
 	return Text::MultiMarkdown->new->markdown($content);
 }
 
