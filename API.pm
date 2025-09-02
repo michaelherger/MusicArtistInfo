@@ -84,7 +84,6 @@ sub getArtistBioId {
 	my @queryParams;
 	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
 	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
-	push @queryParams, 'ai=1' if $prefs->get('useAIGeneratedContent');
 	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
 
 	my $url = sprintf(BIOGRAPHY_URL, uri_escape_utf8($args->{artist})) . $query;

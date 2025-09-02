@@ -41,7 +41,7 @@ sub initPlugin {
 		lookupCoverArt => 1,
 		lookupAlbumArtistPicturesOnly => 1,
 		fallBackToEnglish => 1,
-		useAIGeneratedContent => 0,
+		useAIGeneratedContent => 1,
 	});
 
 	$prefs->setChange(\&webPages, 'hidextramenusitems');

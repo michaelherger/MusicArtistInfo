@@ -210,7 +210,7 @@ sub getBiography {
 					lang => $pageData->{lang} || $args->{lang},
 				});
 			}
-			elsif ($bioData->{url} && $bioData->{url} =~ m/^https?:.*\.md$/i) {
+			elsif ($bioData->{url} && $prefs->get('useAIGeneratedContent') && $bioData->{url} =~ m{^https?://music-metadata\.lms-community.*\.md$}i) {
 				Slim::Networking::SimpleAsyncHTTP->new(
 					sub {
 						my $http   = shift;
