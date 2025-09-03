@@ -168,7 +168,13 @@ sub getExternalLinks {
 		$url =~ s{/$}{};
 
 		# for some legacy reasons, we use 'url' as a key for the main Wikipedia URL
-		$id = 'wikipedia' if $id eq 'url';
+		if ($id eq 'url') {
+			$id = 'wikipedia' if $url =~ /wikipedia.org/;
+			$id = 'wikidata' if $url =~ /wikidata.org/;
+			$id = 'wiki' if $url =~ /wiki\.org/;
+
+			next if $id eq 'url';   # we have a separate link for that
+		}
 
 		my $label = 'PLUGIN_MUSICARTISTINFO_' . uc($id);
 		my $label = Slim::Utils::Strings::stringExists($label)
