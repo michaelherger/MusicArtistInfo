@@ -266,8 +266,24 @@ sub _fetchLyrics {
 											if ($results && keys %$results && !$results->{error}) {
 												$cb->($results);
 											}
-											else {
+											elsif ($args->{title} !~ /\./ && $args->{artist} !~ /\./) {
 												$ecb->($results);
+											}
+											else {
+												# try one more time with punctuation removed - https://github.com/michaelherger/MusicArtistInfo/issues/12
+												$args->{artist} =~ s/\.//g;
+												$args->{title}  =~ s/\.//g;
+
+												Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
+													$results = shift;
+
+													if ($results && keys %$results && !$results->{error}) {
+														$cb->($results);
+													}
+													else {
+														$ecb->($results);
+													}
+												});
 											}
 										});
 									}
