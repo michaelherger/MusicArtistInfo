@@ -1,6 +1,7 @@
 package Plugins::MusicArtistInfo::API;
 
 use strict;
+use Digest::SHA1 qw(sha1_base64);
 use URI::Escape qw(uri_escape_utf8);
 
 use Slim::Utils::Cache;
@@ -171,7 +172,15 @@ sub _initXMAICfgString {
 	$version ||= (main::SCANNER && Slim::Utils::PluginManager->dataForPlugin('Plugins::MusicArtistInfo::Importer')->{version})
 	          || (!main::SCANNER && $Plugins::MusicArtistInfo::Plugin::VERSION) || 'unk';
 
-	return $xMAICfgString ||= sprintf('v:%s,sc:%s,ba:%s,la:%s,ma:%s,ac:%s,pc:%s',
+	my $serverId = 'undef';
+
+	if (!$xMAICfgString && Slim::Utils::PluginManager->isEnabled('Slim::Plugin::Analytics::Plugin')) {
+		$serverId = sha1_base64(preferences('server')->get('server_uuid'));
+		# replace / with +, as / would be interpreted as a path part
+		$serverId =~ s/\//+/g;
+	}
+
+	return $xMAICfgString ||= sprintf('v:%s,sc:%s,ba:%s,la:%s,ma:%s,ac:%s,pc:%s,si:%s',
 		$version,
 		main::SCANNER ? 1 : 0,
 		$prefs->get('browseArtistPictures') ? 1 : 0,
@@ -179,6 +188,7 @@ sub _initXMAICfgString {
 		$prefs->get('lookupAlbumArtistPicturesOnly') ? 1 : 0,
 		$prefs->get('artistImageFolder') ? 1 : 0,
 		$serverPrefs->get('precacheArtwork') ? 1 : 0,
+		$serverId,
 	);
 }
 
