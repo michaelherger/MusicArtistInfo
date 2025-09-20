@@ -5,6 +5,7 @@ use strict;
 use Exporter::Lite;
 use File::Spec::Functions qw(catdir);
 use JSON::XS::VersionOneAndTwo;
+use List::Util qw(min);
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Cache;
@@ -32,6 +33,10 @@ my $log = Slim::Utils::Log->addLogCategory( {
 } );
 
 my $ua;
+
+# delay requests in case of 429s
+my $delay = 0;
+use constant MAX_DELAY => 30;
 
 sub cleanupAlbumName {
 	my $album = shift;
@@ -271,7 +276,15 @@ sub call {
 
 		my $response = $ua->get($url, %headers);
 
-		$cache->set($cacheKey, $response, $params->{expires} || '1d') if $response->code == 200;
+		if ($response->code == 429) {
+			$delay = $delay ? min($delay*2, MAX_DELAY) : 5;
+			$log->error("Hit rate limiter - delay next call by $delay seconds...");
+			sleep $delay;
+		}
+		else {
+			$cache->set($cacheKey, $response, $params->{expires} || '1d') if $response->code == 200;
+			$delay = 0;
+		}
 
 		$cb2->($response);
 	}
