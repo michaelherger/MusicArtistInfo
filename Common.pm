@@ -195,7 +195,7 @@ sub getExternalLinks {
 		$linkList .= '<li><a href="' . $mbUrl . '" target="_blank">' . cstring($client, 'PLUGIN_MUSICARTISTINFO_MUSICBRAINZ_RELEASE') . '</a></li>';
 	}
 
-	return $linkList ? sprintf("<h4>%s</h4><ul>%s</ul>", cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'), $linkList) : '';
+	return $linkList ? sprintf("<h4>%s</h4><ul class=\"maiExternalLinksList\">%s</ul>", cstring($client, 'PLUGIN_MUSICARTISTINFO_READ_MORE'), $linkList) : '';
 }
 
 

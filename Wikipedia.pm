@@ -192,7 +192,7 @@ sub getPage {
 					} split(/\n/, $result->{content}));
 
 					$result->{contentText} = _removeMarkup($result->{content});
-					$result->{content} = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/wikipedia.css" />' . $result->{content};
+					$result->{content} = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/mai.css" />' . $result->{content};
 
 					my $slug = $args->{title};
 					$slug =~ s/ /_/g;

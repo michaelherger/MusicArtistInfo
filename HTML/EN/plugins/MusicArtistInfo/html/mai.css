@@ -10,3 +10,12 @@ p {
 .selectorMarker {
 	cursor: auto;
 }
+
+.maiExternalLinksList {
+	list-style: revert;
+	padding: revert;
+}
+
+.maiAIHint {
+	font-style: italic;
+}

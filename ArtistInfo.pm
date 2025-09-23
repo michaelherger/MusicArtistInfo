@@ -223,11 +223,11 @@ sub getBiography {
 						}
 
 						utf8::decode($content);
-						$content .= "\n\n" . cstring($client, 'PLUGIN_MUSICARTISTINFO_GENAI_NOTE');
+						$content .= "\n\n<span class=\"maiAIHint\">" . cstring($client, 'PLUGIN_MUSICARTISTINFO_GENAI_NOTE') . "</span>";
 
 						require Plugins::MusicArtistInfo::Parser::Markdown;
 						my $bio = {
-							bio => Plugins::MusicArtistInfo::Parser::Markdown->parseToHTML(\$content),
+							bio => '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/mai.css" />' . Plugins::MusicArtistInfo::Parser::Markdown->parseToHTML(\$content),
 							bioText => Plugins::MusicArtistInfo::Parser::Markdown->parse(\$content),
 						};
 
@@ -256,20 +256,16 @@ sub getBiography {
 sub _getBioItems {
 	my ($bio, $client, $params, $args) = @_;
 
-	my $items = [];
+	my $content = '';
 
 	if ($bio->{error}) {
 		if (keys %$args && Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params)) {
 			$bio->{error} = sprintf("<p>%s</p>\n%s", $bio->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $args));
 		}
 
-		$items = [{
-			name => $bio->{error},
-			type => 'text'
-		}]
+		$content = $bio->{error};
 	}
 	elsif ($bio->{bio}) {
-		my $content = '';
 		if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
 			$content = '<h4>' . $bio->{author} . '</h4>' if $bio->{author};
 			$content .= $bio->{bio};
@@ -279,11 +275,9 @@ sub _getBioItems {
 			$content = $bio->{author} . '\n\n' if $bio->{author};
 			$content .= $bio->{bioText} ? $bio->{bioText} : $bio->{bio};
 		}
-
-		$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 	}
 
-	return $items;
+	return Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
 }
 
 sub getBiographyCLI {

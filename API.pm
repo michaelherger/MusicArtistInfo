@@ -50,7 +50,7 @@ sub getArtistPhoto {
 		return $cb->({ url => $cached });
 	}
 
-	Plugins::MusicArtistInfo::Common->call(
+	_call(
 		$url,
 		sub {
 			my ($result) = @_;
@@ -68,13 +68,6 @@ sub getArtistPhoto {
 			main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($photo));
 
 			$cb->($photo);
-		},{
-			cache => 1,
-			expires => '30d',
-			headers => {
-				'x-mai-cfg' => _initXMAICfgString(),
-			},
-			# ignoreError => [404],
 		}
 	);
 }
@@ -89,7 +82,7 @@ sub getArtistBioId {
 
 	my $url = sprintf(BIOGRAPHY_URL, uri_escape_utf8($args->{artist})) . $query;
 
-	Plugins::MusicArtistInfo::Common->call(
+	_call(
 		$url,
 		sub {
 			my ($result) = @_;
@@ -97,12 +90,6 @@ sub getArtistBioId {
 			main::INFOLOG && $log->is_info && $log->info("found biography: " . Data::Dump::dump($result));
 
 			$cb->($result);
-		},{
-			cache => 1,
-			expires => '30d',
-			headers => {
-				'x-mai-cfg' => _initXMAICfgString(),
-			},
 		}
 	);
 }
@@ -112,7 +99,7 @@ sub getAlbumReviewId {
 
 	my $url = _prepareAlbumUrl(ALBUMREVIEW_URL, $args);
 
-	Plugins::MusicArtistInfo::Common->call(
+	_call(
 		$url,
 		sub {
 			my ($result) = @_;
@@ -120,12 +107,6 @@ sub getAlbumReviewId {
 			main::INFOLOG && $log->is_info && $log->info("found album review: " . Data::Dump::dump($result));
 
 			$cb->($result);
-		},{
-			cache => 1,
-			expires => '30d',
-			headers => {
-				'x-mai-cfg' => _initXMAICfgString(),
-			},
 		}
 	);
 }
@@ -135,7 +116,7 @@ sub getAlbumGenres {
 
 	my $url = _prepareAlbumUrl(ALBUMGENRES_URL, $args);
 
-	Plugins::MusicArtistInfo::Common->call(
+	_call(
 		$url,
 		sub {
 			my ($result) = @_;
@@ -143,14 +124,20 @@ sub getAlbumGenres {
 			main::INFOLOG && $log->is_info && $log->info("found album genres: " . Data::Dump::dump($result));
 
 			$cb->($result);
-		},{
-			cache => 1,
-			expires => '30d',
-			headers => {
-				'x-mai-cfg' => _initXMAICfgString(),
-			},
 		}
 	);
+}
+
+sub _call {
+	my ($url, $cb, $args) = @_;
+
+	$args ||= {};
+	$args->{cache} //= 1;
+	$args->{expires} //= '30d';
+	$args->{headers} ||= {};
+	$args->{headers}->{'x-mai-cfg'} ||= _initXMAICfgString();
+
+	Plugins::MusicArtistInfo::Common->call($url, $cb, $args);
 }
 
 sub _prepareAlbumUrl {
