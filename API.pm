@@ -161,9 +161,9 @@ sub _initXMAICfgString {
 
 	my $serverId = 'undef';
 
-	if (!$xMAICfgString && Slim::Utils::PluginManager->isEnabled('Slim::Plugin::Analytics::Plugin')) {
+	if (!$xMAICfgString && Slim::Utils::PluginManager->isConfiguredEnabled('Analytics')) {
+		# sync with what the analytics plugin does to hash the server ID
 		$serverId = sha1_base64(preferences('server')->get('server_uuid'));
-		# replace / with +, as / would be interpreted as a path part
 		$serverId =~ s/\//+/g;
 	}
 
