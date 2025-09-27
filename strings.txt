@@ -269,7 +269,7 @@ PLUGIN_MUSICARTISTINFO_GENAI
 PLUGIN_MUSICARTISTINFO_GENAI_DESC
 	DE	Sie können experimentelle Unterstützung aktivieren, um Biografien und Rezensionen mit Hilfe generativer KI zu erstellen. Diese Option würde verwendet werden, wenn keine Inhalte auf Wikipedia gefunden werden können. Die Qualität kann variieren!
 	EN	You can enable experimental support to generate biographies and reviews using generative AI. This option would be used if no content could be found on Wikipedia. Quality can vary!
-	FR	Vous pouvez activer la prise en charge expérimentale pour générer des biographies et des critiques à l'aide de l'IA générative. Cette option serait utilisée si aucun contenu ne pouvait être trouvé sur Wikipédia. La qualité peut varier !
+	FR	Vous pouvez activer la génération expérimentale des biographies et des critiques à l'aide de l'IA générative. Cette option sera utilisée si aucun contenu ne peut être trouvé sur Wikipédia. La qualité peut varier !
 	NL	Je kunt experimentele ondersteuning inschakelen om biografieën en recensies te genereren met behulp van generatieve AI. Deze optie wordt gebruikt als er geen content op Wikipedia kan worden gevonden. De kwaliteit kan variëren!
 
 PLUGIN_MUSICARTISTINFO_GENAI_NOTE
