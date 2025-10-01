@@ -134,7 +134,10 @@ sub getAlbum {
 
 		my $albumInfo;
 
-		if ( $items = $items->{results} ) {
+		if (!ref $items) {
+			$log->error("Discogs lookup failed: " . $items) if $items;
+		}
+		elsif ( $items = $items->{results} ) {
 			foreach ( @$items ) {
 				$_->{title} = Slim::Utils::Unicode::utf8decode($_->{title});
 

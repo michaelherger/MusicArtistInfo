@@ -43,6 +43,7 @@ sub handler {
 		}
 	}
 
+	$paramRef->{hitRateLimit} = Plugins::MusicArtistInfo::API::hasHitRateLimit();
 	$paramRef->{noImageProxy} = !CAN_IMAGEPROXY;
 	$paramRef->{canLMSArtistArtwork} = CAN_LMS_ARTIST_ARTWORK;
 	$paramRef->{canOnlineLibrary} = CAN_ONLINE_LIBRARY;

@@ -6,6 +6,10 @@
 		</select>
 	[% END; END %]
 
+	[% IF hitRateLimit; WRAPPER setting title="" desc="" %]
+		<div style="color:red">[% "PLUGIN_MUSICARTISTINFO_HIT_RATE_LIMIT" | string %]</div>
+	[% END; END %]
+
 	[% WRAPPER settingSection %]
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_IMPORTER" desc="PLUGIN_MUSICARTISTINFO_IMPORTER_DESC" %]
 			<input type="checkbox" [% IF prefs.pref_runImporter %]checked [% END %] class="stdedit" name="pref_runImporter" id="pref_runImporter" value="1" />
@@ -66,8 +70,9 @@
 			<label for="pref_fallBackToEnglish" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK" | string %]</label>
 		[% END %]
 
-		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS" desc="PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC" %]
+		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS" desc="" %]
 			<input type="checkbox" [% IF prefs.pref_hidextramenusitems %]checked [% END %] class="stdedit" name="pref_hidextramenusitems" id="pref_hidextramenusitems" value="1" />
+			<label for="pref_hidextramenusitems" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC" | string %]</label>
 		[% END %]
 
 		[% WRAPPER settingGroup title="PLUGIN_MUSICARTISTINFO_GENAI" desc="" %]

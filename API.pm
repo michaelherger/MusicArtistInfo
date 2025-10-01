@@ -22,9 +22,10 @@ my $serverPrefs = preferences('server');
 
 my $xMAICfgString;
 my $version;
+my $hitRateLimit;
 
 if (!main::SCANNER) {
-	$prefs->setChange(\&_initXMAICfgString,
+	$prefs->setChange(sub { _initXMAICfgString(1) },
 		'browseArtistPictures',
 		'lookupArtistPictures',
 		'lookupAlbumArtistPicturesOnly',
@@ -32,7 +33,7 @@ if (!main::SCANNER) {
 		'saveMissingArtistPicturePlaceholder'
 	);
 
-	$serverPrefs->setChange(\&_initXMAICfgString,
+	$serverPrefs->setChange(sub { _initXMAICfgString(1) },
 		'precacheArtwork',
 	);
 }
@@ -128,6 +129,10 @@ sub getAlbumGenres {
 	);
 }
 
+sub hasHitRateLimit {
+	return $hitRateLimit ? 1 : 0;
+}
+
 sub _call {
 	my ($url, $cb, $args) = @_;
 
@@ -137,7 +142,18 @@ sub _call {
 	$args->{headers} ||= {};
 	$args->{headers}->{'x-mai-cfg'} ||= _initXMAICfgString();
 
-	Plugins::MusicArtistInfo::Common->call($url, $cb, $args);
+	Plugins::MusicArtistInfo::Common->call($url, sub {
+		my ($result) = @_;
+
+		if ($result && ref $result && $result->{error}) {
+			my $error = delete $result->{error};
+			$log->error("API call to $url failed: $error");
+
+			$hitRateLimit = 1 if $error =~ /rate limit|\b429\b/i;
+		}
+
+		$cb->(@_);
+	}, $args);
 }
 
 sub _prepareAlbumUrl {
@@ -156,6 +172,13 @@ sub _prepareAlbumUrl {
 }
 
 sub _initXMAICfgString {
+	my ($renew) = @_;
+
+	if ($renew) {
+		$hitRateLimit = 0;
+		$xMAICfgString = undef;
+	}
+
 	$version ||= (main::SCANNER && Slim::Utils::PluginManager->dataForPlugin('Plugins::MusicArtistInfo::Importer')->{version})
 	          || (!main::SCANNER && $Plugins::MusicArtistInfo::Plugin::VERSION) || 'unk';
 
