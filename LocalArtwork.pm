@@ -261,7 +261,8 @@ sub getArtistPhoto {
 	my $img;
 	my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($artist);
 
-	foreach my $imageFolder ($prefs->get('artistImageFolder'), $serverprefs->get('artfolder')) {
+	foreach my $imageFolder ($prefs->get('artistImageFolder'), $serverprefs->get('artfolder'), catdir($serverprefs->get('cachedir'), 'mai_portraits')) {
+		next unless $imageFolder && -d $imageFolder;
 		$img = _imageInFolder($imageFolder, @$candidates);
 		last if $img;
 	}
