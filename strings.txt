@@ -298,7 +298,7 @@ PLUGIN_MUSICARTISTINFO_GENAI
 	DE	KI verwenden, um Inhalte zu erstellen
 	EN	Generate content using AI
 	FR	Générer du contenu avec l'IA
-	NL	Inhoud genereren met
+	NL	Inhoud genereren met AI
 
 PLUGIN_MUSICARTISTINFO_GENAI_DESC
 	CS	Můžete zapnout experimentální podporu pro generování biografií a recenzí pomocí generativní AI. Tato možnost bude použita, pokud nebude nalezen žádný obsah na Wikipedii. Kvalita se může lišit!
