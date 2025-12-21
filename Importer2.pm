@@ -88,15 +88,18 @@ sub _scanArtistPhotos {
 		push @where, '(contributors.portrait IS NULL OR contributors.portrait = "")';
 	}
 
-	my $roles = Slim::Schema::Contributor->can('activeContributorRoles')
-		? [ map { Slim::Schema::Contributor->typeToRole($_) } Slim::Schema::Contributor->activeContributorRoles() ]
-		: Slim::Schema->artistOnlyRoles();
+	my %roles = map { $_ => 1 } @{
+		Slim::Schema::Contributor->can('activeContributorRoles')
+			? [ map { Slim::Schema::Contributor->typeToRole($_) } Slim::Schema::Contributor->activeContributorRoles() ]
+			: Slim::Schema->artistOnlyRoles()
+	};
 
 	if ($prefs->get('lookupAlbumArtistPicturesOnly')) {
+		$sql =~ s/ (FROM contributors )/, GROUP_CONCAT(contributor_album.role) AS roles $1/;
+
 		my $va  = $serverprefs->get('variousArtistAutoIdentification');
 		$sql   .= 'LEFT JOIN contributor_album ON contributor_album.contributor = contributors.id ';
 		$sql   .= 'LEFT JOIN albums ON contributor_album.album = albums.id ' if $va;
-		push @where, '(contributor_album.role IS NULL OR contributor_album.role IN (' . join( ',', @{$roles || []} ) . '))';
 		push @where, '(albums.compilation IS NULL OR albums.compilation = 0)' if $va;
 		push @where, 'contributors.extid IS NOT NULL AND contributors.extid != ""' if IS_ONLINE_LIBRARY_SCAN;
 		$group .= 'GROUP BY contributors.id';
@@ -136,6 +139,7 @@ sub _scanArtistPhotos {
 	while ( _getArtistPhotoURL({
 		sth      => $sth,
 		count    => $count,
+		roles    => \%roles,
 		progress => $progress,
 		vaObj    => $vaObj ? {
 			id => $vaObj->id,
@@ -196,6 +200,9 @@ sub _getArtistPhotoURL {
 		if (!$done && !$isWipeDb && (my $cachedId = $cache->get($idMatchKey))) {
 			$done = $cachedId == $artist_id;
 		}
+
+		# only look up artwork for contributors with the desired roles
+		$done ||= !(grep { $params->{roles}->{$_} } split(',', $artist->{roles} || ''));
 
 		if (CAN_ONLINE_LIBRARY && !$done && $ua && (my $url = _getImageUrlFromService($artist))) {
 			_precacheArtistImage($artist, {
