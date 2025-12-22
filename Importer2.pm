@@ -202,7 +202,12 @@ sub _getArtistPhotoURL {
 		}
 
 		# only look up artwork for contributors with the desired roles
-		$done ||= !(grep { $params->{roles}->{$_} } split(',', $artist->{roles} || ''));
+		if (!$done && $artist->{roles} && $params->{roles} && ref $params->{roles} eq 'HASH' && scalar keys %{$params->{roles}} ) {
+			$done = !(grep { $params->{roles}->{$_} } split(',', $artist->{roles} || ''));
+			if ($done) {
+				_precacheArtistImage({ name => $artist->{name} }, undef);	# put in missing placeholder if desired
+			}
+		}
 
 		if (CAN_ONLINE_LIBRARY && !$done && $ua && (my $url = _getImageUrlFromService($artist))) {
 			_precacheArtistImage($artist, {
@@ -218,6 +223,9 @@ sub _getArtistPhotoURL {
 				mbid   => $artist->{musicbrainz_id},
 			});
 			$done++;
+		}
+		elsif (!$done) {
+			_precacheArtistImage({ name => $artist->{name} }, undef);	# put in missing placeholder if desired
 		}
 
 		$cache->set($idMatchKey, $artist_id, '1y');
