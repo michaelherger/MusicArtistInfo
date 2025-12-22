@@ -215,6 +215,9 @@ sub _fetchLyrics {
 	# specific rule for the "[E]"xplicit flag - it's too specific/short to fit in with the above
 	$args->{title} =~ s/\[E\]//g;
 
+	# remove trailing release year information
+	$args->{title} =~ s/ \(([0-9]{1,4}(\*+)?|\+NEU\+)\)$//;
+
 	# remove trailing non-word characters
 	$args->{title} =~ s/[\s\W]{2,}$//;
 	$args->{title} =~ s/\s*$//;
