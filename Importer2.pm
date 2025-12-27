@@ -234,7 +234,7 @@ sub _getArtistPhotoURL {
 
 	if ( $progress ) {
 		$progress->final($params->{count});
-		$log->error(sprintf('finished in %.3f seconds', $progress->duration));
+		$log->error(sprintf('finished in %.3f seconds (%i artists)', $progress->duration, $params->{count}) );
 	}
 
 	return 0;

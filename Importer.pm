@@ -15,7 +15,7 @@ use Plugins::MusicArtistInfo::API;
 use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK);
 use Plugins::MusicArtistInfo::LFM;
 
-use constant GENRE_REPLACE_ID => ['spotify', 'wimp', 'deezer', 'qobuz'];
+use constant GENRE_REPLACE_ID => ['spotify', 'wimp', 'deezer', 'qobuz', 'tidal'];
 
 my ($i, $ua, $imageFolder, $filenameTemplate, $max, $cachedir);
 
@@ -205,7 +205,7 @@ sub _getAlbumCoverURL {
 
 	if ($progress) {
 		$progress->final($params->{count}) ;
-		$log->error(sprintf('  finished in %.3f seconds', $progress->duration));
+		$log->error(sprintf('  finished in %.3f seconds (%i albums)', $progress->duration, $params->{count}) );
 	}
 
 	return 0;
@@ -257,7 +257,7 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 	require Plugins::MusicArtistInfo::Discogs;
 
 	my $extIdCondition = join(' OR ', map {
-		"albums.extid LIKE '$_%'";
+		"albums.extid LIKE '$_:%'";
 	} @{GENRE_REPLACE_ID()});
 
 	my $dbh = Slim::Schema->dbh or return;
@@ -331,7 +331,7 @@ sub _scanAlbumGenre { if (CAN_ONLINE_LIBRARY) {
 
 	if ($progress) {
 		$progress->final($count) ;
-		$log->error(sprintf('    finished in %.3f seconds', $progress->duration));
+		$log->error(sprintf('    finished in %.3f seconds (%i albums)', $progress->duration, $count));
 	}
 
 	Slim::Schema->forceCommit;
