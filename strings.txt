@@ -195,7 +195,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 	NL	Vind albums met kleine albumhoes
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
-	CS	Vyhledávání obrázku interpreta online
+	CS	Vyhledávání obrázků interpreta online
 	DA	Søg efter billede af kunstner
 	DE	Interpretenbilder online suchen
 	EN	Artist Picture Online Lookup
@@ -222,7 +222,7 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	NL	Foto's van artiesten
 
 PLUGIN_MUSICARTISTINFO_GENRE_REPLACEMENT_PROGRESS
-	CS	Vyhledávání žánru online a jeho nahrazení
+	CS	Vyhledávání žánrů online a jeho nahrazení
 	DA	Søg efter genre online og erstatning
 	DE	Online Stilrichtungen nachschlagen und ersetzen
 	EN	Online Genre Lookup and Replacement
@@ -360,7 +360,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER
 	NL	Importeer instellingen
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
-	CS	Při skenování vaší hudební knihovny můžeme hledat informace o hudbě a interpretech online.
+	CS	Při prohledávání vaší hudební knihovny můžeme hledat informace o hudbě a interpretech online.
 	DA	Når dit musikbibliotek scannes, kan vi samtidig søge efter musik- og kunstnerinformation online.
 	DE	Sie können beim Durchsuchen der Musiksammlung nach Informationen zur Musik und den Interpreten suchen lassen.
 	EN	When scanning your music library we can look for music and artist information online.
@@ -369,7 +369,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	NL	Als de mediabibliotheek wordt gescand, kan er worden gezocht naar muziek en artiest informatie.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
-	CS	Hledat informace o hudbě a interpretech online během skenování knihovny
+	CS	Hledat informace o hudbě a interpretech online během prohledávání knihovny
 	DA	Ved scanning af musikbiblioteket, søg efter musik- og kunstnerinformation online
 	DE	Beim Durchsuchen der Musiksammlung Informationen online suchen
 	EN	Find music and artist information online during library scan
@@ -430,7 +430,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	NL	Download albumhoezen van online bronnen
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
-	CS	Stahování chybějících obalů alb může být časově náročné. Nalezené obaly budou uloženy lokálně (pokud je to možné), aby mohly být znovu použity při budoucích skenováních.
+	CS	Stahování chybějících obalů alb může být časově náročné. Nalezené obaly budou uloženy lokálně (pokud je to možné), aby mohly být znovu použity při budoucích prohledáváních.
 	DA	Downloading af manglende albumcovers kan være ganske tidskrævende. Fundne billeder gemmes lokalt (hvis muligt), for at blive genbrugt ved fremtidige scanninger.
 	DE	Das Herunterladen und Zwischenspeichern von Bildern kann eine Weile dauern. Die Daten werden jedoch wenn möglich lokal gespeichert und beim nächsten Scan wieder verwendet.
 	EN	Downloading missing cover art can be quite time-consuming. Found artwork will be stored locally (if possible), to be re-used in future rescans.
@@ -466,7 +466,7 @@ PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	NL	Toon Engelse informatie als jouw taal niet beschikbaar is
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
-	CS	Skrytí položek menu Bonusy
+	CS	Skrytí položek menu Doplňky
 	DA	Skjul ekstra menupunkter
 	DE	Zusätzliche Menüeinträge ausblenden
 	EN	Hide Extra menu items
@@ -475,7 +475,7 @@ PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
 	NL	Verberg menu items "Extra's"
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
-	CS	Skrýt položky typu „Najít alba bez obrázků“ z menu Bonusy
+	CS	Skrýt položky typu „Najít alba bez obrázků“ z menu Doplňky
 	DA	Skjul "Find albums" elementer fra ekstra menuen
 	DE	"Alben ohne Plattenhülle suchen" und ähnliche Einträge aus dem Extras Menü entfernen
 	EN	Hide "Find albums with missing artwork" and similar items from the Extra menu
@@ -527,7 +527,7 @@ PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
 	NL	Helaas, dit bestandsformaat wordt niet ondersteund op dit apparaat.
 
 PLUGIN_MUSICARTISTINFO_READ_MORE
-	CS	Další zdroje online
+	CS	Další online zdroje
 	DE	Weitere Informationen online
 	EN	More online sources
 	FR	Autres sources en ligne
