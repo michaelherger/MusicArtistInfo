@@ -411,7 +411,13 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	HU	Csak a fő előadók, de nem minden közreműködő (zeneszerzők, karmesterek stb.) képei tölthetők le.
 	NL	Download alleen foto's van artiesten, maar niet van andere uitvoerenden (componisten, dirigenten, etc).
 
-PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER
+PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_0
+	DE	Keine Platzhalter-Datei speichern.
+	EN	Don't store any placeholder file.
+	FR	Ne pas enregistrer de fichier de remplacement.
+	NL	Geen tijdelijke aanduidingsbestand opslaan.
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_1
 	CS	Uložit zástupný soubor („artist.missing“), pokud mají být staženy obrázky interpretů, ale nemohou být nalezeny
 	DA	Gem pladsholderfil ("artist.missing"), hvis kunstnerbilleder skal downloades, men ikke kan findes.
 	DE	Speichere Platzhalter-Datei ("artist.missing") falls Interpreten-Bilder heruntergeladen werden sollen, aber nicht gefunden werden.
@@ -419,6 +425,12 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER
 	FR	Enregistrer un fichier "artiste.missing" pour les artistes dont la photo a été recherchée mais pas trouvée.
 	HU	Tárolja a helyőrző fájlt ("artist.missing"), ha az előadói képeket le kell tölteni, de nem találhatók.
 	NL	Maak een bestand ("artist.missing") aan als de foto van de artiest dient te worden gedownload maar niet kan worden gevonden.
+
+PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_2
+	DE	Speichere Platzhalter-Datei für all Rollen (nicht nur Interpreten, sondern auch Dirigenten, Solisten etc.).
+	EN	Store placeholder not only for main artist, but all contributors (composers, soloists, etc.)
+	FR	Enregistrer un fichier "artiste.missing" non seulement pour l'artiste principal, mais aussi pour tous les contributeurs (compositeurs, solistes, etc.)
+	NL	Sla een tijdelijke aanduiding op, niet alleen voor de hoofdartiest, maar voor alle bijdragers (componisten, solisten, enz.)
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	CS	Stáhnout chybějící obaly alb z online zdrojů

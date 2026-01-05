@@ -40,8 +40,11 @@
 		[% END; END %]
 
 		[% IF !noImageProxy; WRAPPER settingGroup title="" desc="" %]
-			<input type="checkbox" [% IF prefs.pref_saveMissingArtistPicturePlaceholder %]checked [% END %] class="stdedit" name="pref_saveMissingArtistPicturePlaceholder" id="pref_saveMissingArtistPicturePlaceholder" value="1" />
-			<label for="pref_saveMissingArtistPicturePlaceholder" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER" | string %]</label>
+			<select class="stdedit" name="pref_saveMissingArtistPicturePlaceholder" id="pref_saveMissingArtistPicturePlaceholder">
+				<option [% IF !prefs.pref_saveMissingArtistPicturePlaceholder %]selected [% END %]value="0">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_0" | string %]</option>
+				<option [% IF prefs.pref_saveMissingArtistPicturePlaceholder == 1 %]selected [% END %]value="1">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_1" | string %]</option>
+				<option [% IF prefs.pref_saveMissingArtistPicturePlaceholder == 2 %]selected [% END %]value="2">[% "PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_2" | string %]</option>
+			</select>
 		[% END; END %]
 
 		[% WRAPPER settingGroup title="SETUP_ARTFOLDER" desc="SETUP_ARTFOLDER_DESC" %]

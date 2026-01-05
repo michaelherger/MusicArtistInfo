@@ -322,6 +322,9 @@ sub getArtistPhoto {
 		$img = Slim::Utils::Unicode::utf8encode($img);
 		$cache->set($cachekey, $img);
 	}
+	elsif (main::INFOLOG && $log->is_info) {
+		$log->info("No local artwork found for artist '$artist'");
+	}
 
 	return ($args->{rawUrl} || !$img) ? $img : proxiedUrl($img);
 }

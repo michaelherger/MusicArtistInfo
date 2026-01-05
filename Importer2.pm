@@ -30,7 +30,7 @@ my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
 
-my ($i, $ua, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder, $isWipeDb);
+my ($i, $ua, $cachedir, $imgProxyCache, $specs, $testSpec, $max, $precacheArtwork, $imageFolder, $isWipeDb, $saveMissingArtistPicturePlaceholder);
 
 sub startScan {
 	my $class = shift;
@@ -55,6 +55,7 @@ sub startScan {
 	$isWipeDb = Slim::Music::Import->stillScanning() eq 'SETUP_WIPEDB';
 
 	$precacheArtwork = $serverprefs->get('precacheArtwork');
+	$saveMissingArtistPicturePlaceholder = $prefs->get('saveMissingArtistPicturePlaceholder') || 0;
 
 	$imageFolder = $prefs->get('artistImageFolder');
 	if ( !($imageFolder && -d $imageFolder && -w _) ) {
@@ -204,7 +205,7 @@ sub _getArtistPhotoURL {
 		# only look up artwork for contributors with the desired roles
 		if (!$done && $artist->{roles} && $params->{roles} && ref $params->{roles} eq 'HASH' && scalar keys %{$params->{roles}} ) {
 			$done = !(grep { $params->{roles}->{$_} } split(',', $artist->{roles} || ''));
-			if ($done) {
+			if ($done && $saveMissingArtistPicturePlaceholder == 2) {
 				_precacheArtistImage({ name => $artist->{name} }, undef);	# put in missing placeholder if desired
 			}
 		}
@@ -224,7 +225,7 @@ sub _getArtistPhotoURL {
 			});
 			$done++;
 		}
-		elsif (!$done) {
+		elsif (!$done && $saveMissingArtistPicturePlaceholder == 2) {
 			_precacheArtistImage({ name => $artist->{name} }, undef);	# put in missing placeholder if desired
 		}
 
@@ -260,7 +261,7 @@ sub _precacheArtistImage {
 	$specs    ||= join(',', Slim::Music::Artwork::getResizeSpecs());
 	$cachedir ||= $serverprefs->get('cachedir');
 
-	if ( $imageFolder && !($artist_id && $img) && $prefs->get('saveMissingArtistPicturePlaceholder') ) {
+	if ( $imageFolder && !($artist_id && $img) && $saveMissingArtistPicturePlaceholder ) {
 		my $file = Plugins::MusicArtistInfo::Importer::filename('', $imageFolder, $artist->{name});
 		$file =~ s/\.$/\.missing/;
 		if (!-f $file) {
