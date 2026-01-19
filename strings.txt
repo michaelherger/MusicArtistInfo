@@ -427,7 +427,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_1
 	NL	Maak een bestand ("artist.missing") aan, als de foto van de artiest dient te worden gedownload maar niet kan worden gevonden.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_2
-	DE	Speichere Platzhalter-Datei für all Rollen (nicht nur Interpreten, sondern auch Dirigenten, Solisten etc.).
+	DE	Speichere Platzhalter-Datei für alle Rollen (nicht nur Interpreten, sondern auch Dirigenten, Solisten etc.).
 	EN	Store placeholder not only for main artist, but all contributors (composers, soloists, etc.)
 	FR	Enregistrer un fichier "artiste.missing" non seulement pour l'artiste principal, mais aussi pour tous les contributeurs (compositeurs, solistes, etc.)
 	NL	Maak een bestand ("artist.missing") aan, niet alleen voor de artiest, maar voor alle uitvoerenden (componisten, solisten, enz.)
