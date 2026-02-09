@@ -212,6 +212,7 @@ sub call {
 
 	$params->{timeout} ||= 15;
 	my %headers = %{delete $params->{headers} || {}};
+	$headers{'User-Agent'} = Slim::Utils::Misc::userAgentString('legacy');
 
 	my $cb2 = sub {
 		my ($response, $error) = @_;
