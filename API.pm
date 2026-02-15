@@ -14,6 +14,7 @@ use constant ARTISTIMAGESEARCH_URL => BASE_URL . '/artist/%s/picture';
 use constant ALBUMREVIEW_URL => BASE_URL . '/album/%s/%s/review';
 use constant ALBUMGENRES_URL => BASE_URL . '/album/%s/%s/genres';
 use constant BIOGRAPHY_URL => BASE_URL . '/artist/%s/biography';
+use constant WORKREVIEW_URL => BASE_URL . '/work/%s/%s/review';
 
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.musicartistinfo');
@@ -123,6 +124,24 @@ sub getAlbumGenres {
 			my ($result) = @_;
 
 			main::INFOLOG && $log->is_info && $log->info("found album genres: " . Data::Dump::dump($result));
+
+			$cb->($result);
+		}
+	);
+}
+
+sub getWorkReviewId {
+	my ( $class, $cb, $args ) = @_;
+
+	my $url = sprintf(WORKREVIEW_URL, uri_escape_utf8($args->{title}), uri_escape_utf8($args->{composer}));
+	$url .= '?lang=' . $args->{lang} if $args->{lang};
+
+	_call(
+		$url,
+		sub {
+			my ($result) = @_;
+
+			main::INFOLOG && $log->is_info && $log->info("found work review: " . Data::Dump::dump($result));
 
 			$cb->($result);
 		}

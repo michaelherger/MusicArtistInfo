@@ -9,7 +9,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::MusicArtistInfo::AlbumInfo;
 use Plugins::MusicArtistInfo::ArtistInfo;
-use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY);
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_LMS_WORKS);
 use Plugins::MusicArtistInfo::TrackInfo;
 use Plugins::MusicArtistInfo::LocalFile;
 
@@ -50,6 +50,11 @@ sub initPlugin {
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
 	Plugins::MusicArtistInfo::TrackInfo->init($class);
 	Plugins::MusicArtistInfo::LocalFile->init($class);
+
+	if (CAN_LMS_WORKS) {
+		require Plugins::MusicArtistInfo::WorkInfo;
+		Plugins::MusicArtistInfo::WorkInfo->init($class);
+	}
 
 	# no need to actually initialize the importer, as it will only be executed in the external scanner anyway
 	# but we still need to tell the scanner that there are external importers to be run

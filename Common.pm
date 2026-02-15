@@ -17,12 +17,13 @@ BEGIN {
 	use constant CAN_IMAGEPROXY => (Slim::Utils::Versions->compareVersions($::VERSION, '7.8.0') >= 0);
 	use constant CAN_ONLINE_LIBRARY => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 	use constant CAN_LMS_ARTIST_ARTWORK => (Slim::Utils::Versions->compareVersions($::VERSION, '9.1.0') >= 0 && Slim::Music::Artwork->can('generateImageId')) ? 1 : 0;
+	use constant CAN_LMS_WORKS => (Slim::Utils::Versions->compareVersions($::VERSION, '9.1.0') >= 0 ? 1 : 0);
 	use constant CAN_DISCOGS => 0;
 	use constant CAN_LFM => 1;
 	use constant CLICOMMAND => 'musicartistinfo';
 
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM );
+	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM );
 }
 
 my $cache = Slim::Utils::Cache->new();
