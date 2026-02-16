@@ -96,72 +96,77 @@ sub getAlbumReview {
 		return;
 	}
 
-	my $mbid = $args->{mbid};
 	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
+	$args->{title} = $args->{album};
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(
 		sub {
-			my $reviewData = shift;
-
-			my $reviewCb = sub {
-				my $review = shift;
-				my $items = [];
-
-				$reviewData->{url} ||= $review->{url} || {};
-
-				if ($review->{error}) {
-					if (keys %$reviewData && Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params)) {
-						$review->{error} = sprintf("<p>%s</p>\n%s", $review->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData, $mbid));
-					}
-
-					$items = [{
-						name => $review->{error},
-						type => 'text'
-					}]
-				}
-				elsif ($review->{review}) {
-					my $content = '';
-					if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
-						$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
-						$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
-						$content .= $review->{review};
-						$content .= Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData, $mbid);
-					}
-					else {
-						$content = $review->{author} . '\n\n' if $review->{author};
-						$content .= $review->{reviewText};
-					}
-
-					$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
-				}
-
-				$cb->($items);
-			};
-
-			# TODO - respect fallback language setting?
-			if ($reviewData && (my $pageData = $reviewData->{wikidata})) {
-				Plugins::MusicArtistInfo::Wikipedia->getPage($client, sub {
-					my $review = shift;
-
-					if ($review && $review->{content} && $review->{contentText}) {
-						$review->{review} = delete $review->{content};
-						$review->{reviewText} = delete $review->{contentText};
-						return $reviewCb->($review);
-					}
-
-					Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client, $reviewCb, $args);
-				}, {
-					title => $pageData->{title},
-					id => $pageData->{pageid},
-					lang => $pageData->{lang} || $args->{lang},
-				});
-			}
-			else {
-				Plugins::MusicArtistInfo::Wikipedia->getAlbumReview($client, $reviewCb, $args);
-			}
+			renderReview($client, 'album', shift, $params, $args, $cb);
 		},
 		$args,
 	);
+}
+
+sub renderReview {
+	my ($client, $type, $reviewData, $params, $args, $cb) = @_;
+
+	my $mbid = $args->{mbid};
+
+	my $reviewCb = sub {
+		my $review = shift;
+		my $items = [];
+
+		$reviewData->{url} ||= $review->{url} || {};
+
+		if ($review->{error}) {
+			if (keys %$reviewData && Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params)) {
+				$review->{error} = sprintf("<p>%s</p>\n%s", $review->{error}, Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData, $mbid));
+			}
+
+			$items = [{
+				name => $review->{error},
+				type => 'text'
+			}]
+		}
+		elsif ($review->{review}) {
+			my $content = '';
+			if ( Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
+				$content = '<h4>' . $review->{author} . '</h4>' if $review->{author};
+				$content .= '<div><img src="' . $review->{image} . '" onerror="this.style.display=\'none\'"></div>' if $review->{image};
+				$content .= $review->{review};
+				$content .= Plugins::MusicArtistInfo::Common::getExternalLinks($client, $reviewData, $mbid);
+			}
+			else {
+				$content = $review->{author} . '\n\n' if $review->{author};
+				$content .= $review->{reviewText};
+			}
+
+			$items = Plugins::MusicArtistInfo::Plugin->textAreaItem($client, $params->{isButton}, $content);
+		}
+
+		$cb->($items);
+	};
+
+	if ($reviewData && (my $pageData = $reviewData->{wikidata})) {
+		Plugins::MusicArtistInfo::Wikipedia->getPage($client, sub {
+			my $review = shift;
+
+			if ($review && $review->{content} && $review->{contentText}) {
+				$review->{review} = delete $review->{content};
+				$review->{reviewText} = delete $review->{contentText};
+				return $reviewCb->($review);
+			}
+
+			Plugins::MusicArtistInfo::Wikipedia->getAlbumOrWorkReview($client, $reviewCb, $type, $args);
+		}, {
+			title => $pageData->{title},
+			id => $pageData->{pageid},
+			lang => $pageData->{lang} || $args->{lang},
+		});
+	}
+	else {
+		Plugins::MusicArtistInfo::Wikipedia->getAlbumOrWorkReview($client, $reviewCb, $type, $args);
+	}
 }
 
 sub getAlbumCovers {
@@ -372,33 +377,44 @@ sub getAlbumReviewCLI {
 
 	getAlbumReview($client,
 		sub {
-			my $items = shift || [];
-
-			if ($items && ref $items && ref $items eq 'HASH' && $items->{items}) {
-				$items = $items->{items};
-			}
-
-			if ( !$items || ref $items ne 'ARRAY' || !scalar @$items || $items->[0]->{name} eq cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND') ) {
-				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
-			}
-			elsif ( $items->[0]->{error} ) {
-				$request->addResult('error', $items->[0]->{error});
-			}
-			elsif ($items) {
-				my $item = shift @$items;
-				# CLI clients expect real line breaks, not literal \n
-				$item->{name} =~ s/\\n/\n/g;
+			renderReviewCLIResponse($request, shift, sub {
+				my ($request, $item) = @_;
 				$request->addResult('albumreview', $item->{name});
 				$request->addResult('album_id', $args->{album_id}) if $args->{album_id};
 				$request->addResult('album', $args->{album}) if $args->{album};
 				$request->addResult('artist', $args->{artist}) if $args->{artist};
-			}
-
-			$request->setStatusDone();
+			});
 		},{
 			isWeb  => $request->getParam('html') || Plugins::MusicArtistInfo::Plugin->isWebBrowser($client),
 		}, $args
 	);
+}
+
+sub renderReviewCLIResponse {
+	my ($request, $items, $cb) = @_;
+	my $client = $request->client();
+	my $defaultError = cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
+	$items ||= [];
+
+	if (ref $items && ref $items eq 'HASH' && $items->{items}) {
+		$items = $items->{items};
+	}
+
+	if (ref $items ne 'ARRAY' || !scalar @$items || $items->[0]->{name} eq $defaultError ) {
+		$request->addResult('error', $defaultError);
+	}
+	elsif ( $items->[0]->{error} ) {
+		$request->addResult('error', $items->[0]->{error});
+	}
+	elsif ($items) {
+		my $item = shift @$items;
+		# CLI clients expect real line breaks, not literal \n
+		$item->{name} =~ s/\\n/\n/g;
+		$request->addResult('error', $defaultError) if $item->{name} =~ /^<p>$defaultError<\/p>/;
+		$cb->($request, $item);
+	}
+
+	$request->setStatusDone();
 }
 
 sub _objInfoHandler {

@@ -38,12 +38,12 @@ sub _rank {
 	return $condition;
 }
 
-sub getAlbumReview {
-	my ( $class, $client, $cb, $args ) = @_;
+sub getAlbumOrWorkReview {
+	my ( $class, $client, $cb, $type, $args ) = @_;
 	my $lang = $args->{lang} || _language($client);
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(SEARCH_URL, $lang, uri_escape_utf8('"' . $args->{album} . '" album "' . $args->{artist} . '"')),
+		sprintf(SEARCH_URL, $lang, uri_escape_utf8('"' . $args->{title} . '" ' . $type . ' "' . $args->{artist} . '"')),
 		sub {
 			my $searchResults = shift;
 
@@ -60,20 +60,20 @@ sub getAlbumReview {
 				$_->{categorysnippet} = _removeMarkup($_->{categorysnippet});
 
 				my $title = lc($_->{title});
-				$title =~ s/\s*\(.*album\)//ig;
+				$title =~ s/\s*\(.*$type\)//ig;
 
 				$_->{ranking} = 0;
 
-				if (_rank($_, $title eq lc($args->{album}), 10, 'exact title match')) {}
-				elsif (_rank($_, ($title =~ /^\Q$args->{album}\E/i || $args->{album} =~ /^\Q$title\E/i), 7, 'partial title match')) {}
-				elsif (_rank($_, Text::Levenshtein::distance($title, lc($args->{album})) < 10, 5, 'levenshtein 10')) {}
+				if (_rank($_, $title eq lc($args->{title}), 10, 'exact title match')) {}
+				elsif (_rank($_, ($title =~ /^\Q$args->{title}\E/i || $args->{title} =~ /^\Q$title\E/i), 7, 'partial title match')) {}
+				elsif (_rank($_, Text::Levenshtein::distance($title, lc($args->{title})) < 10, 5, 'levenshtein 10')) {}
 
 				if (_rank($_, lc($_->{snippet}) eq lc($args->{artist}), 5, 'artist match')) {}
 				elsif (_rank($_, $_->{snippet} =~ /^\Q$args->{artist}\E/i, 3, 'snippet starts with artist')) {}
 				elsif (_rank($_, $_->{snippet} =~ /\Q$args->{artist}\E/i, 2, 'snippet has artist')) {}
 
-				_rank($_, $_->{snippet} =~ /\Q$args->{album}\E/i && $_->{title} =~ /album/i, 1, 'snippet has album');
-				_rank($_, $title eq lc($args->{album}) && length($args->{album}) > 20, 5, 'matches a long album title');
+				_rank($_, $_->{snippet} =~ /\Q$args->{title}\E/i && $_->{title} =~ /$type/i, 1, "snippet has $type");
+				_rank($_, $title eq lc($args->{title}) && length($args->{title}) > 20, 5, "matches a long $type title");
 
 				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($_));
 
@@ -86,7 +86,7 @@ sub getAlbumReview {
 
 			if (!$candidate->{pageid} && $lang ne 'en' && $prefs->get('fallBackToEnglish')) {
 				$args->{lang} = 'en';
-				return $class->getAlbumReview($client, $cb, $args);
+				return $class->getAlbumOrWorkReview($client, $cb, $type, $args);
 			}
 
 			$class->getPage($client, sub {
@@ -135,7 +135,7 @@ sub getBiography {
 
 			if (!$candidate->{pageid} && !$args->{lang} && _language($client) ne 'en' && $prefs->get('fallBackToEnglish')) {
 				$args->{lang} = 'en';
-				return $class->getAlbumReview($client, $cb, $args);
+				return $class->getBiography($client, $cb, $args);
 			}
 
 			$class->getPage($client, sub {
