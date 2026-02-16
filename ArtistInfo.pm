@@ -295,10 +295,11 @@ sub getBiographyCLI {
 
 			my $artistInfo = _getArtistFromArtistId($artist_id || $artist);
 			my $portraitId = $artistInfo && $artistInfo->{portraitId};
+			my $defaultError = cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 
 			if ( !$items || !ref $items || ref $items ne 'ARRAY' || !scalar @$items ) {
 				main::INFOLOG && $log->is_info && $log->info("No Biography found: " . Data::Dump::dump($items));
-				$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
+				$request->addResult('error', $defaultError);
 			}
 			elsif ( $items->[0]->{error} ) {
 				$request->addResult('error', $items->[0]->{error});
@@ -310,6 +311,7 @@ sub getBiographyCLI {
 				$request->addResult('biography', $item->{name});
 				$request->addResult('artist_id', $artist_id) if $artist_id;
 				$request->addResult('artist', $artist) if $artist;
+				$request->addResult('error', $defaultError) if $item->{name} =~ /^$defaultError/;
 			}
 
 			$request->addResult('portraitid', $portraitId) if $portraitId;
