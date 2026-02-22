@@ -51,6 +51,8 @@ sub getLyrics {
 		} : undef);
 	}, {
 		timeout => 5,
+		cache => 1,
+		expires => 86400,
 		ignoreError => [404]
 	});
 

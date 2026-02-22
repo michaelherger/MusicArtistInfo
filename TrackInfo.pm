@@ -2,6 +2,7 @@ package Plugins::MusicArtistInfo::TrackInfo;
 
 use strict;
 
+use Async::Util;
 use File::Basename qw(dirname);
 use File::Slurp qw(read_file write_file);
 use File::Spec::Functions qw(catfile catdir);
@@ -13,7 +14,6 @@ use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::Common qw(CLICOMMAND);
-use Plugins::MusicArtistInfo::Lyrics::LRCLib;
 use Plugins::MusicArtistInfo::Parser::LRC;
 
 my $log = logger('plugin.musicartistinfo');
@@ -94,12 +94,14 @@ sub getSongLyricsCLI {
 	my $title  = $request->getParam('title');
 	my $id     = $request->getParam('track_id');
 	my $url    = $request->getParam('url');
+	my $duration = $request->getParam('duration');
 
 	my $args   = {
 		artist => $artist,
 		title  => $title,
 		url    => $url,
-		track_id => $id
+		track_id => $id,
+		duration => $duration
 	};
 
 	if ($id || $url) {
@@ -113,6 +115,7 @@ sub getSongLyricsCLI {
 		if ($args->{track}) {
 			$args->{artist} ||= $args->{track}->artistName;
 			$args->{title}  ||= $args->{track}->title;
+			$args->{duration} = $args->{track}->secs;
 		}
 	}
 
@@ -219,82 +222,75 @@ sub _fetchLyrics {
 	$args->{title} =~ s/[\s\W]{2,}$//;
 	$args->{title} =~ s/\s*$//;
 
-	Plugins::MusicArtistInfo::Lyrics::LRCLib->getLyrics($args, sub {
-		my $results = shift;
+	my $lyricsResult;
 
-		if ($results && keys %$results && !$results->{error}) {
-			$cb->($results);
-		}
-		else {
-			if ($results && keys %$results && !$results->{error}) {
-				$cb->($results);
+	Async::Util::amap(
+		inputs => [
+			sub {
+				require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
+				Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, $_[0]);
+			},
+			sub {
+				require Plugins::MusicArtistInfo::Lyrics::LRCLib;
+				Plugins::MusicArtistInfo::Lyrics::LRCLib->getLyrics($args, $_[0])
+			},
+			sub {
+				require Plugins::MusicArtistInfo::Lyrics::LRCLib;
+				Plugins::MusicArtistInfo::Lyrics::LRCLib->searchLyrics($args, $_[0])
+			},
+			sub {
+				require Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
+				Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, $_[0]);
+			},
+			sub {
+				require Plugins::MusicArtistInfo::Lyrics::Genius;
+				Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, $_[0]);
+			},
+			sub {
+				my ($scb) = @_;
+
+				if ($args->{title} !~ /\./ && $args->{artist} !~ /\./) {
+					$scb->($lyricsResult);
+				}
+				else {
+					# try one more time with punctuation removed - https://github.com/michaelherger/MusicArtistInfo/issues/12
+					$args->{artist} =~ s/\.//g;
+					$args->{title}  =~ s/\.//g;
+
+					Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, $scb);
+				}
+			}
+		],
+		action => sub {
+			my ($handler, $acb) = @_;
+
+			if ($lyricsResult) {
+				$acb->($lyricsResult);
+				return;
+			}
+
+			$handler->(sub {
+				my $result = shift;
+
+				if ($result && ref $result && keys %$result && !$result->{error}) {
+					$lyricsResult = $result;
+					$acb->($result);
+				}
+				else {
+					$acb->();
+				}
+			});
+		},
+		cb => sub {
+			if ($lyricsResult && ref $lyricsResult && keys %$lyricsResult && !$lyricsResult->{error}) {
+				$cb->($lyricsResult);
 			}
 			else {
-				Plugins::MusicArtistInfo::Lyrics::LRCLib->searchLyrics($args, sub {
-					my $results = shift;
-
-					if ($results && keys %$results && !$results->{error}) {
-						$cb->($results);
-					}
-					else {
-						main::INFOLOG && $log->is_info && $log->info('Failed lookup on LRCLib - falling back to ChartLyrics');
-						require Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
-
-						Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, sub {
-							my $results = shift;
-
-							if ($results && keys %$results && !$results->{error}) {
-								$cb->($results);
-							}
-							else {
-								main::INFOLOG && $log->is_info && $log->info('Failed lookup on ChartLyrics - falling back to AZLyrics');
-								require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
-
-								Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, sub {
-									$results = shift;
-
-									if ($results && keys %$results && !$results->{error}) {
-										$cb->($results);
-									}
-									else {
-										main::INFOLOG && $log->is_info && $log->info('Failed lookup on AZLyrics - falling back to Genius');
-										require Plugins::MusicArtistInfo::Lyrics::Genius;
-
-										Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
-											$results = shift;
-
-											if ($results && keys %$results && !$results->{error}) {
-												$cb->($results);
-											}
-											elsif ($args->{title} !~ /\./ && $args->{artist} !~ /\./) {
-												$ecb->($results);
-											}
-											else {
-												# try one more time with punctuation removed - https://github.com/michaelherger/MusicArtistInfo/issues/12
-												$args->{artist} =~ s/\.//g;
-												$args->{title}  =~ s/\.//g;
-
-												Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, sub {
-													$results = shift;
-
-													if ($results && keys %$results && !$results->{error}) {
-														$cb->($results);
-													}
-													else {
-														$ecb->($results);
-													}
-												});
-											}
-										});
-									}
-								});
-							}
-						});
-					}
-				});
+				$ecb->($lyricsResult);
 			}
-		}
-	});
+		},
+		at_a_time => 1,
+	);
 }
 
 sub _cacheLyrics {

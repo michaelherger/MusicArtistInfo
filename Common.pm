@@ -218,6 +218,7 @@ sub call {
 	my $cb2 = sub {
 		my ($response, $error) = @_;
 
+		main::INFOLOG && $log->is_info && $log->info("Got response from " . _debug($url));
 		main::DEBUGLOG && $log->is_debug && $response->code !~ /2\d\d/ && $log->debug(_debug(Data::Dump::dump($response, @_)));
 
 		my $result;

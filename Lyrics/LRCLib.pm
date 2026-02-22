@@ -19,7 +19,7 @@ my $prefs = preferences('plugin.musicartistinfo');
 sub getLyrics {
 	my ( $class, $args, $cb ) = @_;
 
-	return $cb->() unless $args->{album} && $args->{duration};
+	return $cb->() unless $args->{artist} && $args->{title} && $args->{album} && $args->{duration};
 
 	Plugins::MusicArtistInfo::Common->call(
 		sprintf(GET_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title}), uri_escape_utf8($args->{album} || '.'), $args->{duration} || 1),
@@ -36,7 +36,9 @@ sub getLyrics {
 
 			$cb->();
 		},{
-			timeout => 10,
+			timeout => 5,
+			cache => 1,
+			expires => 86400,
 			ignoreError => [404]
 		}
 	);
@@ -47,6 +49,8 @@ sub getLyrics {
 
 sub searchLyrics {
 	my ( $class, $args, $cb ) = @_;
+
+	return $cb->() unless $args->{artist} && $args->{title};
 
 	Plugins::MusicArtistInfo::Common->call(
 		sprintf(SEARCH_URL, uri_escape_utf8($args->{artist}), uri_escape_utf8($args->{title}), uri_escape_utf8($args->{album})),
@@ -86,7 +90,9 @@ sub searchLyrics {
 
 			$cb->();
 		},{
-			timeout => 10,
+			timeout => 5,
+			cache => 1,
+			expires => 86400,
 			ignoreError => [404]
 		}
 	);

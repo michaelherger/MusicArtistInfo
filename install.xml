@@ -6,7 +6,6 @@
 	<description>PLUGIN_MUSICARTISTINFO_DESC</description>
 	<category>information</category>
 	<email>slim@herger.net</email>
-	<homepageURL>https://github.com/michaelherger/MusicArtistInfo</homepageURL>
 	<optionsURL>plugins/MusicArtistInfo/settings.html</optionsURL>
 	<icon>https://www.herger.net/slim-plugins/icons/mai.svg</icon>
 	<id>65f0c9e0-042f-11e3-8ffd-0800200c9a66</id>
@@ -15,8 +14,8 @@
 	<targetApplication>
 		<id>SqueezeCenter</id>
 		<maxVersion>*</maxVersion>
-		<minVersion>7.6</minVersion>
+		<minVersion>8.0</minVersion>
 	</targetApplication>
 	<type>2</type>
-	<version>1.20.0</version>
+	<version>1.21.0</version>
 </extension>

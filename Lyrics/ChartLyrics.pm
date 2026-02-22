@@ -44,6 +44,8 @@ sub searchLyrics {
 			$cb->();
 		},{
 			timeout => 5,
+			cache => 1,
+			expires => 86400,
 			wantError => 1,
 		}
 	);
@@ -84,6 +86,8 @@ sub getLyrics {
 		$cb->();
 	},{
 		timeout => 5,
+		cache => 1,
+		expires => 86400,
 	});
 
 	return;
