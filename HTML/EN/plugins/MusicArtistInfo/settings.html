@@ -68,6 +68,11 @@
 			<input type="text" class="stdedit selectFolder" name="pref_lyricsFolder" id="pref_lyricsFolder" value="[% prefs.pref_lyricsFolder %]" size="40">
 		[% END %]
 
+		[% WRAPPER settingGroup title="" desc="PLUGIN_MUSICARTISTINFO_PREFER_LYRICS_PRECISION_OVER_SPEED_DESC" %]
+			<input type="checkbox" [% IF prefs.pref_preferLyricsPrecisionOverSpeed %]checked [% END %] class="stdedit" name="pref_preferLyricsPrecisionOverSpeed" id="pref_preferLyricsPrecisionOverSpeed" value="1" />
+			<label for="pref_preferLyricsPrecisionOverSpeed" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_PREFER_LYRICS_PRECISION_OVER_SPEED" | string %]</label>
+		[% END %]
+
 		[% WRAPPER settingGroup title="" desc="" %]
 			<input type="checkbox" [% IF prefs.pref_fallBackToEnglish %]checked [% END %] class="stdedit" name="pref_fallBackToEnglish" id="pref_fallBackToEnglish" value="1" />
 			<label for="pref_fallBackToEnglish" class="stdlabel">[% "PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK" | string %]</label>

@@ -239,43 +239,51 @@ sub _fetchLyrics {
 
 	my $lyricsResult;
 
-	Async::Util::amap(
-		inputs => [
-			sub {
-				require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
-				Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, $_[0]);
-			},
-			sub {
-				require Plugins::MusicArtistInfo::Lyrics::LRCLib;
-				Plugins::MusicArtistInfo::Lyrics::LRCLib->getLyrics($args, $_[0])
-			},
-			sub {
-				require Plugins::MusicArtistInfo::Lyrics::LRCLib;
-				Plugins::MusicArtistInfo::Lyrics::LRCLib->searchLyrics($args, $_[0])
-			},
-			sub {
-				require Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
-				Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, $_[0]);
-			},
-			sub {
-				require Plugins::MusicArtistInfo::Lyrics::Genius;
-				Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, $_[0]);
-			},
-			sub {
-				my ($scb) = @_;
+	my $handlerPipeline = [
+		sub {
+			require Plugins::MusicArtistInfo::Lyrics::AZLyrics;
+			Plugins::MusicArtistInfo::Lyrics::AZLyrics->getLyrics($args, $_[0]);
+		},
+		sub {
+			require Plugins::MusicArtistInfo::Lyrics::LRCLib;
+			Plugins::MusicArtistInfo::Lyrics::LRCLib->getLyrics($args, $_[0])
+		},
+		sub {
+			require Plugins::MusicArtistInfo::Lyrics::LRCLib;
+			Plugins::MusicArtistInfo::Lyrics::LRCLib->searchLyrics($args, $_[0])
+		},
+		sub {
+			require Plugins::MusicArtistInfo::Lyrics::ChartLyrics;
+			Plugins::MusicArtistInfo::Lyrics::ChartLyrics->searchLyricsInDirect($args, $_[0]);
+		},
+		sub {
+			require Plugins::MusicArtistInfo::Lyrics::Genius;
+			Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, $_[0]);
+		},
+		sub {
+			my ($scb) = @_;
 
-				if ($args->{title} !~ /\./ && $args->{artist} !~ /\./) {
-					$scb->($lyricsResult);
-				}
-				else {
-					# try one more time with punctuation removed - https://github.com/michaelherger/MusicArtistInfo/issues/12
-					$args->{artist} =~ s/\.//g;
-					$args->{title}  =~ s/\.//g;
-
-					Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, $scb);
-				}
+			if ($args->{title} !~ /\./ && $args->{artist} !~ /\./) {
+				$scb->($lyricsResult);
 			}
-		],
+			else {
+				require Plugins::MusicArtistInfo::Lyrics::Genius;
+				# try one more time with punctuation removed - https://github.com/michaelherger/MusicArtistInfo/issues/12
+				$args->{artist} =~ s/\.//g;
+				$args->{title}  =~ s/\.//g;
+
+				Plugins::MusicArtistInfo::Lyrics::Genius->getLyrics($args, $scb);
+			}
+		}
+	];
+
+	if ($prefs->get('preferLyricsPrecisionOverSpeed')) {
+		# move slow LRCLib requests to later in the queue
+		splice @$handlerPipeline, 2, 0, shift @$handlerPipeline;
+	}
+
+	Async::Util::amap(
+		inputs => $handlerPipeline,
 		action => sub {
 			my ($handler, $acb) = @_;
 

@@ -7,9 +7,11 @@ use URI::Escape qw(uri_escape_utf8);
 
 use Slim::Utils::Prefs;
 
-use constant BASE_URL => 'https://lrclib.net/';
-use constant GET_URL => BASE_URL . 'api/get?artist_name=%s&track_name=%s&album_name=%s&duration=%s';
-use constant SEARCH_URL => BASE_URL . 'api/search?artist_name=%s&track_name=%s&album_name=%s';
+# use constant BASE_URL => 'https://lrclib.net/api/';
+# use constant BASE_URL => 'http://localhost:8787/music/LRCLibProxy/';
+use constant BASE_URL => 'https://api.lms-community.org/music/LRCLibProxy/';
+use constant GET_URL => BASE_URL . 'get?artist_name=%s&track_name=%s&album_name=%s&duration=%s';
+use constant SEARCH_URL => BASE_URL . 'search?artist_name=%s&track_name=%s&album_name=%s';
 
 # if we have different durations in a search result, accept a maximum difference of X seconds
 use constant MAX_DURATION_DIFF => 5;
@@ -36,7 +38,7 @@ sub getLyrics {
 
 			$cb->();
 		},{
-			timeout => 5,
+			timeout => 15,
 			cache => 1,
 			expires => 86400,
 			ignoreError => [404]
@@ -90,7 +92,7 @@ sub searchLyrics {
 
 			$cb->();
 		},{
-			timeout => 5,
+			timeout => 15,
 			cache => 1,
 			expires => 86400,
 			ignoreError => [404]

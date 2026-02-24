@@ -468,6 +468,18 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 	HU	Egyes online streaming szolgáltatások nem adnak műfaji információkat az albumokhoz. Ezzel az opcióval automatikusan megkeresheti a műfajokat az interneten, és felhasználhatja őket a könyvtárban.
 	NL	Sommige online muziekdiensten hebben geen genre informatie voor albums. Met deze optie worden genres automatisch online opgezocht en is het mogelijk deze te gebruiken in de mediabibliotheek.
 
+PLUGIN_MUSICARTISTINFO_PREFER_LYRICS_PRECISION_OVER_SPEED
+	DE	Bevorzuge (potentiell) langsame Suche nach Songtexten mit Timing-Informationen gegenüber schnellen Antworten.
+	EN	Prefer (potentially) slow downloads of lyrics with timing information over quick responses.
+	FR	Préférez le téléchargement (potentiellement) lent de paroles avec des informations de synchronisation plutôt que des réponses rapides.
+	NL	Geef de voorkeur aan trage songteksten met timinginformatie boven snelle reacties.
+
+PLUGIN_MUSICARTISTINFO_PREFER_LYRICS_PRECISION_OVER_SPEED_DESC
+	DE	Songtexte mit Timing-Informationen werden für Karaoke-ähnliche Darstellungen bevorzugt. Bitte beachten Sie, dass der Bezug der Zeitinformationen sehr langsam sein können (10 Sekunden oder mehr!) und so die ersten Zeilen des Liedes verpasst werden können.
+	EN	Lyrics with timing information are preferred for karaoke style lyrics display. Please note that the timed information can be very slow (10 seconds or more!) to download, missing the first few lines of the song!
+	FR	Les paroles avec informations de synchronisation sont préférées pour un affichage de type karaoké. Veuillez noter que le téléchargement de ces informations chronométrées peut être très lent (10 secondes ou plus !), et faire manquer les premières lignes de la chanson.
+	NL	Songteksten met timinginformatie hebben de voorkeur voor karaoke-achtige weergave. Houd er rekening mee dat de getimede informatie erg langzaam kan zijn (10 seconden of meer!), waardoor de eerste regels van het nummer kunnen ontbreken.
+
 PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	CS	Zobrazit anglický obsah, pokud čeština není k dispozici
 	DA	Vis engelsk indhold, når dansk indhold ikke er tilgængelig
