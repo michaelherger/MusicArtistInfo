@@ -91,6 +91,7 @@ sub getSongLyricsCLI {
 
 	my $args;
 	my $artist = $request->getParam('artist');
+	my $album  = $request->getParam('album');
 	my $title  = $request->getParam('title');
 	my $id     = $request->getParam('track_id');
 	my $url    = $request->getParam('url');
@@ -98,6 +99,7 @@ sub getSongLyricsCLI {
 
 	my $args   = {
 		artist => $artist,
+		album  => $album,
 		title  => $title,
 		url    => $url,
 		track_id => $id,
@@ -114,8 +116,21 @@ sub getSongLyricsCLI {
 
 		if ($args->{track}) {
 			$args->{artist} ||= $args->{track}->artistName;
+			$args->{album}  ||= $args->{track}->albumname;
 			$args->{title}  ||= $args->{track}->title;
 			$args->{duration} = $args->{track}->secs;
+
+			if ( !($args->{track} && $args->{artist} && $args->{title} && $args->{duration} && $args->{album}) && $args->{track}->isRemoteURL ) {
+				my $handler = Slim::Player::ProtocolHandlers->handlerForURL($args->{track}->url);
+
+				if ( $handler && $handler->can('getMetadataFor') ) {
+					my $meta = $handler->getMetadataFor( $client, $args->{track}->url );
+					$args->{artist} ||= $meta->{artist};
+					$args->{album}  ||= $meta->{album};
+					$args->{title}  ||= $meta->{title};
+					$args->{duration} ||= $meta->{duration};
+				}
+			}
 		}
 	}
 
