@@ -283,7 +283,7 @@ sub _getBioItems {
 sub getBiographyCLI {
 	my $request = shift;
 
-	my ($artist, $artist_id, $mbid) = _checkRequest($request, ['biography']);
+	my ($artist, $artist_id, $mbid, $lang) = _checkRequest($request, ['biography']);
 
 	return unless $artist;
 
@@ -322,6 +322,7 @@ sub getBiographyCLI {
 		},{
 			artist => $artist,
 			mbid => $mbid,
+			lang => $lang,
 		}
 	);
 }
@@ -340,6 +341,7 @@ sub _checkRequest {
 	my $artist_id = $request->getParam('artist_id');
 	my $artist = $request->getParam('artist');
 	my $mbid = $request->getParam('mbid');
+	my $lang = $request->getParam('lang');
 
 	if (!$artist) {
 		my $artistInfo = _getArtistFromArtistId($artist_id);
@@ -347,7 +349,7 @@ sub _checkRequest {
 		$mbid ||= $artistInfo->{mbid};
 	}
 
-	return ($artist, $artist_id, $mbid) if $artist;
+	return ($artist, $artist_id, $mbid, $lang) if $artist;
 
 	$request->addResult('error', cstring($request->client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 	$request->setStatusDone();
