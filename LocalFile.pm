@@ -81,7 +81,7 @@ sub getAlbumReview {
 
 		$sth->execute($args->{album_id});
 
-		$review = _getInfoFileForTrackFromDb($client, $sth, 'review', ['album.nfo', 'review.html?', 'review.txt', 'albumreview.html?', 'albumreview.txt'], $params);
+		$review = _getInfoFileForTrackFromDb($client, $sth, 'review', ['album.nfo', 'album.md', 'review.md', 'review.html?', 'review.txt', 'albumreview.md', 'albumreview.html?', 'albumreview.txt'], $params);
 	}
 
 	if ( !$review && $args->{album} && $args->{artist} && (my $reviewFolder = $prefs->get('reviewFolder')) ) {
@@ -89,8 +89,10 @@ sub getAlbumReview {
 		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{album});
 
 		my $folders = [ map { catdir($reviewFolder, $_) } @$artists ];
-		$review = _getInfoFileFromFolder($client, $folders, 'review', ['nfo', 'html', 'htm', 'txt'], $candidates, $params);
+		$review = _getInfoFileFromFolder($client, $folders, 'review', ['nfo', 'md', 'html', 'htm', 'txt'], $candidates, $params);
 	}
+
+
 
 	return $review;
 }
@@ -132,11 +134,11 @@ sub getBiography {
 
 	$sth->execute($var);
 
-	my $biography = _getInfoFileForTrackFromDb($client, $sth, 'biography', ['artist.nfo', 'biography.html?', 'bio.html?', 'biography.txt', 'bio.txt'], $params);
+	my $biography = _getInfoFileForTrackFromDb($client, $sth, 'biography', ['artist.nfo', 'artist.md', 'biography.html?', 'biography.md', 'bio.html?', 'biography.txt', 'bio.txt', 'bio.md'], $params);
 
 	if ( !$biography && $args->{artist} && (my $bioFolder = $prefs->get('bioFolder')) ) {
 		my $candidates = Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist});
-		$biography = _getInfoFileFromFolder($client, $bioFolder, 'biography', ['nfo', 'html', 'htm', 'txt'], $candidates, $params);
+		$biography = _getInfoFileFromFolder($client, $bioFolder, 'biography', ['nfo', 'md', 'html', 'htm', 'txt'], $candidates, $params);
 	}
 
 	return $biography;
@@ -391,6 +393,7 @@ sub getFileContent {
 	$params ||= {};
 
 	my $content = cstring($client, 'PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT');
+	my $isWebBrowser = Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params);
 
 	my $items;
 
@@ -399,11 +402,17 @@ sub getFileContent {
 		$items = Plugins::MusicArtistInfo::Parser::NFO->renderAsOPML($client, $path, $params);
 		$content = '';
 	}
+	elsif ( $path =~ /\.md$/i && $isWebBrowser ) {
+		require Plugins::MusicArtistInfo::Parser::Markdown;
+		$content = '<link rel="stylesheet" type="text/css" href="/plugins/MusicArtistInfo/html/mai.css" />';
+		$content .= Plugins::MusicArtistInfo::Parser::Markdown->parseToHTML($path);
+		$content =~ s/\n+//sg;
+	}
 	elsif ( $path =~ /\.md$/i ) {
 		require Plugins::MusicArtistInfo::Parser::Markdown;
 		$content = Plugins::MusicArtistInfo::Parser::Markdown->parse($path);
 	}
-	elsif ( $type =~ /html/ && !Plugins::MusicArtistInfo::Plugin->isWebBrowser($client, $params) ) {
+	elsif ( $type =~ /html/ && !$isWebBrowser ) {
 		require HTML::FormatText;
 		$content = HTML::FormatText->format_file(
 			$path,
