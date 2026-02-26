@@ -7,9 +7,10 @@ use URI::Escape qw(uri_escape_utf8);
 
 use Slim::Utils::Prefs;
 
-# use constant BASE_URL => 'https://lrclib.net/api/';
+# LRCLib used to hang responses, therefore we used a proxy. But that seems to no longer be needed
+use constant BASE_URL => 'https://lrclib.net/api/';
 # use constant BASE_URL => 'http://localhost:8787/music/LRCLibProxy/';
-use constant BASE_URL => 'https://api.lms-community.org/music/LRCLibProxy/';
+# use constant BASE_URL => 'https://api.lms-community.org/music/LRCLibProxy/';
 use constant GET_URL => BASE_URL . 'get?artist_name=%s&track_name=%s&album_name=%s&duration=%s';
 use constant SEARCH_URL => BASE_URL . 'search?artist_name=%s&track_name=%s&album_name=%s';
 
