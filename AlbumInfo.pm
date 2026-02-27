@@ -96,7 +96,7 @@ sub getAlbumReview {
 		return;
 	}
 
-	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
+	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
 	$args->{title} = $args->{album};
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(

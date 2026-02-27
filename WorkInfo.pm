@@ -93,7 +93,7 @@ sub getWorkReview {
 	# 	return;
 	# }
 
-	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
+	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
 	$args->{artist} = $args->{composer};
 
 	Plugins::MusicArtistInfo::API->getWorkReviewId(

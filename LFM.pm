@@ -17,6 +17,22 @@ use constant ARTISTIMAGESEARCH_URL => BASE_URL . '%s/+images';
 my $cache = Slim::Utils::Cache->new;
 my $log = logger('plugin.musicartistinfo');
 
+# language codes to be used in Last.fm lookups - only these are available, otherwise fall back to English
+sub _lfmLanguage {
+	{
+		'da' => 'da',
+		'de' => 'de',
+		'en' => 'en',
+		'es' => 'es',
+		'fr' => 'fr',
+		'hu' => 'hu',
+		'it' => 'it',
+		'pl' => 'pl',
+		'pt' => 'pt',
+		'sv' => 'sv',
+	}->{$_[0]} || 'en';
+}
+
 sub getLargestPhotoFromList {
 	my ( $class, $photos, $minSize ) = @_;
 
@@ -54,13 +70,15 @@ sub _getArtistInfo {
 	_call({
 		method => 'artist.getInfo',
 		artist => $args->{artist},
-		lang   => $args->{lang} || 'en',
+		lang   => _lfmLanguage($args->{lang}),
 		autocorrect => 1,
 	}, $cb);
 }
 
 sub getBiography {
 	my ( $class, $client, $cb, $args ) = @_;
+
+	$args->{lang} = _lfmLanguage($args->{lang});
 
 	_getArtistInfo(sub {
 		my $artistInfo = shift;

@@ -170,7 +170,7 @@ sub getBiography {
 		return;
 	}
 
-	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_LASTFM_LANGUAGE');
+	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
 
 	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {
