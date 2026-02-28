@@ -120,7 +120,7 @@ sub getSongLyricsCLI {
 			$args->{title}  ||= $args->{track}->title;
 			$args->{duration} = $args->{track}->secs;
 
-			if ( !($args->{track} && $args->{artist} && $args->{title} && $args->{duration} && $args->{album}) && $args->{track}->isRemoteURL ) {
+			if ( $client && !($args->{track} && $args->{artist} && $args->{title} && $args->{duration} && $args->{album}) && $args->{track}->isRemoteURL ) {
 				my $handler = Slim::Player::ProtocolHandlers->handlerForURL($args->{track}->url);
 
 				if ( $handler && $handler->can('getMetadataFor') ) {
