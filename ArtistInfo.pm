@@ -10,7 +10,7 @@ use Slim::Menu::GlobalSearch;
 use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
-use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK);
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK validateLanguage);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::API;
@@ -170,7 +170,7 @@ sub getBiography {
 		return;
 	}
 
-	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
+	$args->{lang} ||= validateLanguage($client, $args->{lang});
 
 	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {

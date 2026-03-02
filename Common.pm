@@ -10,6 +10,7 @@ use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
+use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(cstring);
 
 BEGIN {
@@ -23,8 +24,24 @@ BEGIN {
 	use constant CLICOMMAND => 'musicartistinfo';
 
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM );
+	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM validateLanguage );
 }
+
+my $contentLanguages = {
+	CS => 'cs',
+	DA => 'da',
+	DE => 'de',
+	EN => 'en',
+	ES => 'es',
+	FR => 'fr',
+	HU => 'hu',
+	IT => 'it',
+	NL => 'nl',
+	PL => 'pl',
+	PT => 'pt',
+	SV => 'sv',
+	ZH_CN	=> 'zh'
+};
 
 my $cache = Slim::Utils::Cache->new();
 my $log = Slim::Utils::Log->addLogCategory( {
@@ -32,12 +49,29 @@ my $log = Slim::Utils::Log->addLogCategory( {
 	defaultLevel => 'WARN',
 	description  => 'PLUGIN_MUSICARTISTINFO',
 } );
+my $prefs = preferences('plugin.musicartistinfo');
 
 my $ua;
 
 # delay requests in case of 429s
 my $delay = 0;
 use constant MAX_DELAY => 30;
+
+sub validateLanguage {
+	my ($client, $lang) = @_;
+	return $lang || $contentLanguages->{$prefs->get('preferredLanguage')} || cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
+}
+
+sub storeContentLanguageStrings {
+	Slim::Utils::Strings::storeExtraStrings([{
+		strings => $contentLanguages,
+		token   => 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE',
+	}]);
+}
+
+sub getContentLanguages {
+	return [ keys %$contentLanguages ];
+}
 
 sub cleanupAlbumName {
 	my $album = shift;

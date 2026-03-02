@@ -40,12 +40,12 @@ sub initPlugin {
 		lookupArtistPictures => 1,
 		lookupCoverArt => 1,
 		lookupAlbumArtistPicturesOnly => 1,
-		fallBackToEnglish => 1,
 		useAIGeneratedContent => 1,
 	});
 
 	$prefs->setChange(\&webPages, 'hidextramenusitems');
 
+	Plugins::MusicArtistInfo::Common->storeContentLanguageStrings();
 	Plugins::MusicArtistInfo::AlbumInfo->init($class);
 	Plugins::MusicArtistInfo::ArtistInfo->init($class);
 	Plugins::MusicArtistInfo::TrackInfo->init($class);

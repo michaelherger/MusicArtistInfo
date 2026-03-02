@@ -8,7 +8,7 @@ use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
-use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY);
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY validateLanguage);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::MusicBrainz;
@@ -96,7 +96,7 @@ sub getAlbumReview {
 		return;
 	}
 
-	$args->{lang} ||= cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
+	$args->{lang} ||= validateLanguage($client, $args->{lang});
 	$args->{title} = $args->{album};
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(

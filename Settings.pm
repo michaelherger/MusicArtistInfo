@@ -16,7 +16,7 @@ sub name {
 
 sub prefs {
 	my @prefs = ($prefs, qw(runImporter lookupArtistPictures lookupCoverArt reviewFolder artistImageFolder lyricsFolder bioFolder
-		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres useAIGeneratedContent fallBackToEnglish
+		lookupAlbumArtistPicturesOnly saveMissingArtistPicturePlaceholder replaceOnlineGenres useAIGeneratedContent preferredLanguage
 		hidextramenusitems preferLyricsPrecisionOverSpeed));
 
 	# we'll leave the artist picture handling to LMS, if possible
@@ -48,6 +48,9 @@ sub handler {
 	$paramRef->{canLMSArtistArtwork} = CAN_LMS_ARTIST_ARTWORK;
 	$paramRef->{canOnlineLibrary} = CAN_ONLINE_LIBRARY;
 	$paramRef->{artfolder} = $serverprefs->get('artfolder');
+	$paramRef->{languageOptions} = Slim::Utils::Strings::languageOptions();
+	$paramRef->{contentLanguages} = Plugins::MusicArtistInfo::Common::getContentLanguages();
+	$paramRef->{lmsLanguage} = preferences('server')->get('language');
 
 	if ( $paramRef->{artfolder} && !(-d $paramRef->{artfolder} && -w _) ) {
 		$paramRef->{saveAlbumCoversDisabled} = 1;

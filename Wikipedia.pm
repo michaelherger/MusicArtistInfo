@@ -11,7 +11,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 use Slim::Utils::Strings qw(string cstring);
 
-use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY);
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY validateLanguage);
 
 use constant MIN_REVIEW_SIZE => 50;
 use constant PAGE_URL => 'https://%s.wikipedia.org/wiki/%s';
@@ -41,7 +41,7 @@ my $searchTypes = {
 		PT	=> 'Obra',
 		SV	=> 'Verk',
 		ZH_CN	=> '作品'
-	}
+	},
 };
 
 my $log = logger('plugin.musicartistinfo');
@@ -64,7 +64,7 @@ sub _rank {
 
 sub getAlbumOrWorkReview {
 	my ( $class, $client, $cb, $type, $args ) = @_;
-	my $lang = $args->{lang} || _language($client);
+	my $lang = validateLanguage($client, $args->{lang});
 
 	# need to localize "$type" - see https://forums.lyrion.org/node/1813577
 	my $localizedType = $searchTypes->{$type}->{uc($lang)} || $searchTypes->{$type}->{EN} || $type;
@@ -111,7 +111,7 @@ sub getAlbumOrWorkReview {
 
 			$candidate ||= {};
 
-			if (!$candidate->{pageid} && $lang ne 'en' && $prefs->get('fallBackToEnglish')) {
+			if (!$candidate->{pageid} && $lang ne 'en') {
 				$args->{lang} = 'en';
 				return $class->getAlbumOrWorkReview($client, $cb, $type, $args);
 			}
@@ -139,7 +139,7 @@ sub getBiography {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(SEARCH_URL, $args->{lang} || _language($client), uri_escape_utf8($args->{artist})),
+		sprintf(SEARCH_URL, validateLanguage($client, $args->{lang}), uri_escape_utf8($args->{artist})),
 		sub {
 			my $searchResults = shift;
 
@@ -160,7 +160,7 @@ sub getBiography {
 
 			$candidate ||= {};
 
-			if (!$candidate->{pageid} && !$args->{lang} && _language($client) ne 'en' && $prefs->get('fallBackToEnglish')) {
+			if (!$candidate->{pageid} && validateLanguage($client, $args->{lang}) ne 'en') {
 				$args->{lang} = 'en';
 				return $class->getBiography($client, $cb, $args);
 			}
@@ -201,7 +201,7 @@ sub getPage {
 	}
 
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(FETCH_URL, $args->{lang} || _language($client), uri_escape_utf8($args->{id})),
+		sprintf(FETCH_URL, validateLanguage($client, $args->{lang}), uri_escape_utf8($args->{id})),
 		sub {
 			my $fetchResults = shift;
 
@@ -223,7 +223,7 @@ sub getPage {
 
 					my $slug = $args->{title};
 					$slug =~ s/ /_/g;
-					$result->{url} = sprintf(PAGE_URL, $args->{lang} || _language($client), uri_escape_utf8($slug));
+					$result->{url} = sprintf(PAGE_URL, validateLanguage($client, $args->{lang}), uri_escape_utf8($slug));
 				}
 			}
 
@@ -237,11 +237,6 @@ sub getPage {
 			expires => 86400,	# force caching - wikipedia doesn't want to cache by default
 		}
 	);
-}
-
-sub _language {
-	my $client = shift;
-	return cstring($client, 'PLUGIN_MUSICARTISTINFO_WIKIPEDIA_LANGUAGE');
 }
 
 1;
