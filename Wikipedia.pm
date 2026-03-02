@@ -20,6 +20,30 @@ use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&actio
 # https://www.mediawiki.org/wiki/API:Get_the_contents_of_a_page#Method_3:_Use_the_TextExtracts_API
 use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&formatversion=2&format=json&pageids=%s'; # params: language, page ID
 
+# we need to localize search terms, but can't read from strings table, as we'd only have the main language, not what might have been requested
+my $searchTypes = {
+	album => {
+		EN	=> 'Album',
+		ES	=> 'Álbum',
+		FI	=> 'Levy',
+		PT	=> 'Álbum',
+		ZH_CN	=> '专辑'
+	},
+	work => {
+		CS	=> 'Díla',
+		DA	=> 'Værk',
+		DE	=> 'Werk',
+		EN	=> 'work',
+		ES	=> 'Obra',
+		FR	=> 'Œuvre',
+		HU	=> 'Művek',
+		NL	=> 'Compositie',
+		PT	=> 'Obra',
+		SV	=> 'Verk',
+		ZH_CN	=> '作品'
+	}
+};
+
 my $log = logger('plugin.musicartistinfo');
 my $prefs = preferences('plugin.musicartistinfo');
 
@@ -42,8 +66,11 @@ sub getAlbumOrWorkReview {
 	my ( $class, $client, $cb, $type, $args ) = @_;
 	my $lang = $args->{lang} || _language($client);
 
+	# need to localize "$type" - see https://forums.lyrion.org/node/1813577
+	my $localizedType = $searchTypes->{$type}->{uc($lang)} || $searchTypes->{$type}->{EN} || $type;
+
 	Plugins::MusicArtistInfo::Common->call(
-		sprintf(SEARCH_URL, $lang, uri_escape_utf8('"' . $args->{title} . '" ' . $type . ' "' . $args->{artist} . '"')),
+		sprintf(SEARCH_URL, $lang, uri_escape_utf8('"' . $args->{title} . '" ' . $localizedType . ' "' . $args->{artist} . '"')),
 		sub {
 			my $searchResults = shift;
 
@@ -60,7 +87,7 @@ sub getAlbumOrWorkReview {
 				$_->{categorysnippet} = _removeMarkup($_->{categorysnippet});
 
 				my $title = lc($_->{title});
-				$title =~ s/\s*\(.*$type\)//ig;
+				$title =~ s/\s*\(.*(?:$type|$localizedType)\)//ig;
 
 				$_->{ranking} = 0;
 
@@ -72,7 +99,7 @@ sub getAlbumOrWorkReview {
 				elsif (_rank($_, $_->{snippet} =~ /^\Q$args->{artist}\E/i, 3, 'snippet starts with artist')) {}
 				elsif (_rank($_, $_->{snippet} =~ /\Q$args->{artist}\E/i, 2, 'snippet has artist')) {}
 
-				_rank($_, $_->{snippet} =~ /\Q$args->{title}\E/i && $_->{title} =~ /$type/i, 1, "snippet has $type");
+				_rank($_, $_->{snippet} =~ /\Q$args->{title}\E/i && $_->{title} =~ /$type|$localizedType/i, 1, "snippet has $type");
 				_rank($_, $title eq lc($args->{title}) && length($args->{title}) > 20, 5, "matches a long $type title");
 
 				main::INFOLOG && $log->is_info && $log->info(Data::Dump::dump($_));
