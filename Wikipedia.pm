@@ -18,7 +18,7 @@ use constant PAGE_URL => 'https://%s.wikipedia.org/wiki/%s';
 # https://www.mediawiki.org/wiki/API:Search
 use constant SEARCH_URL => 'https://%s.wikipedia.org/w/api.php?format=json&action=query&list=search&srsearch=%s&srprop=snippet|categorysnippet'; # params: language, query string
 # https://www.mediawiki.org/wiki/API:Get_the_contents_of_a_page#Method_3:_Use_the_TextExtracts_API
-use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&formatversion=2&format=json&pageids=%s'; # params: language, page ID
+use constant FETCH_URL => 'https://%s.wikipedia.org/w/api.php?action=query&prop=extracts&formatversion=2&format=json&pageids=%s&redirects=1'; # params: language, page ID
 
 # we need to localize search terms, but can't read from strings table, as we'd only have the main language, not what might have been requested
 my $searchTypes = {
