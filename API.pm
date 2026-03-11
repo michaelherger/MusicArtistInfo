@@ -12,6 +12,7 @@ use constant BASE_URL => 'https://api.lms-community.org/music';
 # use constant BASE_URL => 'http://127.0.0.1:8787/music';
 use constant ARTISTIMAGESEARCH_URL => BASE_URL . '/artist/%s/picture';
 use constant ALBUMREVIEW_URL => BASE_URL . '/album/%s/%s/review';
+use constant TRACKREVIEW_URL => BASE_URL . '/track/%s/%s/review';
 use constant ALBUMGENRES_URL => BASE_URL . '/album/%s/%s/genres';
 use constant BIOGRAPHY_URL => BASE_URL . '/artist/%s/biography';
 use constant WORKREVIEW_URL => BASE_URL . '/work/%s/%s/review';
@@ -107,6 +108,29 @@ sub getAlbumReviewId {
 			my ($result) = @_;
 
 			main::INFOLOG && $log->is_info && $log->info("found album review: " . Data::Dump::dump($result));
+
+			$cb->($result);
+		}
+	);
+}
+
+sub getTrackReviewId {
+	my ( $class, $cb, $args ) = @_;
+
+	my @queryParams;
+	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
+	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
+
+	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
+
+	my $url = sprintf(TRACKREVIEW_URL, uri_escape_utf8($args->{title}), uri_escape_utf8($args->{artist})) . $query;
+
+	_call(
+		$url,
+		sub {
+			my ($result) = @_;
+
+			main::INFOLOG && $log->is_info && $log->info("found track review: " . Data::Dump::dump($result));
 
 			$cb->($result);
 		}

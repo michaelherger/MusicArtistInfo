@@ -97,6 +97,16 @@ sub getAlbumReview {
 	}
 
 	$args->{lang} ||= validateLanguage($client, $args->{lang});
+
+	if (!$args->{album} && $args->{title}) {
+		return Plugins::MusicArtistInfo::API->getTrackReviewId(
+			sub {
+				renderReview($client, 'album', shift, $params, $args, $cb);
+			},
+			$args,
+		);
+	}
+
 	$args->{title} = $args->{album};
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(
@@ -367,7 +377,21 @@ sub getAlbumReviewCLI {
 			mbid   => $mbid,
 		};
 
-	if ( !($args && $args->{artist} && $args->{album}) ) {
+	# try to find track information if we don't have an album title
+	if ( $args->{artist} && !$args->{album} && !$args->{title} && $client ) {
+		my $track = Slim::Player::Playlist::track($client);
+
+		if ( $track && $track->isRemoteURL ) {
+			my $handler = Slim::Player::ProtocolHandlers->handlerForURL($track->url);
+
+			if ( $handler && $handler->can('getMetadataFor') ) {
+				my $meta = $handler->getMetadataFor( $client, $track->url );
+				$args->{title} = _cleanupAlbumName($meta->{title}) if $meta;
+			}
+		}
+	}
+
+	if ( !($args && $args->{artist} && ($args->{album} || $args->{title})) ) {
 		$request->addResult('error', cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 		$request->setStatusDone();
 		return;
