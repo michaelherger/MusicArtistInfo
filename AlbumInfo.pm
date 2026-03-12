@@ -8,7 +8,7 @@ use Slim::Utils::Strings qw(string cstring);
 use Slim::Utils::Log;
 
 use Plugins::MusicArtistInfo::ArtistInfo;
-use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY validateLanguage);
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND CAN_IMAGEPROXY validateLanguage REVIEW_TYPE_ALBUM REVIEW_TYPE_TRACK);
 use Plugins::MusicArtistInfo::Discogs;
 use Plugins::MusicArtistInfo::LFM;
 use Plugins::MusicArtistInfo::MusicBrainz;
@@ -101,7 +101,7 @@ sub getAlbumReview {
 	if (!$args->{album} && $args->{title}) {
 		return Plugins::MusicArtistInfo::API->getTrackReviewId(
 			sub {
-				renderReview($client, 'album', shift, $params, $args, $cb);
+				renderReview($client, REVIEW_TYPE_TRACK, shift, $params, $args, $cb);
 			},
 			$args,
 		);
@@ -111,7 +111,7 @@ sub getAlbumReview {
 
 	Plugins::MusicArtistInfo::API->getAlbumReviewId(
 		sub {
-			renderReview($client, 'album', shift, $params, $args, $cb);
+			renderReview($client, REVIEW_TYPE_ALBUM, shift, $params, $args, $cb);
 		},
 		$args,
 	);
@@ -123,7 +123,7 @@ sub renderReview {
 	my $mbid = $args->{mbid};
 
 	my $reviewCb = sub {
-		my $review = shift;
+		my $review = shift || {};
 		my $items = [];
 
 		$reviewData->{url} ||= $review->{url} || {};
@@ -166,6 +166,9 @@ sub renderReview {
 				$review->{reviewText} = delete $review->{contentText};
 				return $reviewCb->($review);
 			}
+			elsif ($type eq REVIEW_TYPE_TRACK) {
+				return $reviewCb->();
+			}
 
 			Plugins::MusicArtistInfo::Wikipedia->getAlbumOrWorkReview($client, $reviewCb, $type, $args);
 		}, {
@@ -173,6 +176,9 @@ sub renderReview {
 			id => $pageData->{pageid},
 			lang => $pageData->{lang} || $args->{lang},
 		});
+	}
+	elsif ($type eq REVIEW_TYPE_TRACK) {
+		return $reviewCb->();
 	}
 	else {
 		Plugins::MusicArtistInfo::Wikipedia->getAlbumOrWorkReview($client, $reviewCb, $type, $args);

@@ -23,8 +23,14 @@ BEGIN {
 	use constant CAN_LFM => 1;
 	use constant CLICOMMAND => 'musicartistinfo';
 
+	use constant REVIEW_TYPE_ALBUM => 'album';
+	use constant REVIEW_TYPE_WORK => 'work';
+	use constant REVIEW_TYPE_TRACK => 'track';
+
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM validateLanguage );
+	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM validateLanguage
+		REVIEW_TYPE_ALBUM REVIEW_TYPE_WORK REVIEW_TYPE_TRACK
+	 );
 }
 
 my $contentLanguages = {

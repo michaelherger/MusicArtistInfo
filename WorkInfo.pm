@@ -5,7 +5,7 @@ use strict;
 use Slim::Utils::Log;
 use Slim::Utils::Strings qw(string cstring);
 
-use Plugins::MusicArtistInfo::Common qw(CLICOMMAND validateLanguage);
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND validateLanguage REVIEW_TYPE_WORK);
 
 my $log = logger('plugin.musicartistinfo');
 
@@ -98,7 +98,7 @@ sub getWorkReview {
 
 	Plugins::MusicArtistInfo::API->getWorkReviewId(
 		sub {
-			Plugins::MusicArtistInfo::AlbumInfo::renderReview($client, 'work', shift, $params, $args, $cb);
+			Plugins::MusicArtistInfo::AlbumInfo::renderReview($client, REVIEW_TYPE_WORK, shift, $params, $args, $cb);
 		},
 		$args,
 	);
