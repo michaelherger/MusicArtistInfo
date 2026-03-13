@@ -391,8 +391,10 @@ sub getAlbumReviewCLI {
 			my $handler = Slim::Player::ProtocolHandlers->handlerForURL($track->url);
 
 			if ( $handler && $handler->can('getMetadataFor') ) {
-				my $meta = $handler->getMetadataFor( $client, $track->url );
-				$args->{title} = _cleanupAlbumName($meta->{title}) if $meta;
+				if (my $meta = $handler->getMetadataFor( $client, $track->url )) {
+					$args->{title} = _cleanupAlbumName($meta->{title});
+					$args->{radioUrl} = $track->url;
+				}
 			}
 		}
 	}

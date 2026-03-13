@@ -2,7 +2,9 @@ package Plugins::MusicArtistInfo::API;
 
 use strict;
 use Digest::SHA1 qw(sha1_base64);
+use URI;
 use URI::Escape qw(uri_escape_utf8);
+use URI::QueryParam;
 
 use Slim::Utils::Cache;
 use Slim::Utils::Log;
@@ -16,6 +18,8 @@ use constant TRACKREVIEW_URL => BASE_URL . '/track/%s/%s/review';
 use constant ALBUMGENRES_URL => BASE_URL . '/album/%s/%s/genres';
 use constant BIOGRAPHY_URL => BASE_URL . '/artist/%s/biography';
 use constant WORKREVIEW_URL => BASE_URL . '/work/%s/%s/review';
+
+use constant PLUGIN_PACKAGE => __PACKAGE__ =~ s/\b(?:\w+)$/Plugin/r;
 
 my $cache = Slim::Utils::Cache->new();
 my $log = logger('plugin.musicartistinfo');
@@ -133,6 +137,8 @@ sub getTrackReviewId {
 			main::INFOLOG && $log->is_info && $log->info("found track review: " . Data::Dump::dump($result));
 
 			$cb->($result);
+		},{
+			radioUrl => $args->{radioUrl},
 		}
 	);
 }
@@ -184,6 +190,17 @@ sub _call {
 	$args->{expires} //= '30d';
 	$args->{headers} ||= {};
 	$args->{headers}->{'x-mai-cfg'} ||= _initXMAICfgString();
+	$args->{headers}->{'X-LMS-Plugin-ID'} ||= PLUGIN_PACKAGE;
+
+	if ($args->{radioUrl} && (my $parsed = URI->new(delete $args->{radioUrl}))) {
+		# only submit host name / path to avoid posting potentially sensitive info like stream keys etc.
+		$args->{headers}->{'X-LMS-Radio-URL'} = sprintf('%s://%s:%s%s', $parsed->scheme, $parsed->host, $parsed->port, $parsed->path);
+
+		if ($parsed->host =~ /\b(?:tunein|radiotime)\.com$/i) {
+			my $queryParams = $parsed->query_form_hash;
+			$args->{headers}->{'X-LMS-Radio-URL'} .= '?sid=' . ($queryParams->{id} || 'unknown');
+		}
+	}
 
 	Plugins::MusicArtistInfo::Common->call($url, sub {
 		my ($result) = @_;
