@@ -296,7 +296,7 @@ sub _getBioItems {
 sub getBiographyCLI {
 	my $request = shift;
 
-	my ($artist, $artist_id, $mbid, $lang) = _checkRequest($request, ['biography']);
+	my ($artist, $artist_id, $mbid, $lang, $album) = _checkRequest($request, ['biography']);
 
 	return unless $artist;
 
@@ -334,6 +334,7 @@ sub getBiographyCLI {
 			isWeb  => $request->getParam('html') || Plugins::MusicArtistInfo::Plugin->isWebBrowser($client),
 		},{
 			artist => $artist,
+			album => $album,
 			mbid => $mbid,
 			lang => $lang,
 		}
@@ -355,6 +356,7 @@ sub _checkRequest {
 	my $artist = $request->getParam('artist');
 	my $mbid = $request->getParam('mbid');
 	my $lang = $request->getParam('lang');
+	my $album = $request->getParam('album');
 
 	if (!$artist) {
 		my $artistInfo = _getArtistFromArtistId($artist_id);
@@ -362,7 +364,7 @@ sub _checkRequest {
 		$mbid ||= $artistInfo->{mbid};
 	}
 
-	return ($artist, $artist_id, $mbid, $lang) if $artist;
+	return ($artist, $artist_id, $mbid, $lang, $album) if $artist;
 
 	$request->addResult('error', cstring($request->client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND'));
 	$request->setStatusDone();
@@ -410,7 +412,7 @@ sub getArtistPhotos {
 sub getArtistPhotosCLI {
 	my $request = shift;
 
-	my ($artist, $artist_id) = _checkRequest($request, ['artistphotos']);
+	my ($artist, $artist_id, $mbid, $lang, $album) = _checkRequest($request, ['artistphotos']);
 
 	return unless $artist;
 
