@@ -388,13 +388,9 @@ sub getAlbumReviewCLI {
 		my $track = Slim::Player::Playlist::track($client);
 
 		if ( $track && $track->isRemoteURL ) {
-			my $handler = Slim::Player::ProtocolHandlers->handlerForURL($track->url);
-
-			if ( $handler && $handler->can('getMetadataFor') ) {
-				if (my $meta = $handler->getMetadataFor( $client, $track->url )) {
-					$args->{title} = _cleanupAlbumName($meta->{title});
-					$args->{radioUrl} = $track->url;
-				}
+			if ( my $meta = Plugins::MusicArtistInfo::Common::getMetadataFor($client, $track) ) {
+				$args->{title} = _cleanupAlbumName($meta->{title});
+				$args->{radioUrl} = $track->url;
 			}
 		}
 	}

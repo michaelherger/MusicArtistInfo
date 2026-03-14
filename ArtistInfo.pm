@@ -172,6 +172,19 @@ sub getBiography {
 
 	$args->{lang} ||= validateLanguage($client, $args->{lang});
 
+	# try to get album name as a hint to help disambiguate artists with common names
+	if ( !$args->{album} && $client && (my $track = Slim::Player::Playlist::track($client)) ) {
+		if ( $track->isRemoteURL && (my $meta = Plugins::MusicArtistInfo::Common::getMetadataFor($client, $track)) ) {
+			if ($meta->{artist} && $meta->{artist} eq $args->{artist}) {
+				$args->{album} = Plugins::MusicArtistInfo::Common::cleanupAlbumName($meta->{album});
+			}
+			$args->{radioUrl} = $track->url;
+		}
+		elsif ($track->artistName && $track->artistName eq $args->{artist}) {
+			$args->{album} = Plugins::MusicArtistInfo::Common::cleanupAlbumName($track->albumname);
+		}
+	}
+
 	Plugins::MusicArtistInfo::API->getArtistBioId(
 		sub {
 			my $bioData = shift || {};

@@ -47,7 +47,7 @@ if (!main::SCANNER) {
 sub getArtistPhoto {
 	my ( $class, $cb, $args ) = @_;
 
-	my $query = '?mbid=' . $args->{mbid} if $args->{mbid};
+	my $query = _getArtistQueryParams($args);
 	my $url = sprintf(ARTISTIMAGESEARCH_URL, uri_escape_utf8($args->{artist})) . $query;
 	my $cacheKey = "mai_artist_artwork_$url";
 
@@ -82,11 +82,7 @@ sub getArtistPhoto {
 sub getArtistBioId {
 	my ( $class, $cb, $args ) = @_;
 
-	my @queryParams;
-	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
-	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
-	my $query = @queryParams ? '?' . join('&', @queryParams) : '';
-
+	my $query = _getArtistQueryParams($args);
 	my $url = sprintf(BIOGRAPHY_URL, uri_escape_utf8($args->{artist})) . $query;
 
 	_call(
@@ -99,6 +95,18 @@ sub getArtistBioId {
 			$cb->($result);
 		}
 	);
+}
+
+sub _getArtistQueryParams {
+	my $args = shift;
+
+	my @queryParams;
+	push @queryParams, 'mbid=' . $args->{mbid} if $args->{mbid};
+	push @queryParams, 'lang=' . $args->{lang} if $args->{lang};
+	# the album name in the artists related queries is used to better disambiguate artists with common names, so include it if available
+	push @queryParams, 'album=' . uri_escape_utf8($args->{album}) if $args->{album};
+
+	return @queryParams ? '?' . join('&', @queryParams) : '';
 }
 
 sub getAlbumReviewId {
@@ -192,7 +200,8 @@ sub _call {
 	$args->{headers}->{'x-mai-cfg'} ||= _initXMAICfgString();
 	$args->{headers}->{'X-LMS-Plugin-ID'} ||= PLUGIN_PACKAGE;
 
-	if ($args->{radioUrl} && (my $parsed = URI->new(delete $args->{radioUrl}))) {
+	# provide radio station URL to help avoiding unnecessary lookups if a station is known to provide no or invalid metadata
+	if ($args->{radioUrl} && $args->{radioUrl} =~ m{^https?://} && (my $parsed = URI->new(delete $args->{radioUrl}))) {
 		# only submit host name / path to avoid posting potentially sensitive info like stream keys etc.
 		$args->{headers}->{'X-LMS-Radio-URL'} = sprintf('%s://%s:%s%s', $parsed->scheme, $parsed->host, $parsed->port, $parsed->path);
 

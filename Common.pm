@@ -139,6 +139,22 @@ sub matchAlbum {
 	return;
 }
 
+sub getMetadataFor {
+	my ($client, $track) = @_;
+
+	return unless $track && $track->isRemoteURL && (my $url = $track->url);
+
+	my $handler = Slim::Player::ProtocolHandlers->handlerForURL($url);
+
+	if ( $handler && $handler->can('getMetadataFor') ) {
+		if (my $meta = $handler->getMetadataFor( $client, $url )) {
+			return $meta;
+		}
+	}
+
+	return {};
+}
+
 my @HEADER_DATA = map {
 	# s/=*$|\s//sg;
 	MIME::Base64::decode_base64($_);
