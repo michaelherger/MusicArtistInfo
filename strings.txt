@@ -593,7 +593,7 @@ PLUGIN_MUSICARTISTINFO_CONTENT_LANGUAGE_DESC
 	DE	Leider sind Inhalte nicht in allen Sprachen verfügbar. Ist eine Sprache nicht unterstützt, wird Englisch verwendet. Hier können Sie wählen, welche Sprache Sie bevorzugen, falls Sie eine andere als die Systemsprache verwenden möchten..
 	EN	Unfortunately not all languages are available for the downloaded content. English will be used if your system language wasn't available. You can select a language different from your system's, if you prefer to do so.
 	FR	Malheureusement, toutes les langues ne sont pas disponibles pour le contenu téléchargé. L'anglais sera utilisé si la langue de votre système n'est pas disponible. Vous pouvez sélectionner une langue différente de celle de votre système, si vous le souhaitez.
-	NL	Helaas zijn niet alle talen beschikbaar voor de gedownloade inhoud. Als de taal van uw systeem niet beschikbaar is, wordt Engels gebruikt. U kunt een andere taal dan die van uw systeem selecteren, als u dat wilt.
+	NL	Helaas zijn niet alle talen beschikbaar voor de gedownloade inhoud. Als de taal van jouw systeem niet beschikbaar is, wordt Engels gebruikt. Je kan een andere taal dan die van jouw systeem selecteren, als je dat wilt.
 
 PLUGIN_MUSICARTISTINFO_LANGUAGE_DEFAULT
 	DE	Automatisch
