@@ -84,6 +84,8 @@ sub getBiography {
 		my $artistInfo = shift;
 
 		if ( $artistInfo && ref $artistInfo && $artistInfo->{artist} && $artistInfo->{artist}->{bio} && (my $content = $artistInfo->{artist}->{bio}->{content})) {
+			$content =~ s/(<a href="https:\/\/www\.last\.fm\/.*?>Read more.*?<\/a>\. User.*?\.)/\n\n($1)/;
+
 			$cb->({
 				# author => 'Last.fm',
 				bio => $content
@@ -282,6 +284,7 @@ sub getAlbumCovers {
 	}, $args);
 }
 
+=pod we currently don't look up reviews on Last.fm
 sub getAlbumReview {
 	my ( $class, $client, $cb, $args ) = @_;
 
@@ -291,6 +294,7 @@ sub getAlbumReview {
 
 		if ( $albumInfo && ref $albumInfo && $albumInfo->{album} && (my $review = $albumInfo->{album}->{wiki}) ) {
 			$result->{review} = $result->{reviewText} = $review->{content};
+			# $result->{review} =~ s/(<a href="https:\/\/www\.last\.fm\/.*?>Read more.*?<\/a>\. User.*?\.)/\n\n($1)/;
 
 			if ( my $image = $albumInfo->{album}->{image} ) {
 				my $url = $class->getLargestPhotoFromList($image, 'extralarge');
@@ -305,6 +309,7 @@ sub getAlbumReview {
 		$cb->($result);
 	}, $args);
 }
+=cut
 
 sub getAlbum {
 	my ( $class, $cb, $args ) = @_;
