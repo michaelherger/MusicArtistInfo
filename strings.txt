@@ -19,6 +19,7 @@ PLUGIN_MUSICARTISTINFO_DESC
 PLUGIN_MUSICARTISTINFO_REMOTE_DEBUGGING
 	DE	Musik- und Interpreteninformation, Online-Zugriffe erzwingen
 	EN	Music and Artist Information - force online lookups
+	FR	Informations sur la Musique et les Artistes - forcer les recherches en ligne
 
 PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	CS	Informace o interpretovi
