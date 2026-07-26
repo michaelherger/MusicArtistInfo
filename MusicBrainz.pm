@@ -1,7 +1,6 @@
 package Plugins::MusicArtistInfo::MusicBrainz;
 
 use strict;
-use JSON::XS::VersionOneAndTwo;
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
 use Slim::Networking::SimpleAsyncHTTP;
@@ -24,16 +23,16 @@ sub getDiscography {
 			limit  => 100,
 		}, sub {
 			my $artistInfo = shift;
-			
+
 			my $items = [];
-			
+
 			if ( my $releases = $artistInfo->{'release-groups'} ) {
 				foreach ( @$releases ) {
 					next unless $_->{'first-release-date'};
 
 					my $title = $_->{title};
 					$title .= ' (' . $_->{disambiguation} . ')' if $_->{disambiguation};
-					
+
 					push @$items, {
 						title => $title,
 						mbid  => $_->{id},
@@ -42,18 +41,18 @@ sub getDiscography {
 					};
 				}
 			}
-			
+
 			$cb->($items);
 		});
 	};
-	
+
 	if ($args->{mbid}) {
 		$getDiscographyCb->($args->{mbid});
 	}
 	else {
 		$class->getArtist($client, sub {
 			my $artistInfo = shift;
-			
+
 			if ($artistInfo && $artistInfo->{id}) {
 				$getDiscographyCb->($artistInfo->{id});
 			}
@@ -77,7 +76,7 @@ sub getAlbumCovers {
 			if (my $images = $coverInfo->{images}) {
 				if ( ref $images eq 'ARRAY' ) {
 					my @images;
-					
+
 					foreach ( @$images ) {
 						push @images, {
 							author => 'MusicBrainz',
@@ -87,7 +86,7 @@ sub getAlbumCovers {
 							# type   => $rawUrl ? $_->{type} : undef,
 						};
 					}
-					
+
 					$result->{images} = \@images if @images;
 				}
 			}
@@ -95,18 +94,18 @@ sub getAlbumCovers {
 			if ( !$result->{images} && !main::SCANNER ) {
 				$result->{error} ||= Slim::Utils::Strings::cstring($client, 'PLUGIN_MUSICARTISTINFO_NOT_FOUND');
 			}
-			
+
 			$cb->($result);
 		});
 	};
-	
+
 	if ($args->{mbid}) {
 		$getCoversCb->($args->{mbid});
 	}
 	else {
 		$class->getAlbum($client, sub {
 			my $albumInfo = shift;
-			
+
 			if ($albumInfo && $albumInfo->{id}) {
 				$getCoversCb->($albumInfo->{id});
 			}
@@ -121,7 +120,7 @@ sub getArtist {
 	my ( $class, $client, $cb, $args ) = @_;
 
 	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
-	
+
 	if (!$artist) {
 		$cb->();
 		return;
@@ -131,9 +130,9 @@ sub getArtist {
 		query => $artist,
 	}, sub {
 		my $items = shift;
-		
+
 		my $artistInfo;
-		
+
 		if ( $items = $items->{artists} ) {
 			# some fuzzyness to find the correct artist (test eg. "Adele"):
 			# - pick artists whose name matches or the score is >= 80
@@ -143,11 +142,11 @@ sub getArtist {
 				keys %$b <=> keys %$a
 			} grep {
 				my $name = Slim::Utils::Unicode::utf8decode($_->{name});
-	
+
 				$_->{score} >= 80 && Slim::Utils::Text::ignoreCaseArticles($name, 1) =~ /\Q$artist\E/i;
 			} @$items;
 		}
-		
+
 		$cb->($artistInfo);
 	});
 }
@@ -157,7 +156,7 @@ sub getAlbum {
 
 	my $artist = Slim::Utils::Text::ignoreCaseArticles($args->{artist}, 1);
 	my $album = Slim::Utils::Text::ignoreCaseArticles($args->{album}, 1);
-	
+
 	if (!$artist || !$album) {
 		$cb->();
 		return;
@@ -168,11 +167,11 @@ sub getAlbum {
 	}, sub {
 		my $items = shift;
 		my $albumInfo;
-	
+
 		if ( $items->{'release-groups'} ) {
 			$albumInfo = shift @{$items->{'release-groups'}}
 		}
-		
+
 		$cb->($albumInfo);
 	});
 }
@@ -180,9 +179,9 @@ sub getAlbum {
 
 sub _call {
 	my ( $resource, $args, $cb ) = @_;
-	
+
 	Plugins::MusicArtistInfo::Common->call(
-		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), 'fmt=json' ), 
+		($resource =~ /^https?:/ ? $resource : (BASE_URL . $resource)) . '?' . join( '&', Plugins::MusicArtistInfo::Common->getQueryString($args), 'fmt=json' ),
 		$cb,
 		{
 			cache   => 1,

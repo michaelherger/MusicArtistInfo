@@ -4,7 +4,7 @@ use strict;
 
 use Exporter::Lite;
 use File::Spec::Functions qw(catdir);
-use JSON::XS::VersionOneAndTwo;
+use JSON::XS;
 use List::Util qw(min);
 use URI::Escape qw(uri_escape uri_escape_utf8);
 
@@ -196,7 +196,7 @@ my @HEADER_DATA = map {
 	MIME::Base64::decode_base64($_);
 } <Plugins::MusicArtistInfo::Common::DATA>;
 
-$HEADER_DATA[CAN_DISCOGS] = eval { from_json($HEADER_DATA[CAN_DISCOGS]) };
+$HEADER_DATA[CAN_DISCOGS] = eval { decode_json($HEADER_DATA[CAN_DISCOGS]) };
 
 sub imageInFolder {
 	my ($folder, @names) = @_;
@@ -332,7 +332,7 @@ sub call {
 				XML::Simple::XMLin( $content );
 			}
 			elsif ( $response->headers->content_type =~ /json/ ) {
-				from_json( $content );
+				decode_json( $content );
 			}
 			else {
 				$content;
