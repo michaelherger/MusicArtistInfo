@@ -58,11 +58,13 @@ sub startScan {
 	$saveMissingArtistPicturePlaceholder = $prefs->get('saveMissingArtistPicturePlaceholder') || 0;
 
 	$imageFolder = $prefs->get('artistImageFolder');
-	if ( !($imageFolder && -d $imageFolder && -w _) ) {
-		$imageFolder && $log->error('Artist Image Folder either does not exist or is not writable: ' . $imageFolder);
-		$imageFolder = _cacheFolder();
-		# if user doesn't care about artwork folder, then he doesn't care about artwork. Only download smaller size.
-		$max = 500;
+	if (!$imageFolder) {
+		$log->error('No Artist Image Folder specified - will not look for artist pictures online');
+		return;
+	}
+	elsif ( !(-d $imageFolder && -w _) ) {
+		$log->error('Artist Image Folder either does not exist or is not writable: ' . $imageFolder . ' - will not look for artist pictures online');
+		return;
 	}
 
 	if (main::SCANNER && !$serverprefs->get('artfolder')) {
