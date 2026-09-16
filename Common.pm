@@ -19,6 +19,8 @@ BEGIN {
 	use constant CAN_ONLINE_LIBRARY => (Slim::Utils::Versions->compareVersions($::VERSION, '8.0.0') >= 0);
 	use constant CAN_LMS_ARTIST_ARTWORK => (Slim::Utils::Versions->compareVersions($::VERSION, '9.1.0') >= 0 && Slim::Music::Artwork->can('generateImageId')) ? 1 : 0;
 	use constant CAN_LMS_WORKS => (Slim::Utils::Versions->compareVersions($::VERSION, '9.1.0') >= 0 ? 1 : 0);
+	use constant CAN_LMS_IS_DIR_WRITABLE => (Slim::Utils::Versions->compareVersions($::VERSION, '9.2.0') >= 0 && Slim::Utils::Misc->can('isDirWritable') ? 1 : 0);
+	use constant CAN_LMS_CAN_WEBLINK => (Slim::Utils::Versions->compareVersions($::VERSION, '9.0.0') >= 0 && Slim::Utils::Misc->can('canFollowWeblinks') ? 1 : 0);
 	use constant CAN_DISCOGS => 0;
 	use constant CAN_LFM => 1;
 	use constant CLICOMMAND => 'musicartistinfo';
@@ -28,8 +30,9 @@ BEGIN {
 	use constant REVIEW_TYPE_TRACK => 'track';
 
 	use Exporter::Lite;
-	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM validateLanguage
-		REVIEW_TYPE_ALBUM REVIEW_TYPE_WORK REVIEW_TYPE_TRACK
+	our @EXPORT_OK = qw( CLICOMMAND CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK CAN_LMS_WORKS CAN_ONLINE_LIBRARY CAN_DISCOGS CAN_LFM
+		CAN_LMS_IS_DIR_WRITABLE CAN_LMS_CAN_WEBLINK REVIEW_TYPE_ALBUM REVIEW_TYPE_WORK REVIEW_TYPE_TRACK
+		isDirWritable validateLanguage
 	 );
 }
 
@@ -197,6 +200,19 @@ my @HEADER_DATA = map {
 } <Plugins::MusicArtistInfo::Common::DATA>;
 
 $HEADER_DATA[CAN_DISCOGS] = eval { decode_json($HEADER_DATA[CAN_DISCOGS]) };
+
+sub isDirWritable {
+	my ($folder) = @_;
+
+	return unless $folder;
+
+	if (CAN_LMS_IS_DIR_WRITABLE) {
+		return Slim::Utils::Misc::isDirWritable($folder);
+	}
+
+	# this fallback isn't safe, in particular not on Windows. But good enough for most.
+	return -d $folder && (main::ISWINDOWS || -w _);
+}
 
 sub imageInFolder {
 	my ($folder, @names) = @_;

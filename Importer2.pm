@@ -14,7 +14,7 @@ use Slim::Utils::ImageResizer;
 use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Common qw(CAN_LMS_ARTIST_ARTWORK CAN_ONLINE_LIBRARY);
+use Plugins::MusicArtistInfo::Common qw(CAN_LMS_ARTIST_ARTWORK CAN_ONLINE_LIBRARY isDirWritable);
 use Plugins::MusicArtistInfo::API;
 use Plugins::MusicArtistInfo::LocalArtwork;
 
@@ -62,7 +62,7 @@ sub startScan {
 		$log->error('No Artist Image Folder specified - will not look for artist pictures online');
 		return;
 	}
-	elsif ( !(-d $imageFolder && -w _) ) {
+	elsif ( !isDirWritable($imageFolder) ) {
 		$log->error('Artist Image Folder either does not exist or is not writable: ' . $imageFolder . ' - will not look for artist pictures online');
 		return;
 	}

@@ -9,7 +9,7 @@ use Slim::Utils::Strings qw(string cstring);
 
 use Plugins::MusicArtistInfo::AlbumInfo;
 use Plugins::MusicArtistInfo::ArtistInfo;
-use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_LMS_WORKS);
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_LMS_WORKS CAN_LMS_CAN_WEBLINK);
 use Plugins::MusicArtistInfo::TrackInfo;
 use Plugins::MusicArtistInfo::LocalFile;
 
@@ -17,7 +17,7 @@ use constant PLUGIN_TAG => 'musicartistinfo';
 
 # Keep in sync with Qobuz plugin
 my $WEBLINK_SUPPORTED_UA_RE = qr/\b(?:iPeng|SqueezePad|OrangeSqueeze|Squeeze-Control|Squeezer|OpenSqueeze)\b/i;
-my $WEBBROWSER_UA_RE = qr/\b(?:FireFox|Chrome|Safari)\b/i;
+my $WEBBROWSER_UA_RE = qr/\b(?:FireFox|Chrome|Safari|Mozilla.*AppleWebKit)\b/i;
 
 my $log = Slim::Utils::Log->addLogCategory( {
 	category     => 'plugin.musicartistinfo',
@@ -318,13 +318,19 @@ sub getSmallArtworkAlbums {
 
 sub canWeblink {
 	my ($class, $client) = @_;
-	return $client && $client->controllerUA && ($client->controllerUA =~ $WEBLINK_SUPPORTED_UA_RE || $client->controllerUA =~ $WEBBROWSER_UA_RE);
+	return unless $client;
+	return 1 if $client->controllerUA && ($client->controllerUA =~ $WEBLINK_SUPPORTED_UA_RE || $client->controllerUA =~ $WEBBROWSER_UA_RE);
+	return CAN_LMS_CAN_WEBLINK && Slim::Utils::Misc::canFollowWeblinks($client);
 }
 
 sub isWebBrowser {
 	my ($class, $client, $params) = @_;
+
 	return 1 if $params && $params->{isWeb};
-	return $client && $client->controllerUA && $client->controllerUA =~ $WEBBROWSER_UA_RE;
+	return unless $client;
+
+	return 1 if $client->controllerUA && $client->controllerUA =~ $WEBBROWSER_UA_RE;
+	return CAN_LMS_CAN_WEBLINK && Slim::Utils::Misc::isWebBrowser($client);
 }
 
 my $canWrap;

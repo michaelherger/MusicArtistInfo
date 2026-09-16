@@ -12,7 +12,7 @@ use Slim::Utils::Log;
 use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::API;
-use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK);
+use Plugins::MusicArtistInfo::Common qw(CAN_ONLINE_LIBRARY CAN_IMAGEPROXY CAN_LMS_ARTIST_ARTWORK isDirWritable);
 use Plugins::MusicArtistInfo::LFM;
 
 use constant GENRE_REPLACE_ID => ['spotify', 'wimp', 'deezer', 'qobuz', 'tidal'];
@@ -98,7 +98,7 @@ sub _scanAlbumCovers {
 	$imageFolder = $serverprefs->get('artfolder');
 
 	# use our own folder in the cache folder if the user has not defined an artfolder
-	if ( !($imageFolder && -d $imageFolder && -w _) ) {
+	if ( !isDirWritable($imageFolder) ) {
 		$max = 500;		# if user doesn't care about artwork folder, then he doesn't care about artwork. Only download smaller size.
 		$imageFolder = $class->_cacheFolder;
 	}
@@ -370,7 +370,7 @@ sub filename {
 sub _initCacheFolder {
 	my ($class, $cacheDir, $imageFolder) = @_;
 
-	my $useCustomFolder = $imageFolder && -d $imageFolder && -w _;
+	my $useCustomFolder = isDirWritable($imageFolder);
 	require File::Copy if $useCustomFolder;
 
 	# purge cached files

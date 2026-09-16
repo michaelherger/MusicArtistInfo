@@ -5,7 +5,7 @@ use base qw(Slim::Web::Settings);
 
 use Slim::Utils::Prefs;
 
-use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_ONLINE_LIBRARY CAN_LMS_ARTIST_ARTWORK);
+use Plugins::MusicArtistInfo::Common qw(CAN_IMAGEPROXY CAN_ONLINE_LIBRARY CAN_LMS_ARTIST_ARTWORK isDirWritable);
 
 my $prefs = preferences('plugin.musicartistinfo');
 my $serverprefs = preferences('server');
@@ -55,7 +55,7 @@ sub handler {
 	$paramRef->{contentLanguages} = Plugins::MusicArtistInfo::Common::getContentLanguages();
 	$paramRef->{lmsLanguage} = preferences('server')->get('language');
 
-	if ( $paramRef->{artfolder} && !(-d $paramRef->{artfolder} && -w _) ) {
+	if ( $paramRef->{artfolder} && !isDirWritable($paramRef->{artfolder}) ) {
 		$paramRef->{saveAlbumCoversDisabled} = 1;
 	}
 

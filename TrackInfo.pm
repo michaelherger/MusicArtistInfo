@@ -14,7 +14,7 @@ use Slim::Utils::Misc;
 use Slim::Utils::Prefs;
 
 use Plugins::MusicArtistInfo::API;
-use Plugins::MusicArtistInfo::Common qw(CLICOMMAND);
+use Plugins::MusicArtistInfo::Common qw(CLICOMMAND isDirWritable);
 use Plugins::MusicArtistInfo::Parser::LRC;
 
 my $log = logger('plugin.musicartistinfo');
@@ -394,7 +394,7 @@ sub _getLyricsCacheFile {
 	if ( $args->{title} && $args->{artist} && (my $lyricsFolder = $prefs->get('lyricsFolder')) ) {
 		mkdir $lyricsFolder if $create && ! -d $lyricsFolder;
 
-		if (-w $lyricsFolder) {
+		if (!$create || isDirWritable($lyricsFolder)) {
 			my $artistDir = catdir($lyricsFolder, @{Plugins::MusicArtistInfo::Common::getLocalnameVariants($args->{artist})}[0]);
 			$artistDir =~ s/\.$//;
 			mkdir $artistDir if $create && ! -d $artistDir;
