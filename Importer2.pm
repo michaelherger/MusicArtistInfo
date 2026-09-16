@@ -212,6 +212,8 @@ sub _getArtistPhotoURL {
 			}
 		}
 
+		main::INFOLOG && $log->is_info && !$done && $ua && $log->info("Didn't find local image - go look online.");
+
 		if (CAN_ONLINE_LIBRARY && !$done && $ua && (my $url = _getImageUrlFromService($artist))) {
 			_precacheArtistImage($artist, {
 				url => $url
