@@ -6,6 +6,7 @@ PLUGIN_MUSICARTISTINFO
 	FR	Informations sur la Musique et les Artistes
 	HU	Zenei és előadói információk
 	NL	Muziek en Artiest Informatie
+	SV	Musik- och artistinformation
 
 PLUGIN_MUSICARTISTINFO_DESC
 	CS	Čtěte recenze alb, biografie interpretů, podobné interprety, prohlížejte obrázky interpretů a mnoho dalšího.
@@ -15,11 +16,13 @@ PLUGIN_MUSICARTISTINFO_DESC
 	FR	Critiques d’albums, biographies d’artistes, photos d'artistes, artistes similaires et bien plus encore.
 	HU	Olvasson albumkritikákat, előadói életrajzokat, kapcsolódó művészeket, tekintse meg az előadók képeit és még sok mást.
 	NL	Album recensies, artiest biografieën, gerelateerde artiesten, foto's van artiesten en nog veel meer.
+	SV	Läs skivrecensioner, artistbiografier, om liknande artister, visa bilder av artister och mycket mer.
 
 PLUGIN_MUSICARTISTINFO_REMOTE_DEBUGGING
 	DE	Musik- und Interpreteninformation, Online-Zugriffe erzwingen
 	EN	Music and Artist Information - force online lookups
 	FR	Informations sur la Musique et les Artistes - forcer les recherches en ligne
+	SV	Musik- och artistinformation, forcera online-sökningar
 
 PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	CS	Informace o interpretovi
@@ -29,6 +32,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTINFO
 	FR	Informations sur l'artiste
 	HU	Előadó információk
 	NL	Artiest informatie
+	SV	Artistinformation
 
 PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 	CS	Biografie
@@ -38,6 +42,7 @@ PLUGIN_MUSICARTISTINFO_BIOGRAPHY
 	FR	Biographie
 	HU	Életrajz
 	NL	Biografie
+	SV	Biografi
 
 PLUGIN_MUSICARTISTINFO_ARTISTDETAILS
 	CS	Podrobnosti o interpretovi
@@ -47,6 +52,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTDETAILS
 	FR	Détails sur l'artiste
 	HU	Az előadó adatai
 	NL	Artiest details
+	SV	Detaljer om artisten
 
 PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
 	CS	Obrázky
@@ -56,6 +62,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPICTURES
 	FR	Photos
 	HU	Képek
 	NL	Foto's
+	SV	Foton
 
 PLUGIN_MUSICARTISTINFO_ARTISTNEWS
 	CS	Ve zprávách
@@ -65,6 +72,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTNEWS
 	FR	Actualités
 	HU	Hírekben
 	NL	In het nieuws
+	SV	Aktuellt
 
 PLUGIN_MUSICARTISTINFO_ARTISTBLOGS
 	CS	V blogosféře
@@ -74,6 +82,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTBLOGS
 	FR	Blogosphère
 	HU	Blogbejegyzésekben
 	NL	In de blogosfeer
+	SV	I bloggosfären
 
 PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS
 	CS	Videa
@@ -82,6 +91,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTVIDEOS
 	FR	Vidéos
 	HU	Videók
 	NL	Videos
+	SV	Videor
 
 PLUGIN_MUSICARTISTINFO_DISCOGRAPHY
 	CS	Diskografie
@@ -91,6 +101,7 @@ PLUGIN_MUSICARTISTINFO_DISCOGRAPHY
 	FR	Discographie
 	HU	Diskográfia
 	NL	Discografie
+	SV	Diskografi
 
 PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS
 	CS	Podobní interpreti
@@ -100,6 +111,7 @@ PLUGIN_MUSICARTISTINFO_RELATED_ARTISTS
 	FR	Artistes liés
 	HU	Hasonló előadók
 	NL	Gerelateerde artiesten
+	SV	Liknande artister
 
 PLUGIN_MUSICARTISTINFO_ALBUMINFO
 	CS	Informace o albu
@@ -109,6 +121,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMINFO
 	FR	Informations sur l'album
 	HU	Album információk
 	NL	Album informatie
+	SV	Albuminformation
 
 PLUGIN_MUSICARTISTINFO_ALBUMDETAILS
 	CS	Podrobnosti o albu
@@ -118,6 +131,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMDETAILS
 	FR	Détails sur l'album
 	HU	Az album részletei
 	NL	Album details
+	SV	Detaljer om albumet
 
 PLUGIN_MUSICARTISTINFO_ALBUMCREDITS
 	CS	Kredity
@@ -126,6 +140,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMCREDITS
 	FR	Crédits
 	HU	Kreditek
 	NL	Credits
+	SV	Medverkande
 
 PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 	CS	Recenze alba
@@ -135,6 +150,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMREVIEW
 	FR	Critique de l'album
 	HU	Album értékelés
 	NL	Album recensie
+	SV	Skivrecension
 
 PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	CS	Je mi líto, nenašel jsem žádné relevantní informace.
@@ -144,6 +160,7 @@ PLUGIN_MUSICARTISTINFO_NOT_FOUND
 	FR	Malheureusement, aucune information pertinente n'a été trouvée.
 	HU	Sajnálom, nem találtam releváns információt.
 	NL	Helaas is er geen relevante informatie gevonden.
+	SV	Kunde tyvärr inte hitta någon relevant information.
 
 PLUGIN_MUSICARTISTINFO_URLS
 	CS	Webové stránky
@@ -153,6 +170,7 @@ PLUGIN_MUSICARTISTINFO_URLS
 	FR	Sites web
 	HU	Websites
 	NL	Websites
+	SV	Websidor
 
 PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 	CS	Lokální obrázky
@@ -162,6 +180,7 @@ PLUGIN_MUSICARTISTINFO_LOCAL_ARTWORK
 	FR	Images locales
 	HU	Helyi borítók
 	NL	Lokale afbeeldingen
+	SV	Lokala bilder
 
 PLUGIN_MUSICARTISTINFO_LOCAL_FILES
 	CS	Textové soubory z hudební složky
@@ -171,6 +190,7 @@ PLUGIN_MUSICARTISTINFO_LOCAL_FILES
 	FR	Documents locaux (PDF et autres)
 	HU	Szöveges fájlok a zenei mappából
 	NL	Lokale tekst en PDF bestanden
+	SV	Lokala textfiler (inklusive PDF)
 
 PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	CS	Najít obal alba online
@@ -180,6 +200,7 @@ PLUGIN_MUSICARTISTINFO_ALBUM_COVER
 	FR	Rechercher une pochette sur internet
 	HU	Keresse meg az albumborítót az interneten
 	NL	Vind albumhoes online
+	SV	Hitta skivomslaget online
 
 PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	CS	Najít alba s chybějícím obalem
@@ -189,6 +210,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_MISSING_ARTWORK
 	FR	Rechercher les albums sans pochette
 	HU	Keressen albumokat a hiányzó borítókkal
 	NL	Vind albums zonder albumhoes
+	SV	Hitta album som saknar skivomslag
 
 PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 	CS	Najít alba s malým obalem
@@ -198,6 +220,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMS_SMALL_ARTWORK
 	FR	Rechercher les albums avec une petite pochette
 	HU	Keressen albumokat kis borítóval
 	NL	Vind albums met kleine albumhoes
+	SV	Hitta album med små skivomslag
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	CS	Vyhledávání obrázků interpreta online
@@ -207,6 +230,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTO_PROGRESS
 	FR	Recherche des photos d'artistes en ligne
 	HU	Művész képkeresés
 	NL	Foto's van artiesten opzoeken
+	SV	Leta efter bilder av artisten
 
 PLUGIN_MUSICARTISTINFO_ALBUMCOVER_PROGRESS
 	CS	Vyhledávání obalů alb
@@ -216,6 +240,7 @@ PLUGIN_MUSICARTISTINFO_ALBUMCOVER_PROGRESS
 	FR	Recherche des pochettes d'albums
 	HU	Album borítójának keresése
 	NL	Albumhoezen opzoeken
+	SV	Leta efter skivomslag
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	CS	Fotografie interpretů
@@ -225,6 +250,7 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS
 	FR	Photos d'artistes
 	HU	Művészek fényképei
 	NL	Foto's van artiesten
+	SV	Artistfoton
 
 PLUGIN_MUSICARTISTINFO_GENRE_REPLACEMENT_PROGRESS
 	CS	Vyhledávání žánrů online a jejich nahrazení
@@ -234,6 +260,7 @@ PLUGIN_MUSICARTISTINFO_GENRE_REPLACEMENT_PROGRESS
 	FR	Recherche et remplacement des genres en ligne
 	HU	Online műfajkeresés és csere
 	NL	Online genre opzoeken en vervangen
+	SV	Leta efter genrer och ersätt
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	CS	Zobrazit obrázky (může zpomalit prohlížení)
@@ -243,6 +270,7 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_ON
 	FR	Afficher les photos (peut ralentir l'affichage)
 	HU	Képek megjelenítése (lassíthatja a böngészést)
 	NL	Toon foto's (kan het bladeren vertragen)
+	SV	Visa bilder (kan sakta ner bläddring)
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
 	CS	Složka s fotografiemi interpretů
@@ -252,6 +280,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER
 	FR	Dossier pour les photos d'artistes
 	HU	Előadó képeinek mappája
 	NL	Map voor foto's van artiesten
+	SV	Mapp med artistbilder
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
 	CS	Pokud se rozhodnete použít složku pro fotografie interpretů, bude použita jako další zdroj obrázků. Použijte názvy souborů jako %ARTIST.jpg (png, gif, např. „Peter Gabriel.jpg“). Pokud se soubor v této složce najde, nebude použit žádný online zdroj.
@@ -261,6 +290,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_DESC
 	FR	Si vous spécifiez un dossier pour les photos d'artistes, les photos qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST.jpg (png, gif, par exemple "Peter Gabriel.jpg"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
 	HU	Ha úgy dönt, hogy egy mappát használ az előadók fényképeihez, akkor ez a képek további forrásaként fog szerepelni. Használjon olyan fájlneveket, mint a %ARTIST.jpg (png, gif, pl. 'Peter Gabriel.jpg'). Ha egy fájl található ebben a mappában, akkor a rendszer nem használ online forrást.
 	NL	Als je een map gebruikt voor foto's van artiesten, wordt deze gebruikt als een additionele bron voor foto's. Gebruik bestandsnamen als %ARTIST.jpg (png. gif, bijv. 'Peter Gabriel.jpg'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
+	SV	Om du väljer att använda en mapp för artistbilder kommer den att fungera som en ytterligare bildkälla. Använd filnamn i formatet %ARTIST.jpg (png, gif; t.ex. ”Peter Gabriel.jpg”). Om en fil hittas i denna mapp används inga nätbaserade källor.
 
 PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER
 	CS	Složka s recenzemi alb
@@ -270,6 +300,7 @@ PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER
 	FR	Dossier pour les critiques d'albums
 	HU	Albumismertetők mappa
 	NL	Map voor recensies
+	SV	Mapp för skivrecensioner
 
 PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER_DESC
 	CS	Pokud se rozhodnete použít složku pro recenze alb, bude použita jako další zdroj textového obsahu. Použijte názvy souborů jako %ARTIST/%ALBUM.txt (html, nfo, např. „Peter Gabriel/So.html“). Pokud se soubor v této složce najde, nebude použit žádný online zdroj.
@@ -279,6 +310,7 @@ PLUGIN_MUSICARTISTINFO_REVIEWS_FOLDER_DESC
 	FR	Si vous spécifiez un dossier pour les critiques d'albums, les critiques qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST/%ALBUM.txt (html, nfo, par exemple "Peter Gabriel/So.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
 	HU	Ha úgy dönt, hogy egy mappát használ az albumismertetőkhöz, ez a szöveges tartalom további forrásaként fog szolgálni. Használjon olyan fájlneveket, mint a %ARTIST/%ALBUM.txt (html, nfo, pl. 'Peter Gabriel/So.html'). Ha egy fájl található ebben a mappában, akkor a rendszer nem használ online forrást.
 	NL	Als je een map gebruikt voor recensies, wordt deze gebruikt als een additionele bron voor recensies. Gebruik bestandsnamen als %ARTIST/%ALBUM.txt (html, nfo, bijv. 'Peter Gabriel/So.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
+	SV	Om du väljer att använda en mapp för albumrecensioner kommer den att fungera som en ytterligare källa för textinnehåll. Använd filnamn i formatet %ARTIST/%ALBUM.txt (eller .html, .nfo; t.ex. ”Peter Gabriel/So.html”). Om en fil hittas i denna mapp används inga onlinekällor.
 
 PLUGIN_MUSICARTISTINFO_BIOS_FOLDER
 	CS	Složka s biografiemi
@@ -288,6 +320,7 @@ PLUGIN_MUSICARTISTINFO_BIOS_FOLDER
 	FR	Dossier pour les biographies
 	HU	Életrajzok mappa
 	NL	Map voor biografieën
+	SV	Mapp för biografier
 
 PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC
 	CS	Pokud se rozhodnete použít složku pro biografie, bude použita jako další zdroj textového obsahu. Použijte názvy souborů jako %ARTIST.txt (html, nfo, např. „Peter Gabriel.html“). Pokud se soubor v této složce najde, nebude použit žádný online zdroj.
@@ -297,6 +330,7 @@ PLUGIN_MUSICARTISTINFO_BIOS_FOLDER_DESC
 	FR	Si vous spécifiez un dossier pour les biographies d'artistes, les biographies qu'il contient seront utilisées en priorité sur celles trouvées sur internet. Utilisez des noms de fichiers de la forme %ARTIST.txt (html, nfo, par exemple "Peter Gabriel.txt"), où le nom du fichier doit correspondre exactement au nom de l'artiste dans les fichiers musicaux.
 	HU	Ha úgy dönt, hogy egy mappát használ az életrajzokhoz, azt a szöveges tartalom további forrásaként fogja használni. Használjon olyan fájlneveket, mint a %ARTIST.txt (html, nfo, pl. 'Peter Gabriel.html'). Ha egy fájl található ebben a mappában, akkor a rendszer nem használ online forrást.
 	NL	Als je een map gebruikt voor biografieën van artiesten, wordt deze gebruikt als een additionele bron voor biografieën. Gebruik bestandsnamen als %ARTIST.txt (html, nfo, bijv. 'Peter Gabriel.txt'). Als er een bestand in de map staat, wordt er geen online bron gebruikt.
+	SV	Om du väljer att använda en mapp för biografier kommer den att fungera som en ytterligare källa för textinnehåll. Använd filnamn i formatet %ARTIST/%ALBUM.txt (eller .html, .nfo; t.ex. ”Peter Gabriel/So.html”). Om en fil hittas i denna mapp används inga onlinekällor.
 
 PLUGIN_MUSICARTISTINFO_GENAI
 	CS	Generování obsahu pomocí AI
@@ -304,6 +338,7 @@ PLUGIN_MUSICARTISTINFO_GENAI
 	EN	Generate content using AI
 	FR	Générer du contenu avec l'IA
 	NL	Inhoud genereren met AI
+	SV	Använd AI för att genera innehåll
 
 PLUGIN_MUSICARTISTINFO_GENAI_DESC
 	CS	Můžete zapnout experimentální podporu pro generování biografií a recenzí pomocí generativní AI. Tato možnost bude použita, pokud nebude nalezen žádný obsah na Wikipedii. Kvalita se může lišit!
@@ -311,6 +346,7 @@ PLUGIN_MUSICARTISTINFO_GENAI_DESC
 	EN	You can enable experimental support to generate biographies and reviews using generative AI. This option would be used if no content could be found on Wikipedia. Quality can vary!
 	FR	Vous pouvez activer la génération expérimentale des biographies et des critiques à l'aide de l'IA générative. Cette option sera utilisée si aucun contenu ne peut être trouvé sur Wikipédia. La qualité peut varier !
 	NL	Je kunt experimentele ondersteuning inschakelen om biografieën en recensies te genereren met behulp van generatieve AI. Deze optie wordt gebruikt als er geen content op Wikipedia kan worden gevonden. De kwaliteit kan variëren!
+	SV	Du kan aktivera experimentellt stöd för att generera biografier och recensioner med generativ AI. Det här alternativet används om inget innehåll kunde hittas på Wikipedia. Kvaliteten kan variera!
 
 PLUGIN_MUSICARTISTINFO_GENAI_NOTE
 	CS	(Tento obsah byl vytvořen pomocí generativní AI. Nemusí přesně odrážet realitu nebo může obsahovat fiktivní prvky.)
@@ -318,6 +354,7 @@ PLUGIN_MUSICARTISTINFO_GENAI_NOTE
 	EN	(This content was created using generative AI. It may not accurately reflect reality or may contain fictional elements.)
 	FR	(Ce contenu a été créé à l'aide d'une IA générative. Il peut ne pas refléter fidèlement la réalité ou contenir des éléments fictifs.)
 	NL	(Deze inhoud is gemaakt met behulp van generatieve AI. Het kan afwijken van de werkelijkheid of fictieve elementen bevatten.)
+	SV	(Detta innehåll har skapats med hjälp av generativ AI. Det återspeglar kanske inte verkligheten korrekt eller kan innehålla fiktiva inslag.)
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
 	CS	Obrázky nelze uložit do definované složky. Ujistěte se prosím, že složka existuje a je zapisovatelná Lyrion Music Serverem!
@@ -327,6 +364,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_SAVE_DISABLED
 	FR	L'enregistrement des images téléchargées n'est pas possible ! Assurez-vous que le dossier spécifié existe et qu'il est accessible en écriture pour Lyrion Music Server !
 	HU	A képek nem menthetők a megadott mappába. Kérjük, ellenőrizze, hogy a mappa létezik-e, és a Lyrion Music Server írható-e!
 	NL	Foto's kunnen niet worden opgeslagen in deze map. Zorg ervoor dat de map bestaat en beschrijfbaar is door Lyrion Music Server!
+	SV	Bilderna kan inte sparas i den angivna mappen. Kontrollera att mappen existerar och at Lyrion Music Server har skrivrättigheter i mappen.
 
 PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	CS	Nezobrazovat obrázky
@@ -336,6 +374,7 @@ PLUGIN_MUSICARTISTINFO_BROWSE_ARTISTPHOTOS_OFF
 	FR	Ne pas afficher les photos
 	HU	Ne mutasson képeket
 	NL	Toon geen foto's
+	SV	Visa inte bilder
 
 PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER
 	CS	Složka pro texty písní
@@ -345,6 +384,7 @@ PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER
 	FR	Dossier pour les paroles
 	HU	Dalszövegek mappa
 	NL	Map voor songteksten
+	SV	Mapp för sångtexter
 
 PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC
 	CS	Pokud definujete složku pro texty písní, stažené texty budou uloženy do mezipaměti pro pozdější použití.
@@ -354,6 +394,7 @@ PLUGIN_MUSICARTISTINFO_LYRICS_FOLDER_DESC
 	FR	Si vous spécifiez un dossier pour les paroles de chansons, les textes téléchargés y seront stockés pour optimiser les consultations ultérieures.
 	HU	Ha definiál egy mappát a dalszövegekhez, akkor a letöltött dalszövegek gyorsítótárban lesznek későbbi felhasználás céljából.
 	NL	Als je een map kiest voor songteksten, dan worden de songteksten opgeslagen in de cache.
+	SV	Om du anger en mapp för sångtexter, då lagras de nedladdade sångtexterna i den mappen för att användas senare.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER
 	CS	Nastavení importu
@@ -363,6 +404,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER
 	FR	Paramètres de l'importateur
 	HU	Importőr beállításai
 	NL	Importeer instellingen
+	SV	Importera inställningar
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	CS	Při prohledávání vaší hudební knihovny můžeme hledat informace o hudbě a interpretech online.
@@ -372,6 +414,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_DESC
 	FR	Lorsque vous analysez la bibliothèque musicale, vous pouvez rechercher de l'information sur la musique et l'artiste sur internet.
 	HU	Zenei könyvtárának szkennelésekor kereshetünk zenét és előadót az interneten.
 	NL	Als de mediabibliotheek wordt gescand, kan er worden gezocht naar muziek en artiest informatie.
+	SV	När ditt musikbibliotek skannas kan vi söka efter information om musik och artister på nätet.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
 	CS	Hledat informace o hudbě a interpretech online během prohledávání knihovny
@@ -381,6 +424,8 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_ENABLE
 	FR	Rechercher de l'information en ligne pendant l'analyse de la bibliothèque musicale
 	HU	Keressen zenei és előadói információkat az interneten a könyvtári szkennelés során
 	NL	Vind informatie over muziek en artiesten online tijdens het scannen van de mediacollectie
+	SV	Hitta information om musik och artister på nätet under biblioteksskanning
+
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	CS	Stáhnout a uložit obrázky interpretů z online zdrojů do mezipaměti
@@ -390,6 +435,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE
 	FR	Télécharger des photos d'artistes à partir de sources en ligne et les mettre en cache
 	HU	Töltse le és gyorsítótárazza az előadók képeit online forrásokból
 	NL	Download en cache foto's van artiesten van online bronnen
+	SV	Ladda ner och förhandslagra artistbilder från nätkällor
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	CS	Stahování a ukládání obrázků interpretů do mezipaměti může být časově náročné, ale výrazně urychlí procházení podle interpretů.
@@ -399,6 +445,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PRECACHE_DESC
 	FR	Le téléchargement et la mise en cache des photos peuvent prendre un certain temps, mais accélèrent considérablement la navigation par artiste.
 	HU	Az előadóképek letöltése és előzetes gyorsítótárazása meglehetősen időigényes lehet, de jelentősen felgyorsítja a böngészést az előadók által.
 	NL	Downloaden en cachen van foto's van artiesten kan erg lang duren, maar zal het bladeren op artiest flink versnellen.
+	SV	Nedladdning och förhandslagring av artistbilder kan vara ganska tidskrävande, men det kommer att göra bläddringen efter artister betydligt snabbare.
 
 PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_MISSING
 	CS	Pokud povolíte stahování obrázků interpretů, ujistěte se prosím, že jste níže definovali cílovou složku, kam se mají obrázky ukládat.
@@ -406,6 +453,7 @@ PLUGIN_MUSICARTISTINFO_ARTISTPHOTOS_FOLDER_MISSING
 	EN	If you enable artist artwork download, then please make sure you define a target folder where to save the images - see below.
 	FR	Si vous activez le téléchargement des photos d'artistes, veuillez vous assurer de définir un dossier cible où enregistrer les images (voir ci-dessous).
 	NL	Als je het downloaden van artiestenfoto's inschakelt, zorg er dan voor dat je een doelmap definieert waar de afbeeldingen worden opgeslagen (zie hieronder).
+	SV	Om du aktiverar nedladdning av artistbilder, se då till att ange en mapp där bilderna ska sparas – se nedan.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	CS	Stáhnout obrázky pouze pro hlavní interprety, ne pro všechny přispěvatele (skladatelé, dirigenti atd.)
@@ -415,6 +463,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_ALBUMARTIST_ONLY
 	FR	Télécharger des photos uniquement pour les artistes principaux, mais pas pour les autres artistes tels que les compositeurs, les chefs d'orchestre, etc.
 	HU	Csak a fő előadók, de nem minden közreműködő (zeneszerzők, karmesterek stb.) képei tölthetők le.
 	NL	Download alleen foto's van artiesten, maar niet van andere uitvoerenden (componisten, dirigenten, etc).
+	SV	Ladda endast ned bilder för huvudartister, inte för alla medverkande (kompositörer, dirigenter osv.)
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_0
 	CS	Neukládat žádný zástupný soubor.
@@ -422,6 +471,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_0
 	EN	Don't store any placeholder file.
 	FR	Ne pas enregistrer de fichier de remplacement.
 	NL	Maak geen ("artist.missing") bestanden aan.
+	SV	Lagra ingen platshållarfil.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_1
 	CS	Uložit zástupný soubor („artist.missing“), pokud mají být staženy obrázky interpretů, ale nemohou být nalezeny.
@@ -431,6 +481,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_1
 	FR	Enregistrer un fichier "artiste.missing" pour les artistes dont la photo a été recherchée mais pas trouvée.
 	HU	Tárolja a helyőrző fájlt ("artist.missing"), ha az előadói képeket le kell tölteni, de nem találhatók.
 	NL	Maak een bestand ("artist.missing") aan, als de foto van de artiest dient te worden gedownload maar niet kan worden gevonden.
+	SV	Spara en platshållarfil (”artist.missing”) om artistbilder ska laddas ner men inte kan hittas.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_2
 	CS	Uložit zástupný soubor nejen pro hlavní interprety, ale pro všechny přispěvatele (skladatelé, solisté atd.).
@@ -438,6 +489,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_PLACEHOLDER_2
 	EN	Store placeholder not only for the main artist, but for all contributors (composers, soloists, etc.).
 	FR	Enregistrer un fichier "artiste.missing" non seulement pour l'artiste principal, mais aussi pour tous les contributeurs (compositeurs, solistes, etc.).
 	NL	Maak een bestand ("artist.missing") aan, niet alleen voor de artiest, maar voor alle uitvoerenden (componisten, solisten, enz.).
+	SV	Spara platshållarfiler för alla medverkande (inte bara artisten utan även för dirigenter, solister o.s.v.).
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	CS	Stáhnout chybějící obaly alb z online zdrojů
@@ -447,6 +499,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART
 	FR	Télécharger sur internet et mettre en cache les pochettes d'albums manquantes
 	HU	Töltse le a hiányzó borítót online forrásokból
 	NL	Download albumhoezen van online bronnen
+	SV	Ladda ned skivomslag från onlinekällor
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 	CS	Stahování chybějících obalů alb může být časově náročné. Nalezené obaly budou uloženy lokálně (pokud je to možné), aby mohly být znovu použity při budoucích prohledáváních.
@@ -456,6 +509,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_COVERART_DESC
 	FR	Le téléchargement et la mise en cache des pochettes manquantes peuvent prendre un certain temps. Toutefois, les données récupérées sur internet seront stockées localement (si possible) et réutilisées lors des prochaines analyses.
 	HU	A hiányzó borítók letöltése meglehetősen időigényes lehet. A talált alkotásokat a rendszer helyben tárolja (ha lehetséges), hogy a jövőben újra felhasználhassa őket.
 	NL	Downloaden van albumhoezen kan erg lang duren. Gevonden albumhoezen worden lokaal opgeslagen (indien mogelijk), zodat ze kunnen worden gebruikt bij een nieuwe scan van de mediabibliotheek.
+	SV	Att ladda ner saknade omslagsbilder kan vara ganska tidskrävande. Bilder som hittas sparas lokalt (om möjligt) för att kunna återanvändas vid framtida genomsökningar.
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES
 	CS	Vyhledat chybějící žánry pro alba z online hudebních služeb
@@ -465,6 +519,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES
 	FR	Rechercher les genres manquants pour les albums des services de musique en ligne
 	HU	Keresse meg a hiányzó műfajokat az albumokhoz az online zenei szolgáltatásokból
 	NL	Zoek missende genres op voor albums van online muziekdiensten
+	SV	Sök upp saknade genrer för album från musiktjänster på nätet
 
 PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 	CS	Některé online streamovací služby neposkytují žádné informace o žánru alb. Použití této možnosti vám umožní automaticky vyhledat žánry online a použít je v knihovně.
@@ -474,6 +529,7 @@ PLUGIN_MUSICARTISTINFO_IMPORTER_GENRES_DESC
 	FR	Certains services de streaming de musique n'attribuent pas de genre aux albums. Cette option permet de rechercher le genre en ligne et de le stocker en base de données.
 	HU	Egyes online streaming szolgáltatások nem adnak műfaji információkat az albumokhoz. Ezzel az opcióval automatikusan megkeresheti a műfajokat az interneten, és felhasználhatja őket a könyvtárban.
 	NL	Sommige online muziekdiensten hebben geen genre informatie voor albums. Met deze optie worden genres automatisch online opgezocht en is het mogelijk deze te gebruiken in de mediabibliotheek.
+	SV	Vissa strömningstjänster på nätet tillhandahåller ingen genreinformation för album. Genom att använda det här alternativet kan du automatiskt söka upp genrer på nätet och använda dem i biblioteket.
 
 PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	CS	Zobrazit anglický obsah, pokud čeština není k dispozici
@@ -483,6 +539,7 @@ PLUGIN_MUSICARTISTINFO_ENGLISH_CONTENT_FALLBACK
 	FR	Afficher des informations en anglais lorsque le français n'est pas disponible
 	HU	Térjen vissza az angol tartalomhoz, ha az Ön nyelve nem érhető el
 	NL	Toon Engelse informatie als jouw taal niet beschikbaar is
+	SV	Visa engelskt innehåll, om svenskt innehåll inte är tillgängligt.
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
 	CS	Skrytí položek menu Doplňky
@@ -492,6 +549,7 @@ PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS
 	FR	Masquer les éléments du menu "Extras"
 	HU	Extra menüpontok elrejtése
 	NL	Verberg menu items "Extra's"
+	SV	Dölj extra menypunkter
 
 PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
 	CS	Skrýt položky typu „Najít alba bez obrázků“ z menu Doplňky
@@ -501,6 +559,7 @@ PLUGIN_MUSICARTISTINFO_HIDEEXTRAMENUITEMS_DESC
 	FR	Masquer les éléments "Rechercher les albums sans pochette" et autres du menu "Extras"
 	HU	Az Extra menü „Albumok keresése” elemeinek elrejtése
 	NL	Verberg "Vind albums zonder albumhoes" items in het "Extra's" menu
+	SV	Dölj ”Hitta album som saknar omslagsbild” och liknande alternativ från menyn Extra
 
 PLUGIN_MUSICARTISTINFO_SORRY
 	CS	Je mi líto, ale abyste mohli využít všech pokročilých funkcí tohoto pluginu (např. obrázky interpretů při procházení interpretů), budete potřebovat Logitech Media Server 7.8 nebo novější.
@@ -510,6 +569,7 @@ PLUGIN_MUSICARTISTINFO_SORRY
 	FR	Je suis désolé, mais pour tirer le meilleur parti de ce plug-in (par exemple, les photos d'artistes lorsque vous naviguez dans votre liste d'artistes), vous devez disposer au moins de Logitech Media Server 7.8.
 	HU	Sajnálom, de ahhoz, hogy tudja használni ennek a beépülő modulnak a fejlett funkcióit (pl. előadóképek az előadók között böngészve), a LMS 7.8 vagy újabb verzióját kell futtatnia.
 	NL	Om alle mogelijkheden van deze plug-in te benutten, heb je Logitech Media Server 7.8 of hoger nodig.
+	SV	Tyvärr, för att kunna dra nytta av alla avancerade funktioner i detta tillägg (t.ex. artistbilder när du bläddrar bland artister) måste du köra Logitech Media Server 7.8 eller senare.
 
 PLUGIN_MUSICARTISTINFO_HIT_RATE_LIMIT
 	CS	Definujte prosím níže složky, kam se mají ukládat obrázky. Zdá se, že opakovaně požadujete stejné informace, což způsobuje zbytečný provoz.
@@ -517,6 +577,7 @@ PLUGIN_MUSICARTISTINFO_HIT_RATE_LIMIT
 	EN	Please define folders where to store pictures below. You seem to repeatedly request the same information, which causes unnecessary traffic.
 	FR	Veuillez définir ci-dessous les dossiers où enregistrer les images. Il semble que vous demandiez à plusieurs reprises la même information, ce qui génère un trafic inutile.
 	NL	Definieer hieronder mappen waar foto's opgeslagen moeten worden. Je lijkt herhaaldelijk dezelfde informatie op te vragen, wat onnodig verkeer veroorzaakt.
+	SV	Ange nedan vilka mappar som ska användas för att lagra bilder. Det verkar som att du upprepade gånger efterfrågar samma information, vilket skapar onödig trafik.
 
 PLUGIN_MUSICARTISTINFO_MIN_SIZE_X
 	CS	Menší než %s pixelů
@@ -526,6 +587,7 @@ PLUGIN_MUSICARTISTINFO_MIN_SIZE_X
 	FR	Moins de %s pixels
 	HU	Kisebb, mint %s képpont
 	NL	Kleiner dan %s pixels
+	SV	Mindre än %s pixlar
 
 PLUGIN_MUSICARTISTINFO_MIN_SIZE
 	CS	Minimální velikost obrázku
@@ -535,6 +597,7 @@ PLUGIN_MUSICARTISTINFO_MIN_SIZE
 	FR	Taille minimum
 	HU	Minimális képméret
 	NL	Minimum grootte
+	SV	Minsta bildstorlek
 
 PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
 	CS	Je mi líto, tento typ souboru není na vašem zařízení podporován.
@@ -544,6 +607,7 @@ PLUGIN_MUSICARTISTINFO_UNSUPPORTED_CT
 	FR	Désolé, ce type de fichier n'est pas pris en charge sur ce périphérique.
 	HU	Sajnáljuk, ez a fájltípus nem támogatott az Ön eszközén.
 	NL	Helaas, dit bestandsformaat wordt niet ondersteund op dit apparaat.
+	SV	Tyvärr stöds inte den här filtypen på din spelare.
 
 PLUGIN_MUSICARTISTINFO_READ_MORE
 	CS	Další online zdroje
@@ -551,6 +615,7 @@ PLUGIN_MUSICARTISTINFO_READ_MORE
 	EN	More online sources
 	FR	Autres sources en ligne
 	NL	Meer informatie online
+	SV	Mer information online
 
 # The following services must be matched with the backend service's list of supported services
 # These strings don't need to be translated as they represent a brand or web site's name.
@@ -584,6 +649,7 @@ PLUGIN_MUSICARTISTINFO_CONTENT_LANGUAGE
 	EN	Preferred content language
 	FR	Langue préférée pour le contenu
 	NL	Voorkeurstaal voor inhoud
+	SV	Föredraget språk för innehåll
 
 PLUGIN_MUSICARTISTINFO_CONTENT_LANGUAGE_DESC
 	CS	Bohužel nejsou všechny jazyky pro stažený obsah k dispozici. Pokud není k dispozici jazyk vašeho systému, bude použita angličtina. Můžete zvolit jiný jazyk než jazyk vašeho systému, pokud chcete.
@@ -591,6 +657,7 @@ PLUGIN_MUSICARTISTINFO_CONTENT_LANGUAGE_DESC
 	EN	Unfortunately not all languages are available for the downloaded content. English will be used if your system language wasn't available. You can select a language different from your system's, if you prefer to do so.
 	FR	Malheureusement, toutes les langues ne sont pas disponibles pour le contenu téléchargé. L'anglais sera utilisé si la langue de votre système n'est pas disponible. Vous pouvez sélectionner une langue différente de celle de votre système, si vous le souhaitez.
 	NL	Helaas zijn niet alle talen beschikbaar voor de gedownloade inhoud. Als de taal van jouw systeem niet beschikbaar is, wordt Engels gebruikt. Je kan een andere taal dan die van jouw systeem selecteren, als je dat wilt.
+	SV	Tyvärr är inte alla språk tillgängliga för det nedladdade innehållet. Engelska används om ditt systems språk inte finns tillgängligt. Du kan välja ett annat språk än det som används i ditt system, om du föredrar det.Tyvärr är inte alla språk tillgängliga för det nedladdade innehållet. Engelska används om ditt systems språk inte finns tillgängligt. Du kan välja ett annat språk än det som används i ditt system, om du föredrar det.
 
 PLUGIN_MUSICARTISTINFO_LANGUAGE_DEFAULT
 	CS	Automaticky
@@ -598,8 +665,10 @@ PLUGIN_MUSICARTISTINFO_LANGUAGE_DEFAULT
 	EN	Automatic
 	FR	Automatique
 	NL	Automatisch
+	SV	Automatiskt
 
 PLUGIN_MUSICARTISTINFO_INSTRUMENTAL
 	CS	Instrumentální
 	EN	Instrumental
 	NL	Instrumentaal
+	SV	Instrumental
